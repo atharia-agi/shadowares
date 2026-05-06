@@ -212,7 +212,7 @@ class ShadowCursorEngine {
         let idle, hover, click;
         const ct = t.cursorType || 'arrow';
 
-        // Hotspot logic: crosshair center (16,16), others top-left (4,2)
+        // Hotspot logic
         if (ct === 'sword') {
             idle  = this.svgToURI(this.buildSwordSVG(t.fill, t.stroke, t.glow), 2, 2);
             hover = this.svgToURI(this.buildSwordSVG(t.glow, t.stroke, t.fill), 2, 2);
@@ -239,16 +239,22 @@ class ShadowCursorEngine {
             click = this.svgToURI(this.buildClickSVG(t.fill, t.stroke, t.glow), 5, 4);
         }
 
+        // --- THE FIX: Gunakan inheritance, jangan paksa kursor di SEMUA elemen (*) ---
         styleEl.innerHTML = `
-            html, body, * { cursor: ${idle} !important; }
+            html, body { 
+                cursor: ${idle} !important; 
+                min-height: 100vh;
+            }
+            /* Elemen interaktif - Override inheritance */
             a, button, input, select, textarea, [role="button"], .hoverable, [onclick] { 
                 cursor: ${hover} !important; 
             }
-            html:active, body:active, *:active { 
+            /* Active state - Paling spesifik */
+            html:active, body:active, a:active, button:active, *:active { 
                 cursor: ${click} !important; 
             }
-            /* Menghilangkan seleksi teks biar nggak ganggu visual kursor */
-            .no-select { user-select: none; }
+            /* Matikan seleksi teks agar tidak memicu kursor I-beam bawaan */
+            .no-select, button, a { user-select: none; -webkit-user-drag: none; }
         `;
     }
 
@@ -256,6 +262,10 @@ class ShadowCursorEngine {
         if (this.themes[themeName]) {
             this.currentTheme = themeName;
             this.applyStyles();
+            // Force refresh cursor dengan memicu hover dummy
+            document.body.style.display = 'none';
+            document.body.offsetHeight; // trigger reflow
+            document.body.style.display = '';
             return this.themes[themeName];
         }
         return null;
