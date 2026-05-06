@@ -8,8 +8,8 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "node build.js",
-    "dev": "node build.js",
+    "build": "node build.cjs",
+    "dev": "node build.cjs",
     "test": "echo \"Error: no test specified\" && exit 1",
     "docs": "jsdoc -c jsdoc.conf.json -r .",
     "prepare": "npm run build"
