@@ -102,10 +102,20 @@
 </head>
 <body>
 
-<div class="header">
+    <div class="header">
     <h1>Shadow Cursor Generator</h1>
     <p>Kursor premium fully-custom untuk UMKM Indonesia &amp; Gaming. Klik tema, rasakan trail partikelnya, dan langsung pakai di project lo.</p>
     <div class="badge">v2.0 — 12 THEMES · CLICK RIPPLE · GHOST TRAIL · AUDIO FEEDBACK</div>
+    
+    <div class="controls" style="margin: 20px 0; text-align: center;">
+        <button id="changeCursorBtn" style="padding: 12px 24px; background: #8b5cf6; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(139,92,246,0.3);">
+            🔄 Change Cursor
+        </button>
+        <button id="copyCodeBtn" style="padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; margin-left: 10px; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+            📋 Copy Code
+        </button>
+        <div id="copyStatus" style="margin-top: 10px; color: #10b981; font-weight: 500; min-height: 20px;"></div>
+    </div>
 </div>
 
 <!-- UMKM Section -->
@@ -198,6 +208,10 @@
     businessKeys.forEach(k => makeCard(k, themes[k], document.getElementById('grid-business')));
     gamingKeys.forEach(k => makeCard(k, themes[k], document.getElementById('grid-gaming')));
 
+    // Array of all theme keys for cycling
+    const allThemeKeys = [...businessKeys, ...gamingKeys];
+    let currentThemeIndex = 0;
+
     function activate(key) {
         console.log(`Activating theme: ${key}`);
         document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
@@ -216,6 +230,50 @@
             console.log('Not sending message - not in iframe');
         }
     }
+
+    // Change cursor button functionality
+    document.getElementById('changeCursorBtn').addEventListener('click', () => {
+        currentThemeIndex = (currentThemeIndex + 1) % allThemeKeys.length;
+        const key = allThemeKeys[currentThemeIndex];
+        activate(key);
+        // Update active card UI
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+        document.getElementById(`card-${key}`).classList.add('active');
+    });
+
+    // Copy code button functionality
+    document.getElementById('copyCodeBtn').addEventListener('click', async () => {
+        const code = `<!-- Put this in your HTML -->
+<script src="shadow-cursor-engine.js"></script>
+
+<!-- Select theme -->
+<script>
+  shadowCursor.setTheme('${allThemeKeys[currentThemeIndex]}');
+  // Theme: warteg, warkop, bengkel, salon, pasar, tech,
+  //        minecraft, fps, rpg, retro, racing, default
+</script>`;
+        
+        try {
+            await navigator.clipboard.writeText(code);
+            const status = document.getElementById('copyStatus');
+            status.textContent = '✓ Code copied to clipboard!';
+            status.style.color = '#10b981';
+            
+            // Reset status after 3 seconds
+            setTimeout(() => {
+                status.textContent = '';
+            }, 3000);
+        } catch (err) {
+            const status = document.getElementById('copyStatus');
+            status.textContent = '✗ Failed to copy code';
+            status.style.color = '#ef4444';
+            
+            // Reset status after 3 seconds
+            setTimeout(() => {
+                status.textContent = '';
+            }, 3000);
+        }
+    });
 
     activate('default');
 </script>
