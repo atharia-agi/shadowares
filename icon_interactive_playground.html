@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow 2.5D Interactive Playground</title>
+    <style>
+        :root { --bg: #030712; --surface: #111827; --primary: #06b6d4; --text: #f9fafb; --border: #1f2937; }
+        body { 
+            background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; 
+            padding: 40px; margin: 0; min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #164e63 0%, var(--bg) 70%);
+            overflow-x: hidden;
+        }
+        .container { max-width: 1200px; margin: 0 auto; position: relative; z-index: 10; }
+        
+        .header-card { 
+            background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid var(--border); 
+            padding: 30px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); 
+            margin-bottom: 40px; text-align: center;
+        }
+        h1 { color: #22d3ee; margin-top: 0; font-size: 2.5rem; text-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
+        
+        .upload-area { 
+            border: 2px dashed #374151; border-radius: 12px; padding: 40px; text-align: center; 
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: block; margin-top: 20px; 
+            background: rgba(0,0,0,0.3);
+        }
+        .upload-area:hover { 
+            border-color: var(--primary); background: rgba(6, 182, 212, 0.1); 
+            transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        input[type="file"] { display: none; }
+        
+        .btn { 
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; 
+            border: none; padding: 16px 32px; border-radius: 12px; font-weight: 800; cursor: pointer; 
+            margin-top: 25px; font-size: 1.2rem; transition: 0.3s; box-shadow: 0 5px 15px rgba(6, 182, 212, 0.4);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 8px 25px rgba(6, 182, 212, 0.6); }
+
+        /* The Playground Grid */
+        .playground { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+            gap: 40px; padding: 20px; perspective: 1000px;
+        }
+        
+        .sprite-wrapper {
+            position: relative; height: 220px; display: flex; justify-content: center; align-items: center;
+            border-radius: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+            cursor: grab; transform-style: preserve-3d;
+            transition: border-color 0.3s ease;
+        }
+        .sprite-wrapper:hover { border-color: rgba(6, 182, 212, 0.5); }
+        .sprite-wrapper:active { cursor: grabbing; }
+
+        .sprite-canvas {
+            max-width: 90%; max-height: 90%; object-fit: contain;
+            /* Default initial shadow, will be overridden by JS */
+            filter: drop-shadow(0px 20px 20px rgba(0,0,0,0.8));
+            /* Transition setup for physics bump */
+            transition: transform 0.1s ease-out, filter 0.1s ease-out;
+            will-change: transform, filter;
+            transform-style: preserve-3d;
+        }
+        
+        /* Floating particles effect in background */
+        .ambient-light {
+            position: fixed; top: 50%; left: 50%; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 1; mix-blend-mode: screen;
+            transition: 0.1s ease-out;
+        }
+
+        #status { font-size: 1.1rem; color: #67e8f9; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="ambient-light" id="cursor-light"></div>
+
+<div class="container">
+    <div class="header-card">
+        <h1>✨ 2.5D Interactive Light & Physics</h1>
+        <p style="color: #9ca3af; font-size: 1.1rem; max-width: 800px; margin: 0 auto;">
+            Selamat datang di eksperimen gila Shadow. Masukin spritesheet video lo. Sistem bakal motong semua objek transparan secara real-time, lalu ngubah mereka jadi <b>Entitas 2.5D</b>. <br>
+            Coba gerakin mouse lo di sekitar layar buat liat <i>Dynamic Lighting & Drop Shadow</i> yang bereaksi terhadap kursor lo, dan <b>Klik objeknya</b> buat ngetes *Physics Engine* mental!
+        </p>
+        
+        <label class="upload-area" id="upload-label">
+            <span style="font-size: 1.2rem; color: #d1d5db; font-weight:bold;">🛸 Inject Master File (WebM/MP4) Di Sini</span>
+            <input type="file" id="file-input" accept="video/webm, video/mp4">
+        </label>
+        
+        <div id="status"></div>
+        <button id="btn-process" class="btn" style="display: none;">Bangkitkan Entitas 3D!</button>
+    </div>
+
+    <div id="results" class="playground"></div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('file-input');
+    const uploadLabel = document.getElementById('upload-label');
+    const btnProcess = document.getElementById('btn-process');
+    const statusDiv = document.getElementById('status');
+    const resultsDiv = document.getElementById('results');
+    const cursorLight = document.getElementById('cursor-light');
+    
+    let videoUrl = null;
+    let videoEl = document.createElement('video');
+    videoEl.muted = true;
+    videoEl.loop = true; // Auto loop forever di playground
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        uploadLabel.innerHTML = `Materi Gelap Terdeteksi: <b style="color:#22d3ee">${file.name}</b>`;
+        videoUrl = URL.createObjectURL(file);
+        videoEl.src = videoUrl;
+        
+        videoEl.onloadeddata = () => {
+            statusDiv.textContent = `Sistem siap. Resolusi ${videoEl.videoWidth}x${videoEl.videoHeight}.`;
+            btnProcess.style.display = 'inline-block';
+        };
+    });
+
+    // Cursor Tracking for Global Ambient Light
+    document.addEventListener('mousemove', (e) => {
+        cursorLight.style.left = e.clientX + 'px';
+        cursorLight.style.top = e.clientY + 'px';
+    });
+
+    btnProcess.addEventListener('click', () => {
+        btnProcess.style.display = 'none';
+        statusDiv.textContent = "Menjalankan Quantum BFS Isolation... (Sinkronisasi Frame)";
+        resultsDiv.innerHTML = '';
+        
+        videoEl.currentTime = 0;
+        videoEl.onseeked = () => {
+            videoEl.onseeked = null; // Biar ga ke-trigger dua kali
+            processPlayground();
+        };
+        // Trigger pencarian frame jika video masih nge-blank
+        if (videoEl.readyState >= 2) {
+            // Kadang onseeked ga jalan kalau udah di posisi 0, pancing play sebentar lalu pause
+            videoEl.play().then(() => {
+                videoEl.pause();
+                videoEl.currentTime = 0;
+            });
+        }
+    });
+
+    function processPlayground() {
+        const width = videoEl.videoWidth;
+        const height = videoEl.videoHeight;
+        
+        const masterCanvas = document.createElement('canvas');
+        masterCanvas.width = width; masterCanvas.height = height;
+        const ctx = masterCanvas.getContext('2d', { willReadFrequently: true });
+        
+        ctx.drawImage(videoEl, 0, 0, width, height);
+        const data = ctx.getImageData(0, 0, width, height).data;
+        const bgR = data[0], bgG = data[1], bgB = data[2];
+        
+        const CORE_TOLERANCE = 55; 
+        const FEATHER = 30;
+        const getDist = (r, g, b) => Math.sqrt(Math.pow(r-bgR,2) + Math.pow(g-bgG,2) + Math.pow(b-bgB,2));
+        
+        // BFS Isolation (Sama presisinya dengan exporter)
+        const mask = new Uint8Array(width * height);
+        for (let i = 0; i < data.length; i += 4) {
+            mask[i/4] = getDist(data[i], data[i+1], data[i+2]) <= (CORE_TOLERANCE + FEATHER) ? 0 : 1;
+        }
+        
+        const visited = new Uint8Array(width * height);
+        const rawBoxes = [];
+        const getIdx = (x, y) => y * width + x;
+        
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = getIdx(x, y);
+                if (mask[idx] === 1 && visited[idx] === 0) {
+                    let minX = x, maxX = x, minY = y, maxY = y;
+                    const queue = [[x, y]];
+                    visited[idx] = 1;
+                    let pixelCount = 0;
+                    
+                    while (queue.length > 0) {
+                        const [cx, cy] = queue.shift();
+                        pixelCount++;
+                        if (cx < minX) minX = cx; if (cx > maxX) maxX = cx;
+                        if (cy < minY) minY = cy; if (cy > maxY) maxY = cy;
+                        
+                        const neighbors = [ [cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1], [cx+1, cy+1], [cx-1, cy-1], [cx+1, cy-1], [cx-1, cy+1] ];
+                        for (const [nx, ny] of neighbors) {
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                const nIdx = getIdx(nx, ny);
+                                if (mask[nIdx] === 1 && visited[nIdx] === 0) {
+                                    visited[nIdx] = 1; queue.push([nx, ny]);
+                                }
+                            }
+                        }
+                    }
+                    if (pixelCount > 30) rawBoxes.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
+                }
+            }
+        }
+        
+        let mergedBoxes = [...rawBoxes];
+        let merged = true;
+        const MERGE_DISTANCE = 10;
+        
+        while (merged) {
+            merged = false;
+            for (let i = 0; i < mergedBoxes.length; i++) {
+                for (let j = i + 1; j < mergedBoxes.length; j++) {
+                    const b1 = mergedBoxes[i]; const b2 = mergedBoxes[j];
+                    if (!(b1.x > b2.x + b2.w + MERGE_DISTANCE || b1.x + b1.w + MERGE_DISTANCE < b2.x || b1.y > b2.y + b2.h + MERGE_DISTANCE || b1.y + b1.h + MERGE_DISTANCE < b2.y)) {
+                        b1.x = Math.min(b1.x, b2.x); b1.y = Math.min(b1.y, b2.y);
+                        b1.w = Math.max(b1.x + b1.w, b2.x + b2.w) - b1.x; b1.h = Math.max(b1.y + b1.h, b2.y + b2.h) - b1.y;
+                        mergedBoxes.splice(j, 1); merged = true; break;
+                    }
+                }
+                if (merged) break;
+            }
+        }
+        
+        const boundingBoxes = [];
+        mergedBoxes.forEach(box => {
+            if (box.w > 30 && box.h > 30) {
+                const pad = 5;
+                boundingBoxes.push({ x: Math.max(0, box.x - pad), y: Math.max(0, box.y - pad), w: Math.min(width - box.x, box.w + pad*2), h: Math.min(height - box.y, box.h + pad*2) });
+            }
+        });
+        
+        statusDiv.textContent = `Berhasil membangkitkan ${boundingBoxes.length} Entitas! Gerakkan mouse lo.`;
+        document.querySelector('.header-card').style.padding = "20px";
+        
+        // Buat DOM 2.5D
+        const sprites = boundingBoxes.map((box, i) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'sprite-wrapper';
+            
+            const sc = document.createElement('canvas');
+            sc.className = 'sprite-canvas';
+            sc.width = box.w; sc.height = box.h;
+            
+            wrapper.appendChild(sc);
+            resultsDiv.appendChild(wrapper);
+            
+            return { 
+                ctx: sc.getContext('2d'), 
+                box, 
+                wrapper, 
+                canvas: sc,
+                physicsState: { isJumping: false }
+            };
+        });
+        
+        // PHYSICS & INTERACTION LOGIC
+        // 1. Mouse Move = Dynamic Lighting & 3D Tilt
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        
+        const PROXIMITY_RADIUS = 250; // px — efek tilt hanya aktif dalam radius ini
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            sprites.forEach(sprite => {
+                if(sprite.physicsState.isJumping) return;
+                
+                const rect = sprite.wrapper.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const deltaX = mouseX - centerX;
+                const deltaY = mouseY - centerY;
+                const distance = Math.sqrt(deltaX**2 + deltaY**2);
+
+                // Kalau cursor di luar radius, reset ke posisi netral dan skip
+                if (distance > PROXIMITY_RADIUS) {
+                    sprite.canvas.style.transform = `perspective(800px) rotateX(0deg) rotateY(0deg) scale(1.0)`;
+                    sprite.canvas.style.filter = `drop-shadow(0px 20px 20px rgba(0,0,0,0.8))`;
+                    return;
+                }
+
+                // Faktor interpolasi: 1 = cursor tepat di tengah, 0 = cursor di batas radius
+                const proximity = 1 - (distance / PROXIMITY_RADIUS);
+                
+                // Tilt (Max 20 degrees, dikali faktor proximity supaya smooth)
+                const tiltX = Math.max(-20, Math.min(20, (deltaY / 12))) * proximity;
+                const tiltY = Math.max(-20, Math.min(20, -(deltaX / 12))) * proximity;
+                
+                // Scale sedikit membesar saat cursor dekat
+                const scaleVal = 1.0 + (0.08 * proximity);
+                
+                // Drop Shadow (Arah berlawanan dengan cahaya mouse)
+                const safeDistance = Math.max(distance, 1);
+                const shadowX = (deltaX / safeDistance) * -12 * proximity;
+                const shadowY = (deltaY / safeDistance) * -12 * proximity;
+                const blur = 8 + (12 * (1 - proximity));
+                
+                // Glow cyan saat cursor dekat
+                const glowIntensity = proximity * 0.7;
+                
+                sprite.canvas.style.transform = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scaleVal})`;
+                sprite.canvas.style.filter = `drop-shadow(${shadowX}px ${shadowY}px ${blur}px rgba(0,0,0,0.9)) drop-shadow(0px 0px ${glowIntensity * 25}px rgba(6,182,212,${glowIntensity}))`;
+            });
+        });
+        
+        // 2. Click = Physics Bump (Karakter mental!)
+        sprites.forEach(sprite => {
+            sprite.wrapper.addEventListener('mousedown', () => {
+                if(sprite.physicsState.isJumping) return;
+                sprite.physicsState.isJumping = true;
+                
+                // Ubah transisi biar nge-per (spring physics)
+                sprite.canvas.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.4s ease';
+                
+                // Bikin karakter mental ke atas, muter, dan membesar
+                const randomRot = (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random()*20);
+                sprite.canvas.style.transform = `perspective(800px) translateY(-80px) scale(1.4) rotateZ(${randomRot}deg)`;
+                
+                // Bayangannya ngejauh ke bawah lantai
+                sprite.canvas.style.filter = `drop-shadow(0px 80px 30px rgba(0, 0, 0, 0.5)) drop-shadow(0px 0px 40px rgba(6, 182, 212, 1))`;
+                
+                // Gravitasi jatuh
+                setTimeout(() => {
+                    sprite.canvas.style.transition = 'transform 0.3s cubic-bezier(0.6, -0.28, 0.735, 0.045), filter 0.3s ease';
+                    sprite.canvas.style.transform = `perspective(800px) translateY(10px) scale(0.95) rotateZ(0deg)`; // Squash ke lantai
+                    sprite.canvas.style.filter = `drop-shadow(0px 5px 5px rgba(0, 0, 0, 0.9))`;
+                    
+                    // Balik normal
+                    setTimeout(() => {
+                        sprite.canvas.style.transition = 'transform 0.1s ease-out, filter 0.1s ease-out';
+                        sprite.physicsState.isJumping = false;
+                        
+                        // Force update posisi mouse biar tilt-nya balik bener
+                        const e = new MouseEvent('mousemove', { clientX: mouseX, clientY: mouseY });
+                        document.dispatchEvent(e);
+                    }, 300);
+                    
+                }, 400); // Tahan di udara 0.4 detik
+            });
+        });
+
+        // 3. Real-time Video Render Loop
+        videoEl.play();
+        function renderLoop() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(videoEl, 0, 0, width, height);
+            const rFrame = ctx.getImageData(0, 0, width, height);
+            const d = rFrame.data;
+            
+            for (let i = 0; i < d.length; i += 4) {
+                const dist = getDist(d[i], d[i+1], d[i+2]);
+                if (dist <= CORE_TOLERANCE) { d[i+3] = 0; } 
+                else if (dist <= CORE_TOLERANCE + FEATHER) {
+                    const ratio = (dist - CORE_TOLERANCE) / FEATHER;
+                    d[i+3] = (ratio * ratio * (3 - 2 * ratio)) * 255;
+                }
+            }
+            ctx.putImageData(rFrame, 0, 0);
+            
+            sprites.forEach(sprite => {
+                sprite.ctx.clearRect(0, 0, sprite.box.w, sprite.box.h);
+                sprite.ctx.drawImage(masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
+            });
+            requestAnimationFrame(renderLoop);
+        }
+        requestAnimationFrame(renderLoop);
+    }
+</script>
+
+</body>
+</html>

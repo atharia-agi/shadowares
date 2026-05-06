@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Cursor Generator — Ultimate Edition</title>
+    <style>
+        :root{--bg:#07080f;--surface:rgba(15,23,42,0.7);--border:#1e293b;--text:#f1f5f9;--primary:#8b5cf6;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
+
+        /* Animated BG */
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 0%,#1e1b4b33 0%,transparent 60%),radial-gradient(ellipse at 70% 100%,#0c4a6e22 0%,transparent 60%);pointer-events:none;z-index:0;}
+
+        .header{position:relative;z-index:10;text-align:center;padding:60px 20px 30px;
+            background:linear-gradient(180deg,rgba(30,27,75,0.5) 0%,transparent 100%);}
+        .header h1{font-size:3.2rem;font-weight:900;letter-spacing:-2px;
+            background:linear-gradient(135deg,#c084fc 0%,#60a5fa 50%,#34d399 100%);
+            -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+        .header p{color:#94a3b8;font-size:1.1rem;max-width:700px;margin:10px auto 0;}
+        .badge{display:inline-block;margin-top:15px;padding:6px 16px;border-radius:20px;font-size:.75rem;font-weight:700;letter-spacing:1px;
+            background:rgba(139,92,246,.15);color:#c084fc;border:1px solid rgba(139,92,246,.3);}
+
+        /* Section */
+        .section{max-width:1300px;margin:30px auto;padding:0 20px;position:relative;z-index:10;}
+        .section-title{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-left:5px;}
+        .section-title h2{font-size:1.6rem;color:#e2e8f0;}
+        .section-title .line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+
+        /* Cards Grid */
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;}
+
+        .card{
+            background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--border);
+            border-radius:16px;padding:24px;text-align:center;transition:all .35s cubic-bezier(.4,0,.2,1);
+            position:relative;overflow:hidden;
+        }
+        .card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,var(--card-glow,transparent) 0%,transparent 70%);opacity:0;transition:opacity .3s;}
+        .card:hover::before{opacity:1;}
+        .card:hover{border-color:var(--card-color,#475569);transform:translateY(-6px);box-shadow:0 24px 48px rgba(0,0,0,.4);}
+        .card.active{border-color:var(--card-color,#22d3ee);}
+        .card.active::after{content:'ACTIVE';position:absolute;top:10px;right:10px;
+            background:var(--card-color,#22d3ee);color:#000;font-size:.65rem;font-weight:800;
+            padding:3px 10px;border-radius:12px;}
+
+        .card .icon{font-size:2.8rem;margin-bottom:8px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));}
+        .card h3{font-size:1.15rem;color:#e2e8f0;margin-bottom:4px;}
+        .card .meta{color:#64748b;font-size:.8rem;margin-bottom:12px;}
+        .card .meta span{color:var(--card-color,#94a3b8);font-weight:700;}
+        .card .states{display:flex;gap:6px;justify-content:center;margin-bottom:14px;}
+        .card .st{padding:3px 10px;border-radius:12px;font-size:.7rem;background:rgba(255,255,255,.04);color:#94a3b8;}
+        .card .btn{
+            width:100%;padding:10px;border:none;border-radius:10px;font-weight:700;font-size:.9rem;
+            color:#fff;cursor:pointer;transition:.2s;background:var(--card-color,#8b5cf6);
+            box-shadow:0 4px 12px rgba(0,0,0,.3);
+        }
+        .card .btn:hover{filter:brightness(1.15);transform:scale(1.03);}
+
+        /* Test Zone */
+        .test-zone{
+            background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--border);
+            border-radius:16px;padding:30px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+        }
+        .zone{
+            border:1px dashed #1e293b;border-radius:12px;padding:24px;text-align:center;
+            display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;
+            transition:.3s;min-height:140px;
+        }
+        .zone:hover{background:rgba(255,255,255,.02);border-color:#334155;}
+        .zone .lbl{font-size:.7rem;color:#475569;text-transform:uppercase;letter-spacing:2px;font-weight:700;}
+        .zone button{padding:12px 28px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;border-radius:30px;font-size:.95rem;font-weight:700;cursor:pointer;transition:.2s;}
+        .zone button:hover{transform:scale(1.08);}
+        .zone button:active{transform:scale(.92);}
+        .zone a{color:#60a5fa;text-decoration:underline;font-weight:600;}
+        .zone input{padding:10px 18px;border-radius:8px;border:1px solid #1e293b;background:#0f172a;color:#fff;font-size:.95rem;outline:none;width:85%;}
+        .zone input:focus{border-color:#8b5cf6;box-shadow:0 0 15px rgba(139,92,246,.2);}
+
+        /* Code Box */
+        .code-box{
+            background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:18px 22px;
+            font-family:'Cascadia Code','Courier New',monospace;font-size:.85rem;color:#a5f3fc;
+            overflow-x:auto;line-height:1.7;position:relative;
+        }
+        .code-box .cp{position:absolute;top:8px;right:8px;background:#334155;color:#e2e8f0;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.75rem;transition:.2s;}
+        .code-box .cp:hover{background:#475569;}
+
+        /* Current Theme Banner */
+        .now-playing{
+            margin-top:30px;text-align:center;padding:20px;
+            background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:12px;
+        }
+        .now-playing .np-label{font-size:.7rem;color:#475569;text-transform:uppercase;letter-spacing:2px;}
+        .now-playing .np-name{font-size:1.5rem;font-weight:800;margin-top:4px;}
+
+        @media(max-width:768px){
+            .header h1{font-size:2rem;}
+            .test-zone{grid-template-columns:1fr;}
+            .grid{grid-template-columns:1fr 1fr;}
+        }
+        @media(max-width:480px){.grid{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Shadow Cursor Generator</h1>
+    <p>Kursor premium fully-custom untuk UMKM Indonesia &amp; Gaming. Klik tema, rasakan trail partikelnya, dan langsung pakai di project lo.</p>
+    <div class="badge">v2.0 — 12 THEMES · CLICK RIPPLE · GHOST TRAIL · AUDIO FEEDBACK</div>
+</div>
+
+<!-- UMKM Section -->
+<div class="section">
+    <div class="section-title"><h2>🏪 UMKM &amp; Bisnis</h2><div class="line"></div></div>
+    <div class="grid" id="grid-business"></div>
+</div>
+
+<!-- Gaming Section -->
+<div class="section">
+    <div class="section-title"><h2>🎮 Gaming</h2><div class="line"></div></div>
+    <div class="grid" id="grid-gaming"></div>
+</div>
+
+<!-- Now Playing -->
+<div class="section">
+    <div class="now-playing" id="now-playing">
+        <div class="np-label">Tema Aktif</div>
+        <div class="np-name" id="np-name">-</div>
+    </div>
+</div>
+
+<!-- Test Zone -->
+<div class="section">
+    <div class="section-title"><h2>🧪 Test Zone</h2><div class="line"></div></div>
+    <div class="test-zone">
+        <div class="zone">
+            <div class="lbl">Idle · Gerak Mouse</div>
+            <span style="font-size:2rem">🖱️</span>
+            <p style="color:#475569;font-size:.8rem;">Gerakin mouse di area ini. Perhatikan glow halo &amp; ghost trail.</p>
+        </div>
+        <div class="zone">
+            <div class="lbl">Hover · Interactive</div>
+            <button>Hover Tombol Ini</button>
+            <a href="#">Hover Link Ini</a>
+            <input type="text" placeholder="Atau ketik di sini...">
+        </div>
+        <div class="zone">
+            <div class="lbl">Click · Ripple + SFX</div>
+            <button onclick="void(0)">Klik Berulang!</button>
+            <p style="color:#475569;font-size:.8rem;">Dengarkan micro-SFX &amp; lihat ripple ring expand.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Code -->
+<div class="section" style="padding-bottom:60px;">
+    <div class="section-title"><h2>📋 Integrasi</h2><div class="line"></div></div>
+    <div class="code-box">
+        <button class="cp" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').textContent)">Copy</button>
+<code>&lt;!-- Taruh di HTML --&gt;
+&lt;script src="shadow-cursor-engine.js"&gt;&lt;/script&gt;
+
+&lt;!-- Pilih tema --&gt;
+&lt;script&gt;
+  shadowCursor.setTheme('minecraft');
+  // Tema: warteg, warkop, bengkel, salon, pasar, tech,
+  //        minecraft, fps, rpg, retro, racing, default
+&lt;/script&gt;</code>
+    </div>
+</div>
+
+<script src="shadow-cursor-engine.js"></script>
+<script>
+    const themes = shadowCursor.themes;
+    const businessKeys = ['warteg','warkop','bengkel','salon','pasar','tech','default'];
+    const gamingKeys = ['minecraft','fps','rpg','retro','racing'];
+
+    function makeCard(key, t, container) {
+        const c = document.createElement('div');
+        c.className = 'card';
+        c.id = `card-${key}`;
+        c.style.setProperty('--card-color', t.fill);
+        c.style.setProperty('--card-glow', t.fill + '15');
+        c.innerHTML = `
+            <div class="icon">${t.accent}</div>
+            <h3>${t.name}</h3>
+            <div class="meta">Trail: <span>${t.trail}</span> · ${t.cursorType||'arrow'}</div>
+            <div class="states">
+                <div class="st">🖱️ Idle</div>
+                <div class="st">👆 Hover</div>
+                <div class="st">💥 Click</div>
+                <div class="st">🌊 Trail</div>
+            </div>
+            <button class="btn" onclick="activate('${key}')">Aktifkan</button>
+        `;
+        container.appendChild(c);
+    }
+
+    businessKeys.forEach(k => makeCard(k, themes[k], document.getElementById('grid-business')));
+    gamingKeys.forEach(k => makeCard(k, themes[k], document.getElementById('grid-gaming')));
+
+    function activate(key) {
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+        document.getElementById(`card-${key}`).classList.add('active');
+        shadowCursor.setTheme(key);
+        const t = themes[key];
+        document.getElementById('np-name').textContent = `${t.accent} ${t.name}`;
+        document.getElementById('np-name').style.color = t.fill;
+    }
+
+    activate('default');
+</script>
+
+</body>
+</html>

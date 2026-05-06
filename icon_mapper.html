@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Asset Mapper & Previewer</title>
+    <!-- Import JSZip untuk Download All -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root { --bg: #09090b; --surface: #18181b; --primary: #8b5cf6; --text: #f4f4f5; --border: #27272a; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 40px; margin: 0; background-image: radial-gradient(circle at 50% 0%, #2e1065 0%, var(--bg) 60%); }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: var(--surface); border: 1px solid var(--border); padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        h1 { color: #c4b5fd; margin-top: 0; }
+        .upload-area { border: 2px dashed #4b5563; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: 0.3s; display: block; margin-top: 15px; }
+        .upload-area:hover { border-color: var(--primary); background: rgba(139, 92, 246, 0.05); }
+        input[type="file"] { display: none; }
+        
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 25px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
+        .control-group { display: flex; flex-direction: column; }
+        .control-group label { font-size: 0.875rem; color: #a1a1aa; margin-bottom: 8px; font-weight: bold; }
+        .control-group span { color: var(--primary); }
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+        
+        .btn { background: var(--primary); color: white; border: none; padding: 16px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 1.1rem; }
+        .btn:hover { background: #7c3aed; }
+        
+        pre { background: #000; padding: 15px; border-radius: 8px; overflow-x: auto; color: #a78bfa; border: 1px solid #3b0764; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; margin-top: 30px; margin-bottom: 40px; }
+        .sprite-card { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 15px; text-align: center; display: flex; flex-direction: column; background-image: linear-gradient(45deg, #1f1f22 25%, transparent 25%), linear-gradient(-45deg, #1f1f22 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1f1f22 75%), linear-gradient(-45deg, transparent 75%, #1f1f22 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
+        .sprite-card canvas { max-width: 100%; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); margin: auto; }
+        .sprite-card p { margin: 10px 0 0 0; font-size: 0.9rem; color: #fff; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>Universal Mapper & Previewer</h1>
+        <p>File ini mensupport <b>Video Animasi (WebM/MP4)</b> maupun <b>Gambar Statis (PNG/JPG/WebP/GIF)</b>. Hasil ekstrak gambar akan langsung tampil di atas supaya nggak ketutupan sama JSON yang panjang!</p>
+        
+        <label class="upload-area" id="upload-label">
+            <span style="font-size: 1.2rem; color: #9ca3af;">Pilih Gambar Statis ATAU Video Animasi di sini</span>
+            <input type="file" id="file-input" accept="video/webm, video/mp4, image/png, image/jpeg, image/webp, image/gif">
+        </label>
+        
+        <div class="controls-grid" id="controls" style="display: none;">
+            <div class="control-group">
+                <label>1. Sensitivitas Background: <span id="v-tol">55</span></label>
+                <input type="range" id="i-tol" min="10" max="150" value="55">
+            </div>
+            <div class="control-group">
+                <label>2. Kehalusan Tepi (Feather): <span id="v-feath">30</span></label>
+                <input type="range" id="i-feath" min="0" max="100" value="30">
+            </div>
+            <div class="control-group">
+                <label>3. Gabungin Objek (Merge): <span id="v-merge">10</span> px</label>
+                <input type="range" id="i-merge" min="0" max="100" value="10">
+            </div>
+            <div class="control-group">
+                <label>4. Padding Bounding Box: <span id="v-pad">5</span> px</label>
+                <input type="range" id="i-pad" min="0" max="30" value="5">
+            </div>
+        </div>
+        
+        <div id="status" style="margin-top: 20px; color: #a78bfa; font-weight: bold; font-size: 1.1rem; text-align: center;"></div>
+        <button id="btn-process" class="btn" style="display: none;">Map Coordinates & Preview!</button>
+    </div>
+
+    <!-- GALLERY DI ATAS SEKARANG -->
+    <div id="results" class="grid"></div>
+
+    <!-- JSON DI BAWAH -->
+    <div class="card" id="json-card" style="display: none;">
+        <h3 style="margin-top: 0; color: #ddd;">📋 JSON ASSET_REGIONS</h3>
+        <p style="font-size: 0.85rem; color: #9ca3af;">Copy data JSON ini dan masukkan ke logic Web Component / Engine Sprite Atlas di project produksi lo.</p>
+        <pre id="json-output"></pre>
+    </div>
+</div>
+
+<script>
+    const binds = ['tol', 'feath', 'merge', 'pad'];
+    binds.forEach(id => {
+        const inp = document.getElementById(`i-${id}`);
+        const val = document.getElementById(`v-${id}`);
+        inp.addEventListener('input', () => val.textContent = inp.value);
+    });
+
+    const fileInput = document.getElementById('file-input');
+    const uploadLabel = document.getElementById('upload-label');
+    const btnProcess = document.getElementById('btn-process');
+    const statusDiv = document.getElementById('status');
+    const resultsDiv = document.getElementById('results');
+    const jsonCard = document.getElementById('json-card');
+    const jsonOutput = document.getElementById('json-output');
+    
+    let isVideo = false;
+    let mediaEl = null;
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        uploadLabel.innerHTML = `File Siap: <b style="color:white">${file.name}</b>`;
+        isVideo = file.type.startsWith('video/');
+        
+        if (isVideo) {
+            mediaEl = document.createElement('video');
+            mediaEl.muted = true; mediaEl.loop = true;
+        } else {
+            mediaEl = new Image();
+        }
+        
+        mediaEl.src = URL.createObjectURL(file);
+        
+        const onReady = () => {
+            const w = isVideo ? mediaEl.videoWidth : mediaEl.width;
+            const h = isVideo ? mediaEl.videoHeight : mediaEl.height;
+            statusDiv.textContent = `Media tipe [${isVideo ? 'VIDEO' : 'IMAGE'}] termuat. Resolusi: ${w}x${h}. Silahkan atur parameter lalu klik Map.`;
+            document.getElementById('controls').style.display = 'grid';
+            btnProcess.style.display = 'block';
+            statusDiv.innerHTML = '';
+        };
+
+        if (isVideo) mediaEl.onloadeddata = onReady;
+        else mediaEl.onload = onReady;
+    });
+
+    btnProcess.addEventListener('click', async () => {
+        statusDiv.textContent = "Menganalisa Pixel & Isolasi Grid...";
+        resultsDiv.innerHTML = '';
+        jsonCard.style.display = 'none';
+        
+        if (isVideo) mediaEl.currentTime = 0;
+        setTimeout(() => processMapping(), 500);
+    });
+
+    function processMapping() {
+        const width = isVideo ? mediaEl.videoWidth : mediaEl.width;
+        const height = isVideo ? mediaEl.videoHeight : mediaEl.height;
+        
+        const CORE_TOLERANCE = parseInt(document.getElementById('i-tol').value);
+        const FEATHER = parseInt(document.getElementById('i-feath').value);
+        const MERGE_DISTANCE = parseInt(document.getElementById('i-merge').value);
+        const PAD = parseInt(document.getElementById('i-pad').value);
+        
+        const masterCanvas = document.createElement('canvas');
+        masterCanvas.width = width; masterCanvas.height = height;
+        const ctx = masterCanvas.getContext('2d', { willReadFrequently: true });
+        
+        ctx.drawImage(mediaEl, 0, 0, width, height);
+        const frameData = ctx.getImageData(0, 0, width, height);
+        const data = frameData.data;
+        const bgR = data[0], bgG = data[1], bgB = data[2];
+        const getDistance = (r, g, b) => Math.sqrt(Math.pow(r-bgR, 2) + Math.pow(g-bgG, 2) + Math.pow(b-bgB, 2));
+        
+        const mask = new Uint8Array(width * height);
+        for (let i = 0; i < data.length; i += 4) mask[i/4] = getDistance(data[i], data[i+1], data[i+2]) <= (CORE_TOLERANCE + FEATHER) ? 0 : 1;
+        
+        const visited = new Uint8Array(width * height);
+        const rawBoxes = [];
+        const getIdx = (x, y) => y * width + x;
+        
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = getIdx(x, y);
+                if (mask[idx] === 1 && visited[idx] === 0) {
+                    let minX = x, maxX = x, minY = y, maxY = y;
+                    const queue = [[x, y]]; visited[idx] = 1; let pixelCount = 0;
+                    
+                    while (queue.length > 0) {
+                        const [cx, cy] = queue.shift(); pixelCount++;
+                        if (cx < minX) minX = cx; if (cx > maxX) maxX = cx;
+                        if (cy < minY) minY = cy; if (cy > maxY) maxY = cy;
+                        
+                        const neighbors = [ [cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1], [cx+1, cy+1], [cx-1, cy-1], [cx+1, cy-1], [cx-1, cy+1] ];
+                        for (const [nx, ny] of neighbors) {
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                const nIdx = getIdx(nx, ny);
+                                if (mask[nIdx] === 1 && visited[nIdx] === 0) {
+                                    visited[nIdx] = 1; queue.push([nx, ny]);
+                                }
+                            }
+                        }
+                    }
+                    if (pixelCount > 30) rawBoxes.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
+                }
+            }
+        }
+        
+        let mergedBoxes = [...rawBoxes];
+        let merged = true;
+        while (merged) {
+            merged = false;
+            for (let i = 0; i < mergedBoxes.length; i++) {
+                for (let j = i + 1; j < mergedBoxes.length; j++) {
+                    const b1 = mergedBoxes[i]; const b2 = mergedBoxes[j];
+                    if (!(b1.x > b2.x + b2.w + MERGE_DISTANCE || b1.x + b1.w + MERGE_DISTANCE < b2.x || b1.y > b2.y + b2.h + MERGE_DISTANCE || b1.y + b1.h + MERGE_DISTANCE < b2.y)) {
+                        b1.x = Math.min(b1.x, b2.x); b1.y = Math.min(b1.y, b2.y);
+                        b1.w = Math.max(b1.x + b1.w, b2.x + b2.w) - b1.x; b1.h = Math.max(b1.y + b1.h, b2.y + b2.h) - b1.y;
+                        mergedBoxes.splice(j, 1); merged = true; break;
+                    }
+                }
+                if (merged) break;
+            }
+        }
+        
+        const boundingBoxes = [];
+        mergedBoxes.forEach(box => {
+            if (box.w > 20 && box.h > 20) { 
+                boundingBoxes.push({ x: Math.max(0, box.x - PAD), y: Math.max(0, box.y - PAD), w: Math.min(width - box.x, box.w + (PAD * 2)), h: Math.min(height - box.y, box.h + (PAD * 2)) });
+            }
+        });
+        
+        statusDiv.textContent = `Mapping Selesai! Menampilkan ${boundingBoxes.length} Aset di bawah ini.`;
+        
+        const jsonConfig = {};
+        boundingBoxes.forEach((box, i) => { jsonConfig[`Aset_${i+1}`] = box; });
+        jsonOutput.textContent = `const ASSET_REGIONS = ` + JSON.stringify(jsonConfig, null, 2) + `;`;
+        jsonCard.style.display = 'block';
+        
+        const sprites = boundingBoxes.map((box, i) => {
+            const card = document.createElement('div'); card.className = 'sprite-card';
+            const sc = document.createElement('canvas'); sc.width = box.w; sc.height = box.h;
+            const p = document.createElement('p'); p.textContent = `Aset_${i+1} [${box.w}x${box.h}]`;
+            card.appendChild(sc); card.appendChild(p);
+            resultsDiv.appendChild(card);
+            return { ctx: sc.getContext('2d'), box };
+        });
+        
+        function drawCurrentFrame() {
+            ctx.clearRect(0, 0, width, height); ctx.drawImage(mediaEl, 0, 0, width, height);
+            const rFrame = ctx.getImageData(0, 0, width, height); const d = rFrame.data;
+            for (let i = 0; i < d.length; i += 4) {
+                const dist = getDistance(d[i], d[i+1], d[i+2]);
+                if (dist <= CORE_TOLERANCE) { d[i+3] = 0; } 
+                else if (dist <= CORE_TOLERANCE + FEATHER) {
+                    const ratio = (dist - CORE_TOLERANCE) / FEATHER;
+                    d[i+3] = (ratio * ratio * (3 - 2 * ratio)) * 255;
+                }
+            }
+            ctx.putImageData(rFrame, 0, 0);
+            sprites.forEach(sprite => {
+                sprite.ctx.clearRect(0, 0, sprite.box.w, sprite.box.h);
+                sprite.ctx.drawImage(masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
+            });
+        }
+        
+        if (isVideo) {
+            mediaEl.play();
+            function renderLoop() { drawCurrentFrame(); requestAnimationFrame(renderLoop); }
+            requestAnimationFrame(renderLoop);
+        } else {
+            drawCurrentFrame();
+            
+            // DOWNLOAD ALL LOGIC FOR IMAGES
+            const zip = new JSZip();
+            let loadedCount = 0;
+            
+            sprites.forEach((sprite, i) => {
+                sprite.ctx.canvas.toBlob(blob => {
+                    zip.file(`Aset_Image_${i+1}.png`, blob);
+                    loadedCount++;
+                    
+                    if(loadedCount === sprites.length) {
+                        const btnZip = document.createElement('button');
+                        btnZip.className = 'btn';
+                        btnZip.style.background = '#3b82f6';
+                        btnZip.style.marginTop = '15px';
+                        btnZip.textContent = '📦 Download Semua Aset (ZIP)';
+                        
+                        btnZip.onclick = () => {
+                            btnZip.textContent = '⏳ Membungkus ZIP...';
+                            zip.generateAsync({type:"blob"}).then(content => {
+                                const url = URL.createObjectURL(content);
+                                const a = document.createElement('a');
+                                a.href = url; a.download = 'Aset_Mapped_Static.zip';
+                                a.click();
+                                btnZip.textContent = '📦 Download Semua Aset (ZIP)';
+                            });
+                        };
+                        statusDiv.appendChild(document.createElement('br'));
+                        statusDiv.appendChild(btnZip);
+                    }
+                }, 'image/png');
+            });
+        }
+    }
+</script>
+
+</body>
+</html>

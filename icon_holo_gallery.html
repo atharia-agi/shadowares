@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Holographic Showcase</title>
+    
+    <!-- Import Library Komponen Hologram -->
+    <script src="shadow-holo-card.js"></script>
+    
+    <style>
+        :root { --bg: #000; --primary: #fbbf24; --text: #fff; }
+        body { 
+            background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; 
+            padding: 40px; margin: 0; min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #451a03 0%, var(--bg) 70%);
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        h1 { color: #fcd34d; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 30px rgba(251, 191, 36, 0.4); }
+        
+        .upload-area { 
+            border: 2px dashed #b45309; border-radius: 12px; padding: 30px; text-align: center; 
+            cursor: pointer; display: block; max-width: 600px; margin: 0 auto;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); transition: 0.3s;
+        }
+        .upload-area:hover { border-color: var(--primary); background: rgba(251, 191, 36, 0.1); }
+        input[type="file"] { display: none; }
+        
+        .btn { 
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; 
+            border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; cursor: pointer; 
+            margin-top: 25px; font-size: 1.2rem; transition: 0.3s; box-shadow: 0 10px 20px rgba(217, 119, 6, 0.4);
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(217, 119, 6, 0.6); }
+
+        .gallery { 
+            display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; 
+            margin-top: 50px; perspective: 2000px;
+        }
+        
+        #status { text-align: center; color: #fcd34d; margin-top: 20px; font-size: 1.2rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🃏 Premium Holographic Deck</h1>
+        <p style="color: #d1d5db; font-size: 1.2rem; max-width: 800px; margin: 0 auto;">
+            Selamat datang di utilitas elit. Upload video sprite lo, dan saksikan algoritma Shadow mengubahnya menjadi deretan kartu hologram koleksi <i>(Trading Cards)</i> level dewa. <br>
+            <b>Hover kartu-kartunya</b> untuk melihat efek pantulan kaca (Glass Glare) dan efek pelangi (Holographic Foil) yang bereaksi terhadap kursor lo!
+        </p>
+    </div>
+    
+    <label class="upload-area" id="upload-label">
+        <span style="font-size: 1.2rem; font-weight:bold;">✨ Masukkan Video / Gambar Master</span>
+        <input type="file" id="file-input" accept="video/webm, video/mp4, image/png, image/jpeg, image/webp">
+    </label>
+    
+    <div style="text-align: center;">
+        <button id="btn-process" class="btn" style="display: none;">Generate Hologram Cards!</button>
+        <div id="status"></div>
+    </div>
+
+    <div id="results" class="gallery"></div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('file-input');
+    const uploadLabel = document.getElementById('upload-label');
+    const btnProcess = document.getElementById('btn-process');
+    const statusDiv = document.getElementById('status');
+    const resultsDiv = document.getElementById('results');
+    
+    let isVideo = false;
+    let mediaEl = null;
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        uploadLabel.innerHTML = `Materi Terbaca: <b style="color:var(--primary)">${file.name}</b>`;
+        isVideo = file.type.startsWith('video/');
+        
+        if (isVideo) {
+            mediaEl = document.createElement('video');
+            mediaEl.muted = true; mediaEl.loop = true;
+        } else {
+            mediaEl = new Image();
+        }
+        mediaEl.src = URL.createObjectURL(file);
+        
+        const onReady = () => {
+            statusDiv.textContent = `Sistem siap mengeksekusi konversi Hologram.`;
+            btnProcess.style.display = 'inline-block';
+        };
+        if (isVideo) mediaEl.onloadeddata = onReady;
+        else mediaEl.onload = onReady;
+    });
+
+    btnProcess.addEventListener('click', () => {
+        btnProcess.style.display = 'none';
+        statusDiv.textContent = "Mengisolasi Objek & Menempa Kartu Hologram...";
+        resultsDiv.innerHTML = '';
+        
+        if (isVideo) {
+            mediaEl.currentTime = 0;
+            mediaEl.onseeked = () => { mediaEl.onseeked = null; processGallery(); };
+            if (mediaEl.readyState >= 2) {
+                mediaEl.play().then(() => { mediaEl.pause(); mediaEl.currentTime = 0; });
+            }
+        } else {
+            setTimeout(processGallery, 300);
+        }
+    });
+
+    function processGallery() {
+        const width = isVideo ? mediaEl.videoWidth : mediaEl.width;
+        const height = isVideo ? mediaEl.videoHeight : mediaEl.height;
+        
+        const masterCanvas = document.createElement('canvas');
+        masterCanvas.width = width; masterCanvas.height = height;
+        const ctx = masterCanvas.getContext('2d', { willReadFrequently: true });
+        
+        ctx.drawImage(mediaEl, 0, 0, width, height);
+        const data = ctx.getImageData(0, 0, width, height).data;
+        const bgR = data[0], bgG = data[1], bgB = data[2];
+        
+        const getDist = (r, g, b) => Math.sqrt(Math.pow(r-bgR,2) + Math.pow(g-bgG,2) + Math.pow(b-bgB,2));
+        
+        // Isolasi BFS Presisi
+        const mask = new Uint8Array(width * height);
+        for (let i = 0; i < data.length; i += 4) {
+            mask[i/4] = getDist(data[i], data[i+1], data[i+2]) <= 85 ? 0 : 1;
+        }
+        
+        const visited = new Uint8Array(width * height);
+        const rawBoxes = [];
+        const getIdx = (x, y) => y * width + x;
+        
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (mask[getIdx(x,y)] === 1 && visited[getIdx(x,y)] === 0) {
+                    let minX = x, maxX = x, minY = y, maxY = y;
+                    const queue = [[x, y]];
+                    visited[getIdx(x,y)] = 1;
+                    let pCount = 0;
+                    
+                    while (queue.length > 0) {
+                        const [cx, cy] = queue.shift();
+                        pCount++;
+                        if (cx < minX) minX = cx; if (cx > maxX) maxX = cx;
+                        if (cy < minY) minY = cy; if (cy > maxY) maxY = cy;
+                        
+                        const neighbors = [ [cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1], [cx+1, cy+1], [cx-1, cy-1], [cx+1, cy-1], [cx-1, cy+1] ];
+                        for (const [nx, ny] of neighbors) {
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                if (mask[getIdx(nx,ny)] === 1 && visited[getIdx(nx,ny)] === 0) {
+                                    visited[getIdx(nx,ny)] = 1; queue.push([nx, ny]);
+                                }
+                            }
+                        }
+                    }
+                    if (pCount > 30) rawBoxes.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
+                }
+            }
+        }
+        
+        // Merge & Padding
+        let mBoxes = [...rawBoxes];
+        let merged = true;
+        while (merged) {
+            merged = false;
+            for (let i = 0; i < mBoxes.length; i++) {
+                for (let j = i + 1; j < mBoxes.length; j++) {
+                    const b1 = mBoxes[i], b2 = mBoxes[j], md = 10;
+                    if (!(b1.x > b2.x + b2.w + md || b1.x + b1.w + md < b2.x || b1.y > b2.y + b2.h + md || b1.y + b1.h + md < b2.y)) {
+                        b1.x = Math.min(b1.x, b2.x); b1.y = Math.min(b1.y, b2.y);
+                        b1.w = Math.max(b1.x + b1.w, b2.x + b2.w) - b1.x; b1.h = Math.max(b1.y + b1.h, b2.y + b2.h) - b1.y;
+                        mBoxes.splice(j, 1); merged = true; break;
+                    }
+                }
+                if (merged) break;
+            }
+        }
+        
+        const boxes = [];
+        mBoxes.forEach(b => {
+            if (b.w > 30 && b.h > 30) boxes.push({ x: Math.max(0, b.x-5), y: Math.max(0, b.y-5), w: Math.min(width-b.x, b.w+10), h: Math.min(height-b.y, b.h+10) });
+        });
+        
+        statusDiv.textContent = `Deck Selesai! ${boxes.length} Kartu Hologram Siap Di-Hover.`;
+        
+        // Construct Shadow Holo Cards!
+        const sprites = boxes.map((box, i) => {
+            const holoCard = document.createElement('shadow-holo-card');
+            
+            const sc = document.createElement('canvas');
+            sc.width = box.w; sc.height = box.h;
+            
+            holoCard.appendChild(sc);
+            resultsDiv.appendChild(holoCard);
+            return { ctx: sc.getContext('2d'), box };
+        });
+        
+        function drawFrame() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(mediaEl, 0, 0, width, height);
+            const rFrame = ctx.getImageData(0, 0, width, height);
+            const d = rFrame.data;
+            for (let i = 0; i < d.length; i += 4) {
+                const dist = getDist(d[i], d[i+1], d[i+2]);
+                if (dist <= 55) d[i+3] = 0; 
+                else if (dist <= 85) d[i+3] = ((dist - 55) / 30) ** 2 * 255;
+            }
+            ctx.putImageData(rFrame, 0, 0);
+            
+            sprites.forEach(sprite => {
+                sprite.ctx.clearRect(0, 0, sprite.box.w, sprite.box.h);
+                sprite.ctx.drawImage(masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
+            });
+        }
+        
+        if (isVideo) {
+            mediaEl.play();
+            function renderLoop() { drawFrame(); requestAnimationFrame(renderLoop); }
+            requestAnimationFrame(renderLoop);
+        } else drawFrame();
+    }
+</script>
+
+</body>
+</html>

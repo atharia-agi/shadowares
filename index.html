@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Toolkit — Asset Engineering Suite</title>
+    <meta name="description" content="Zero-dependency browser-native toolkit for sprite isolation, 2.5D physics, procedural audio, custom cursors, color palettes, and scroll animations.">
+    <style>
+        :root{--bg:#07080f;--sidebar:#0c0f1a;--surface:#111827;--border:#1e293b;--text:#f1f5f9;--muted:#64748b;--primary:#8b5cf6;--accent:#22d3ee;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden;display:flex;}
+
+        /* --- SIDEBAR --- */
+        .sidebar{
+            width:280px;min-width:280px;height:100vh;background:var(--sidebar);border-right:1px solid var(--border);
+            display:flex;flex-direction:column;overflow-y:auto;z-index:100;transition:transform .3s;
+        }
+        .sidebar::-webkit-scrollbar{width:4px;}
+        .sidebar::-webkit-scrollbar-thumb{background:#334155;border-radius:4px;}
+
+        .logo{padding:24px 20px 16px;border-bottom:1px solid var(--border);}
+        .logo h1{font-size:1.3rem;font-weight:900;letter-spacing:-0.5px;
+            background:linear-gradient(135deg,#c084fc,#60a5fa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+        .logo p{font-size:.7rem;color:var(--muted);margin-top:4px;letter-spacing:.5px;}
+
+        .nav-group{padding:16px 12px 4px;}
+        .nav-group-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;font-weight:700;padding:0 8px;margin-bottom:8px;}
+
+        .nav-item{
+            display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+            cursor:pointer;transition:all .2s;color:#94a3b8;font-size:.88rem;font-weight:500;
+            border:1px solid transparent;margin-bottom:2px;
+        }
+        .nav-item:hover{background:rgba(255,255,255,.04);color:#e2e8f0;}
+        .nav-item.active{background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);}
+        .nav-item .icon{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0;}
+        .nav-item .badge{margin-left:auto;font-size:.6rem;padding:2px 7px;border-radius:6px;background:rgba(34,211,238,.1);color:#67e8f9;font-weight:700;}
+
+        /* --- MAIN CONTENT --- */
+        .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+        .topbar{
+            height:56px;min-height:56px;background:var(--sidebar);border-bottom:1px solid var(--border);
+            display:flex;align-items:center;padding:0 20px;gap:12px;
+        }
+        .topbar .burger{display:none;background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer;padding:4px;}
+        .topbar .breadcrumb{font-size:.85rem;color:var(--muted);}
+        .topbar .breadcrumb span{color:#e2e8f0;font-weight:600;}
+        .topbar .btn-new-tab{margin-left:auto;padding:6px 14px;border-radius:8px;background:#1e293b;border:1px solid #334155;
+            color:#94a3b8;font-size:.75rem;cursor:pointer;transition:.2s;text-decoration:none;}
+        .topbar .btn-new-tab:hover{background:#334155;color:#fff;}
+
+        /* Welcome screen */
+        .welcome{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:40px;
+            background:radial-gradient(ellipse at 50% 30%,#1e1b4b22,transparent 70%);}
+        .welcome h2{font-size:2.5rem;font-weight:900;margin-bottom:12px;
+            background:linear-gradient(135deg,#c084fc,#60a5fa,#34d399);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+        .welcome p{color:var(--muted);max-width:500px;line-height:1.6;margin-bottom:30px;}
+        .welcome .quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;max-width:700px;width:100%;}
+        .welcome .qcard{
+            background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;
+            cursor:pointer;transition:.3s;text-align:left;
+        }
+        .welcome .qcard:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,.3);}
+        .welcome .qcard .qi{font-size:1.5rem;margin-bottom:6px;}
+        .welcome .qcard h4{font-size:.9rem;color:#e2e8f0;margin-bottom:3px;}
+        .welcome .qcard p{font-size:.75rem;color:var(--muted);margin:0;}
+
+        iframe{flex:1;border:none;width:100%;height:100%;background:var(--bg);}
+
+        /* Mobile */
+        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;}
+        @media(max-width:800px){
+            .sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);z-index:100;}
+            .sidebar.open{transform:translateX(0);}
+            .overlay.open{display:block;}
+            .topbar .burger{display:block;}
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<nav class="sidebar" id="sidebar">
+    <div class="logo">
+        <h1>⚡ Shadow Toolkit</h1>
+        <p>Asset Engineering Suite v2.0</p>
+    </div>
+
+    <!-- Asset Isolation -->
+    <div class="nav-group">
+        <div class="nav-group-label">🔬 Asset Isolation</div>
+        <div class="nav-item" onclick="load('icon_mapper.html','Sprite Mapper (Static + Animated)')"><div class="icon">🗺️</div>Sprite Mapper<div class="badge">BFS</div></div>
+        <div class="nav-item" onclick="load('icon_exporter_animated.html','Animated Exporter')"><div class="icon">🎞️</div>Animated Exporter<div class="badge">ZIP</div></div>
+        <div class="nav-item" onclick="load('icon_interactive_playground.html','2.5D Interactive Playground')"><div class="icon">🎮</div>2.5D Playground</div>
+    </div>
+
+    <!-- Visual Effects -->
+    <div class="nav-group">
+        <div class="nav-group-label">✨ Visual Effects</div>
+        <div class="nav-item" onclick="load('icon_holo_gallery.html','Holographic Card Gallery')"><div class="icon">🌈</div>Holographic Cards</div>
+        <div class="nav-item" onclick="load('icon_snap_gallery.html','Thanos Snap Gallery')"><div class="icon">💥</div>Thanos Snap</div>
+        <div class="nav-item" onclick="load('mesh_gradient_generator.html','Mesh Gradient Generator')"><div class="icon">🌈</div>Mesh Gradient<div class="badge">ANIMATED</div></div>
+        <div class="nav-item" onclick="load('scroll_reveal_demo.html','Scroll Reveal Demo')"><div class="icon">🎬</div>Scroll Reveal</div>
+    </div>
+
+    <!-- Audio -->
+    <div class="nav-group">
+        <div class="nav-group-label">🔊 Audio Engine</div>
+        <div class="nav-item" onclick="load('shadow_audio_synth.html','Procedural Audio Synth')"><div class="icon">🎹</div>Audio Synth</div>
+        <div class="nav-item" onclick="load('shadow_prompt_audio.html','Text-to-Soundscape')"><div class="icon">🎧</div>Text-to-Soundscape</div>
+    </div>
+
+    <!-- Design Tools -->
+    <div class="nav-group">
+        <div class="nav-group-label">🎨 Design Tools</div>
+        <div class="nav-item" onclick="load('cursor_generator.html','Cursor Generator')"><div class="icon">🖱️</div>Cursor Generator<div class="badge">12 THEMES</div></div>
+        <div class="nav-item" onclick="load('color_palette_generator.html','Color Palette Generator')"><div class="icon">🎨</div>Color Palette</div>
+        <div class="nav-item" onclick="load('css_effect_generator.html','CSS Effect Generator')"><div class="icon">🧊</div>CSS Effects<div class="badge">4-IN-1</div></div>
+    </div>
+
+    <!-- Showcase -->
+    <div class="nav-group">
+        <div class="nav-group-label">🚀 Featured</div>
+        <div class="nav-item" onclick="load('component_showcase.html','Premium Component Showcase')"><div class="icon">💎</div>Premium Showcase<div class="badge">LIVE</div></div>
+    </div>
+
+    <!-- Docs -->
+    <div class="nav-group" style="margin-top:auto;padding-bottom:20px;">
+        <div class="nav-group-label">📄 Docs</div>
+        <div class="nav-item" onclick="load('README_ICON_TOOLS.md','Documentation (Markdown)')"><div class="icon">📖</div>README Docs</div>
+    </div>
+</nav>
+
+<div class="main">
+    <div class="topbar">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <div class="breadcrumb" id="breadcrumb">Shadow Toolkit / <span id="bc-page">Home</span></div>
+        <a class="btn-new-tab" id="btn-newtab" href="#" target="_blank" style="display:none;">Buka di Tab Baru ↗</a>
+    </div>
+
+    <div class="welcome" id="welcome">
+        <h2>Shadow Toolkit</h2>
+        <p>Kumpulan utilitas premium zero-dependency untuk asset engineering, visual effects, procedural audio, dan design tools. Pilih tool di sidebar atau klik shortcut di bawah.</p>
+        <div class="quick-grid">
+            <div class="qcard" onclick="load('component_showcase.html','Premium Showcase')" style="grid-column: span 2; border-color: var(--primary); background: rgba(139,92,246,0.1);"><div class="qi">💎</div><h4>Premium Showcase</h4><p>Live demo gabungan semua library (Holo, Snap, 2.5D, Scroll)</p></div>
+            <div class="qcard" onclick="load('icon_mapper.html','Sprite Mapper')"><div class="qi">🗺️</div><h4>Sprite Mapper</h4><p>Isolasi objek dari gambar/video</p></div>
+            <div class="qcard" onclick="load('cursor_generator.html','Cursor Generator')"><div class="qi">🖱️</div><h4>Cursor Generator</h4><p>Kursor custom UMKM + Gaming</p></div>
+            <div class="qcard" onclick="load('color_palette_generator.html','Color Palette')"><div class="qi">🎨</div><h4>Color Palette</h4><p>Generate harmoni warna instan</p></div>
+            <div class="qcard" onclick="load('mesh_gradient_generator.html','Mesh Gradient')"><div class="qi">🌈</div><h4>Mesh Gradient</h4><p>Animated fluid background</p></div>
+        </div>
+    </div>
+
+    <iframe id="frame" style="display:none;" sandbox="allow-scripts allow-same-origin allow-downloads allow-popups allow-forms"></iframe>
+</div>
+
+<script>
+    const frame = document.getElementById('frame');
+    const welcome = document.getElementById('welcome');
+    const bcPage = document.getElementById('bc-page');
+    const btnNewtab = document.getElementById('btn-newtab');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    let currentFile = '';
+
+    function load(file, title) {
+        // Highlight nav item
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        const items = document.querySelectorAll('.nav-item');
+        items.forEach(n => { if (n.textContent.includes(title.split(' ')[0]) || n.onclick?.toString().includes(file)) n.classList.add('active'); });
+
+        // Handle markdown file
+        if (file.endsWith('.md')) {
+            frame.style.display = 'none';
+            welcome.style.display = 'flex';
+            welcome.innerHTML = `<h2>📖 Documentation</h2><p style="color:#94a3b8">Loading ${file}...</p>`;
+            fetch(file).then(r => r.text()).then(md => {
+                // Basic MD rendering
+                let html = md.replace(/^### (.*$)/gm, '<h3 style="color:#c4b5fd;margin:16px 0 8px">$1</h3>')
+                    .replace(/^## (.*$)/gm, '<h2 style="color:#e2e8f0;margin:20px 0 10px;font-size:1.4rem">$1</h2>')
+                    .replace(/^# (.*$)/gm, '<h1 style="color:#f1f5f9;margin:24px 0 12px;font-size:1.8rem">$1</h1>')
+                    .replace(/`([^`]+)`/g, '<code style="background:#1e293b;padding:2px 6px;border-radius:4px;font-size:.85rem;color:#a5f3fc">$1</code>')
+                    .replace(/\n/g, '<br>');
+                welcome.innerHTML = `<div style="text-align:left;max-width:800px;width:100%;padding:30px;overflow-y:auto;max-height:calc(100vh - 100px);line-height:1.7;color:#cbd5e1">${html}</div>`;
+            });
+            bcPage.textContent = 'Documentation';
+            btnNewtab.style.display = 'none';
+            closeSidebar();
+            return;
+        }
+
+        currentFile = file;
+        welcome.style.display = 'none';
+        frame.style.display = 'block';
+        frame.src = file;
+        bcPage.textContent = title;
+        btnNewtab.href = file;
+        btnNewtab.style.display = 'inline-block';
+        closeSidebar();
+
+        // Activate correct nav item
+        document.querySelectorAll('.nav-item').forEach(n => {
+            n.classList.remove('active');
+            if (n.getAttribute('onclick')?.includes(file)) n.classList.add('active');
+        });
+    }
+
+    function toggleSidebar() { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); }
+    function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+
+    // Keyboard shortcut: Ctrl+K = focus sidebar search (future), Escape = close sidebar
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSidebar();
+    });
+</script>
+
+</body>
+</html>

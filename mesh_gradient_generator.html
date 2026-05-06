@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Mesh Gradient Generator</title>
+    <style>
+        :root{--bg:#07080f;--surface:#111827;--border:#1e293b;--text:#f1f5f9;--primary:#8b5cf6;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden;display:flex;}
+
+        /* Sidebar Controls */
+        .controls{width:320px;background:var(--surface);border-right:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;z-index:10;}
+        .controls h2{font-size:1.5rem;font-weight:900;background:linear-gradient(135deg,#c084fc,#60a5fa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+        
+        .group{display:flex;flex-direction:column;gap:8px;}
+        .label{font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;justify-content:space-between;}
+        .label span{color:#a5f3fc;font-family:monospace;}
+
+        input[type="range"]{width:100%;accent-color:var(--primary);height:6px;border-radius:3px;outline:none;-webkit-appearance:none;appearance:none;background:#1e293b;}
+        input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:var(--primary);cursor:pointer;}
+
+        .point-list{display:flex;flex-direction:column;gap:8px;}
+        .point-item{display:flex;align-items:center;gap:10px;background:#0f172a;padding:10px;border-radius:10px;border:1px solid var(--border);}
+        .point-item input[type="color"]{width:30px;height:30px;border:none;border-radius:6px;cursor:pointer;background:transparent;}
+        .point-item .p-info{flex:1;font-size:.75rem;color:#94a3b8;}
+        .btn-del{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;padding:4px;opacity:.6;transition:.2s;}
+        .btn-del:hover{opacity:1;transform:scale(1.1);}
+
+        .btn-add{width:100%;padding:12px;background:rgba(139,92,246,.1);color:var(--primary);border:1px dashed var(--primary);border-radius:10px;cursor:pointer;font-weight:700;transition:.2s;}
+        .btn-add:hover{background:rgba(139,92,246,.2);}
+
+        /* Main Preview */
+        .preview-container{flex:1;position:relative;display:flex;flex-direction:column;background:#000;}
+        .canvas-wrap{flex:1;position:relative;overflow:hidden;cursor:crosshair;}
+        #mesh-canvas{position:absolute;inset:0;width:100%;height:100%;}
+        
+        /* Draggable Points on UI */
+        .ui-point{
+            position:absolute;width:24px;height:24px;border-radius:50%;border:3px solid #fff;
+            box-shadow:0 0 10px rgba(0,0,0,0.5);transform:translate(-50%,-50%);
+            cursor:grab;z-index:20;transition:transform .1s;
+        }
+        .ui-point:active{cursor:grabbing;transform:translate(-50%,-50%) scale(1.2);}
+
+        /* Glass Overlay Toggle */
+        .glass-overlay{
+            position:absolute;inset:0;pointer-events:none;display:none;
+            backdrop-filter:blur(40px) saturate(150%);
+            background:rgba(255,255,255,0.05);
+            z-index:15;
+        }
+        .glass-overlay.active{display:block;}
+
+        /* Code Output */
+        .code-panel{
+            background:var(--sidebar);border-top:1px solid var(--border);padding:20px;
+            display:flex;flex-direction:column;gap:10px;z-index:30;
+        }
+        .code-box{
+            background:#0f172a;border:1px solid var(--border);border-radius:12px;padding:16px;
+            font-family:'Cascadia Code',monospace;font-size:.8rem;color:#a5f3fc;
+            max-height:120px;overflow-y:auto;position:relative;
+        }
+        .cp-btn{position:absolute;top:8px;right:8px;background:#334155;color:#e2e8f0;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.7rem;}
+
+        .toolbar{position:absolute;top:20px;right:20px;display:flex;gap:10px;z-index:40;}
+        .tool-btn{padding:10px 20px;background:rgba(15,23,42,0.8);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;transition:.2s;}
+        .tool-btn:hover{border-color:var(--primary);transform:translateY(-2px);}
+        .tool-btn.active{background:var(--primary);border-color:var(--primary);}
+    </style>
+</head>
+<body>
+
+<div class="controls">
+    <h2>Mesh Gradient</h2>
+    
+    <div class="group">
+        <div class="label">Speed <span id="v-speed">1.0x</span></div>
+        <input type="range" id="speed" min="0" max="500" value="100" oninput="updateSpeed()">
+    </div>
+
+    <div class="group">
+        <div class="label">Blur / Spread <span id="v-blur">60%</span></div>
+        <input type="range" id="blur" min="10" max="100" value="60" oninput="draw()">
+    </div>
+
+    <div class="group">
+        <div class="label">Background</div>
+        <input type="color" id="bg-color" value="#07080f" oninput="draw()">
+    </div>
+
+    <div class="group">
+        <div class="label">Mesh Points</div>
+        <div class="point-list" id="point-list"></div>
+        <button class="btn-add" onclick="addPoint()">+ Tambah Titik</button>
+    </div>
+
+    <p style="font-size:.7rem;color:#475569;margin-top:auto;">Drag titik di canvas untuk mengubah komposisi warna secara live.</p>
+</div>
+
+<div class="preview-container">
+    <div class="toolbar">
+        <button class="tool-btn" id="btn-animate" onclick="toggleAnimate()">Animate: ON</button>
+        <button class="tool-btn" id="btn-glass" onclick="toggleGlass()">Glass Overlay: OFF</button>
+        <button class="tool-btn" onclick="randomize()">🎲 Randomize</button>
+    </div>
+
+    <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="mesh-canvas"></canvas>
+        <div class="glass-overlay" id="glass-overlay"></div>
+        <div id="points-ui"></div>
+    </div>
+
+    <div class="code-panel">
+        <div class="label">CSS Output (Radial Layered)</div>
+        <div class="code-box">
+            <button class="cp-btn" onclick="copyCode()">Copy CSS</button>
+            <code id="code-text"></code>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('mesh-canvas');
+    const ctx = canvas.getContext('2d');
+    const wrap = document.getElementById('canvas-wrap');
+    const pointsUI = document.getElementById('points-ui');
+    const listUI = document.getElementById('point-list');
+
+    let points = [
+        { x: 0.2, y: 0.2, color: '#8b5cf6', vx: 0.001, vy: 0.0015 },
+        { x: 0.8, y: 0.3, color: '#06b6d4', vx: -0.0012, vy: 0.001 },
+        { x: 0.3, y: 0.8, color: '#ec4899', vx: 0.0015, vy: -0.0011 },
+        { x: 0.7, y: 0.7, color: '#f59e0b', vx: -0.001, vy: -0.0013 }
+    ];
+
+    let isAnimating = true;
+    let isGlass = false;
+    let speedMult = 1.0;
+    let dragIdx = -1;
+
+    function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        
+        wrap.addEventListener('mousedown', handleDown);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleUp);
+        
+        renderList();
+        animate();
+    }
+
+    function resize() {
+        canvas.width = wrap.offsetWidth;
+        canvas.height = wrap.offsetHeight;
+        draw();
+    }
+
+    function addPoint() {
+        if (points.length >= 8) return;
+        points.push({
+            x: Math.random(), y: Math.random(),
+            color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'),
+            vx: (Math.random() - 0.5) * 0.003,
+            vy: (Math.random() - 0.5) * 0.003
+        });
+        renderList();
+        draw();
+    }
+
+    function deletePoint(idx) {
+        if (points.length <= 2) return;
+        points.splice(idx, 1);
+        renderList();
+        draw();
+    }
+
+    function renderList() {
+        listUI.innerHTML = '';
+        pointsUI.innerHTML = '';
+        
+        points.forEach((p, i) => {
+            // Sidebar item
+            const item = document.createElement('div');
+            item.className = 'point-item';
+            item.innerHTML = `
+                <input type="color" value="${p.color}" oninput="updateColor(${i}, this.value)">
+                <div class="p-info">Point ${i+1}</div>
+                <button class="btn-del" onclick="deletePoint(${i})">×</button>
+            `;
+            listUI.appendChild(item);
+
+            // UI handle
+            const handle = document.createElement('div');
+            handle.className = 'ui-point';
+            handle.style.left = (p.x * 100) + '%';
+            handle.style.top = (p.y * 100) + '%';
+            handle.style.backgroundColor = p.color;
+            handle.dataset.index = i;
+            pointsUI.appendChild(handle);
+        });
+    }
+
+    function updateColor(idx, val) {
+        points[idx].color = val;
+        renderList();
+        draw();
+    }
+
+    function updateSpeed() {
+        speedMult = document.getElementById('speed').value / 100;
+        document.getElementById('v-speed').textContent = speedMult.toFixed(1) + 'x';
+    }
+
+    function handleDown(e) {
+        if (e.target.classList.contains('ui-point')) {
+            dragIdx = parseInt(e.target.dataset.index);
+        }
+    }
+
+    function handleMove(e) {
+        if (dragIdx === -1) return;
+        const rect = wrap.getBoundingClientRect();
+        points[dragIdx].x = (e.clientX - rect.left) / rect.width;
+        points[dragIdx].y = (e.clientY - rect.top) / rect.height;
+        
+        // Clamp
+        points[dragIdx].x = Math.max(0, Math.min(1, points[dragIdx].x));
+        points[dragIdx].y = Math.max(0, Math.min(1, points[dragIdx].y));
+        
+        draw();
+        updateUIHandles();
+    }
+
+    function handleUp() { dragIdx = -1; }
+
+    function updateUIHandles() {
+        const handles = document.querySelectorAll('.ui-point');
+        handles.forEach((h, i) => {
+            h.style.left = (points[i].x * 100) + '%';
+            h.style.top = (points[i].y * 100) + '%';
+        });
+    }
+
+    function draw() {
+        const bg = document.getElementById('bg-color').value;
+        const blurPct = document.getElementById('blur').value;
+        
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        points.forEach(p => {
+            const radial = ctx.createRadialGradient(
+                p.x * canvas.width, p.y * canvas.height, 0,
+                p.x * canvas.width, p.y * canvas.height, Math.max(canvas.width, canvas.height) * (blurPct/100)
+            );
+            radial.addColorStop(0, p.color);
+            radial.addColorStop(1, 'transparent');
+            
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = radial;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        });
+
+        updateCode();
+    }
+
+    function animate() {
+        if (isAnimating && dragIdx === -1) {
+            points.forEach(p => {
+                p.x += p.vx * speedMult;
+                p.y += p.vy * speedMult;
+
+                if (p.x <= 0 || p.x >= 1) p.vx *= -1;
+                if (p.y <= 0 || p.y >= 1) p.vy *= -1;
+            });
+            draw();
+            updateUIHandles();
+        }
+        requestAnimationFrame(animate);
+    }
+
+    function toggleAnimate() {
+        isAnimating = !isAnimating;
+        document.getElementById('btn-animate').textContent = `Animate: ${isAnimating ? 'ON' : 'OFF'}`;
+        document.getElementById('btn-animate').classList.toggle('active', isAnimating);
+    }
+
+    function toggleGlass() {
+        isGlass = !isGlass;
+        document.getElementById('glass-overlay').classList.toggle('active', isGlass);
+        document.getElementById('btn-glass').textContent = `Glass Overlay: ${isGlass ? 'ON' : 'OFF'}`;
+        document.getElementById('btn-glass').classList.toggle('active', isGlass);
+    }
+
+    function randomize() {
+        points.forEach(p => {
+            p.color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+            p.vx = (Math.random() - 0.5) * 0.003;
+            p.vy = (Math.random() - 0.5) * 0.003;
+        });
+        renderList();
+        draw();
+    }
+
+    function updateCode() {
+        const bg = document.getElementById('bg-color').value;
+        const blur = document.getElementById('blur').value;
+        let css = `background-color: ${bg};\nbackground-image: \n`;
+        
+        points.forEach((p, i) => {
+            const x = Math.round(p.x * 100);
+            const y = Math.round(p.y * 100);
+            css += `  radial-gradient(at ${x}% ${y}%, ${p.color} 0%, transparent ${blur}%)`;
+            css += (i === points.length - 1) ? ';' : ',\n';
+        });
+
+        document.getElementById('code-text').textContent = css;
+    }
+
+    function copyCode() {
+        navigator.clipboard.writeText(document.getElementById('code-text').textContent);
+        alert('CSS Copied to clipboard!');
+    }
+
+    init();
+</script>
+
+</body>
+</html>

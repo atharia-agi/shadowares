@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal WebM/WebP Asset Exporter</title>
+    <!-- Import JSZip untuk fitur Download All -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root { --bg: #09090b; --surface: #18181b; --primary: #10b981; --text: #f4f4f5; --border: #27272a; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 40px; margin: 0; background-image: radial-gradient(circle at 50% 0%, #064e3b 0%, var(--bg) 60%); }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: var(--surface); border: 1px solid var(--border); padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        h1 { color: #34d399; margin-top: 0; }
+        .upload-area { border: 2px dashed #4b5563; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: 0.3s; display: block; margin-top: 15px; }
+        .upload-area:hover { border-color: var(--primary); background: rgba(16, 185, 129, 0.05); }
+        input[type="file"] { display: none; }
+        
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 25px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
+        .control-group { display: flex; flex-direction: column; }
+        .control-group label { font-size: 0.875rem; color: #a1a1aa; margin-bottom: 8px; font-weight: bold; }
+        .control-group span { color: var(--primary); }
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+        
+        .btn { background: var(--primary); color: var(--bg); border: none; padding: 16px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 1.1rem; }
+        .btn:hover { background: #059669; color: white; }
+        .btn-download { background: #3b82f6; color: white; border: none; padding: 8px 16px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 15px; text-decoration: none; display: inline-block; box-sizing: border-box; text-align: center; }
+        .btn-download:hover { background: #2563eb; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 25px; margin-top: 30px; }
+        .sprite-card { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 15px; text-align: center; display: flex; flex-direction: column; background-image: linear-gradient(45deg, #1f1f22 25%, transparent 25%), linear-gradient(-45deg, #1f1f22 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1f1f22 75%), linear-gradient(-45deg, transparent 75%, #1f1f22 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
+        .sprite-card canvas { max-width: 100%; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); margin: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; background: rgba(0,0,0,0.3); }
+        .sprite-card h3 { margin: 15px 0 5px 0; font-size: 1rem; color: #fff; }
+        .progress-bar { height: 6px; background: #374151; width: 100%; border-radius: 3px; overflow: hidden; margin-top: 15px; display: none; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: 0.1s; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>Universal Asset Exporter (WebM / WebP / MP4)</h1>
+        <p>Versi ini sangat dinamis! Bisa lo pake buat ngekstrak berbagai file animasi lainnya di masa depan. Gue udah tambahin <b>Custom Parameter Sliders</b> supaya lo bisa fine-tuning tingkat sensitivitas potongannya sendiri tanpa harus ngedit kode lagi!</p>
+        
+        <label class="upload-area" id="upload-label">
+            <span style="font-size: 1.2rem; color: #9ca3af;">Pilih Master File (WebM, WebP, MP4)</span>
+            <input type="file" id="file-input" accept="video/webm, video/mp4, image/webp, image/gif">
+        </label>
+        
+        <div class="controls-grid" id="controls" style="display: none;">
+            <div class="control-group">
+                <label>1. Sensitivitas Hapus Background: <span id="v-tol">75</span></label>
+                <input type="range" id="i-tol" min="10" max="150" value="75">
+                <small style="color:#71717a">Geser ke kanan kalau masih ada bercak sisa background.</small>
+            </div>
+            <div class="control-group">
+                <label>2. Kehalusan Tepi (Anti-Aliasing): <span id="v-feath">45</span></label>
+                <input type="range" id="i-feath" min="0" max="100" value="45">
+                <small style="color:#71717a">Tingkatkan biar pinggiran objek nggak kasar (smooth alpha).</small>
+            </div>
+            <div class="control-group">
+                <label>3. Gabungin Objek Terpisah: <span id="v-merge">3</span> px</label>
+                <input type="range" id="i-merge" min="0" max="100" value="3">
+                <small style="color:#71717a">Kecilin (ex: 2px) biar ga nyomot tetangganya. Gedein kalau aura karakter kepisah.</small>
+            </div>
+            <div class="control-group">
+                <label>4. Padding Batas (Frame Box): <span id="v-pad">2</span> px</label>
+                <input type="range" id="i-pad" min="0" max="30" value="2">
+                <small style="color:#71717a">Kecilin biar bounding box presisi ketat & ga nabrak sebelahnya.</small>
+            </div>
+        </div>
+        
+        <div id="status" style="margin-top: 20px; color: #10b981; font-weight: bold; font-size: 1.1rem;"></div>
+        <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        
+        <button id="btn-process" class="btn" style="display: none;">Mulai Rendering Ekstrim!</button>
+    </div>
+
+    <div id="results" class="grid"></div>
+</div>
+
+<script>
+    // UI Binding
+    const binds = ['tol', 'feath', 'merge', 'pad'];
+    binds.forEach(id => {
+        const inp = document.getElementById(`i-${id}`);
+        const val = document.getElementById(`v-${id}`);
+        inp.addEventListener('input', () => val.textContent = inp.value);
+    });
+
+    const fileInput = document.getElementById('file-input');
+    const uploadLabel = document.getElementById('upload-label');
+    const btnProcess = document.getElementById('btn-process');
+    const statusDiv = document.getElementById('status');
+    const resultsDiv = document.getElementById('results');
+    const progressBar = document.getElementById('progress-bar');
+    const progressFill = document.getElementById('progress-fill');
+    
+    let videoUrl = null;
+    let videoEl = document.createElement('video');
+    
+    // Pastikan bener-bener NO SOUND supaya exporter bersih
+    videoEl.muted = true;
+    videoEl.volume = 0;
+    videoEl.loop = false;
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        uploadLabel.innerHTML = `File Siap: <b style="color:white">${file.name}</b>`;
+        videoUrl = URL.createObjectURL(file);
+        videoEl.src = videoUrl;
+        
+        videoEl.onloadeddata = () => {
+            statusDiv.textContent = `Video dimuat. Silahkan atur parameter di atas sebelum klik Render.`;
+            document.getElementById('controls').style.display = 'grid';
+            btnProcess.style.display = 'block';
+        };
+    });
+
+    btnProcess.addEventListener('click', async () => {
+        btnProcess.style.display = 'none';
+        document.getElementById('controls').style.opacity = '0.5';
+        document.getElementById('controls').style.pointerEvents = 'none';
+        
+        statusDiv.textContent = "Menganalisa Pixel & Isolasi Grid...";
+        resultsDiv.innerHTML = '';
+        
+        videoEl.currentTime = 0;
+        setTimeout(() => processAndRecord(), 800);
+    });
+
+    function processAndRecord() {
+        const width = videoEl.videoWidth;
+        const height = videoEl.videoHeight;
+        
+        // Ambil value dinamis dari UI User
+        const CORE_TOLERANCE = parseInt(document.getElementById('i-tol').value);
+        const FEATHER = parseInt(document.getElementById('i-feath').value);
+        const MERGE_DISTANCE = parseInt(document.getElementById('i-merge').value);
+        const PAD = parseInt(document.getElementById('i-pad').value);
+        
+        const masterCanvas = document.createElement('canvas');
+        masterCanvas.width = width;
+        masterCanvas.height = height;
+        const ctx = masterCanvas.getContext('2d', { willReadFrequently: true });
+        
+        // Deteksi background
+        ctx.drawImage(videoEl, 0, 0, width, height);
+        const frameData = ctx.getImageData(0, 0, width, height);
+        const data = frameData.data;
+        const bgR = data[0], bgG = data[1], bgB = data[2];
+        
+        const getDistance = (r, g, b) => Math.sqrt(Math.pow(r-bgR, 2) + Math.pow(g-bgG, 2) + Math.pow(b-bgB, 2));
+        
+        // BFS
+        const mask = new Uint8Array(width * height);
+        for (let i = 0; i < data.length; i += 4) {
+            mask[i/4] = getDistance(data[i], data[i+1], data[i+2]) <= (CORE_TOLERANCE + FEATHER) ? 0 : 1;
+        }
+        
+        const visited = new Uint8Array(width * height);
+        const rawBoxes = [];
+        const getIdx = (x, y) => y * width + x;
+        
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = getIdx(x, y);
+                if (mask[idx] === 1 && visited[idx] === 0) {
+                    let minX = x, maxX = x, minY = y, maxY = y;
+                    const queue = [[x, y]];
+                    visited[idx] = 1;
+                    let pixelCount = 0;
+                    
+                    while (queue.length > 0) {
+                        const [cx, cy] = queue.shift();
+                        pixelCount++;
+                        if (cx < minX) minX = cx; if (cx > maxX) maxX = cx;
+                        if (cy < minY) minY = cy; if (cy > maxY) maxY = cy;
+                        
+                        const neighbors = [ [cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1], [cx+1, cy+1], [cx-1, cy-1], [cx+1, cy-1], [cx-1, cy+1] ];
+                        for (const [nx, ny] of neighbors) {
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                const nIdx = getIdx(nx, ny);
+                                if (mask[nIdx] === 1 && visited[nIdx] === 0) {
+                                    visited[nIdx] = 1;
+                                    queue.push([nx, ny]);
+                                }
+                            }
+                        }
+                    }
+                    if (pixelCount > 30) { 
+                        rawBoxes.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
+                    }
+                }
+            }
+        }
+        
+        // Clustering Dinamis
+        let mergedBoxes = [...rawBoxes];
+        let merged = true;
+        
+        while (merged) {
+            merged = false;
+            for (let i = 0; i < mergedBoxes.length; i++) {
+                for (let j = i + 1; j < mergedBoxes.length; j++) {
+                    const b1 = mergedBoxes[i];
+                    const b2 = mergedBoxes[j];
+                    
+                    const overlap = !(
+                        b1.x > b2.x + b2.w + MERGE_DISTANCE || 
+                        b1.x + b1.w + MERGE_DISTANCE < b2.x || 
+                        b1.y > b2.y + b2.h + MERGE_DISTANCE ||
+                        b1.y + b1.h + MERGE_DISTANCE < b2.y
+                    );
+                    
+                    if (overlap) {
+                        const minX = Math.min(b1.x, b2.x);
+                        const minY = Math.min(b1.y, b2.y);
+                        const maxX = Math.max(b1.x + b1.w, b2.x + b2.w);
+                        const maxY = Math.max(b1.y + b1.h, b2.y + b2.h);
+                        
+                        b1.x = minX; b1.y = minY;
+                        b1.w = maxX - minX; b1.h = maxY - minY;
+                        
+                        mergedBoxes.splice(j, 1);
+                        merged = true;
+                        break;
+                    }
+                }
+                if (merged) break;
+            }
+        }
+        
+        // Padding Dinamis
+        const boundingBoxes = [];
+        mergedBoxes.forEach(box => {
+            if (box.w > 20 && box.h > 20) { 
+                boundingBoxes.push({
+                    x: Math.max(0, box.x - PAD), y: Math.max(0, box.y - PAD),
+                    w: Math.min(width - box.x, box.w + (PAD * 2)), h: Math.min(height - box.y, box.h + (PAD * 2))
+                });
+            }
+        });
+        
+        statusDiv.textContent = `Memulai Perekaman Khusus untuk ${boundingBoxes.length} objek...`;
+        progressBar.style.display = 'block';
+        
+        const recorders = [];
+        const zip = new JSZip();
+        let finishedCount = 0;
+        
+        const sprites = boundingBoxes.map((box, i) => {
+            const card = document.createElement('div');
+            card.className = 'sprite-card';
+            
+            const sc = document.createElement('canvas');
+            sc.width = box.w; sc.height = box.h;
+            
+            const h3 = document.createElement('h3');
+            h3.textContent = `Aset_Animasi_${i+1}`;
+            
+            card.appendChild(sc);
+            card.appendChild(h3);
+            resultsDiv.appendChild(card);
+            
+            const stream = sc.captureStream(60); 
+            let mimeType = 'video/webm; codecs=vp9'; 
+            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm; codecs=vp8';
+            
+            const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 3500000 });
+            const chunks = [];
+            recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType });
+                const finalUrl = URL.createObjectURL(blob);
+                
+                const btn = document.createElement('a');
+                btn.className = 'btn-download';
+                btn.href = finalUrl;
+                btn.download = `Aset_${i+1}.webm`;
+                btn.textContent = "⬇ Download WebM";
+                card.appendChild(btn);
+                
+                // Tambahkan ke ZIP
+                zip.file(`Aset_${i+1}.webm`, blob);
+                finishedCount++;
+                
+                // Jika semua selesai, munculkan tombol Download All
+                if (finishedCount === boundingBoxes.length) {
+                    const btnAll = document.createElement('button');
+                    btnAll.className = 'btn';
+                    btnAll.style.background = '#3b82f6';
+                    btnAll.style.marginTop = '15px';
+                    btnAll.textContent = '📦 Download Semua Aset (ZIP)';
+                    btnAll.onclick = () => {
+                        btnAll.textContent = '⏳ Membungkus ZIP...';
+                        zip.generateAsync({type:"blob"}).then(content => {
+                            const url = URL.createObjectURL(content);
+                            const a = document.createElement('a');
+                            a.href = url; a.download = 'Aset_Animated_Shadow.zip';
+                            a.click();
+                            btnAll.textContent = '📦 Download Semua Aset (ZIP)';
+                        });
+                    };
+                    document.getElementById('status').appendChild(document.createElement('br'));
+                    document.getElementById('status').appendChild(btnAll);
+                }
+            };
+            
+            recorders.push(recorder);
+            return { ctx: sc.getContext('2d'), box, card };
+        });
+        
+        function drawCurrentFrame() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(videoEl, 0, 0, width, height);
+            const rFrame = ctx.getImageData(0, 0, width, height);
+            const d = rFrame.data;
+            
+            for (let i = 0; i < d.length; i += 4) {
+                const dist = getDistance(d[i], d[i+1], d[i+2]);
+                if (dist <= CORE_TOLERANCE) {
+                    d[i+3] = 0; 
+                } else if (dist <= CORE_TOLERANCE + FEATHER) {
+                    const ratio = (dist - CORE_TOLERANCE) / FEATHER;
+                    const smoothAlpha = ratio * ratio * (3 - 2 * ratio);
+                    d[i+3] = smoothAlpha * 255;
+                }
+            }
+            ctx.putImageData(rFrame, 0, 0);
+            
+            sprites.forEach(sprite => {
+                sprite.ctx.clearRect(0, 0, sprite.box.w, sprite.box.h);
+                sprite.ctx.drawImage(
+                    masterCanvas, 
+                    sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h,
+                    0, 0, sprite.box.w, sprite.box.h
+                );
+            });
+        }
+        
+        videoEl.onseeked = () => {
+            videoEl.onseeked = null;
+            drawCurrentFrame();
+            recorders.forEach(r => r.start());
+            videoEl.play();
+            
+            function renderLoop() {
+                const percent = (videoEl.currentTime / videoEl.duration) * 100;
+                progressFill.style.width = percent + '%';
+                
+                if (videoEl.ended || videoEl.currentTime >= videoEl.duration) {
+                    recorders.forEach(r => r.stop());
+                    statusDiv.textContent = `RENDER SELESAI! ${sprites.length} aset siap pakai.`;
+                    progressFill.style.width = '100%';
+                    document.getElementById('controls').style.opacity = '1';
+                    document.getElementById('controls').style.pointerEvents = 'auto';
+                    btnProcess.style.display = 'block';
+                    btnProcess.textContent = "Coba Parameter Baru";
+                    return;
+                }
+                drawCurrentFrame();
+                requestAnimationFrame(renderLoop);
+            }
+            requestAnimationFrame(renderLoop);
+        };
+        videoEl.currentTime = 0;
+    }
+</script>
+
+</body>
+</html>

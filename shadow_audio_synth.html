@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Procedural Audio Studio</title>
+    <style>
+        :root { --bg: #09090b; --surface: #18181b; --primary: #f59e0b; --text: #f4f4f5; --border: #3f3f46; }
+        body { 
+            background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; 
+            padding: 40px; margin: 0; min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #78350f 0%, var(--bg) 70%);
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        h1 { color: #fbbf24; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 30px rgba(251, 191, 36, 0.3); }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        
+        .panel { 
+            background: rgba(24, 24, 27, 0.7); backdrop-filter: blur(12px); border: 1px solid var(--border); 
+            padding: 30px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); 
+        }
+        .panel h2 { color: #fcd34d; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        
+        .sfx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .btn { 
+            background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); 
+            padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .btn span { font-size: 1.5rem; margin-bottom: 5px; }
+        .btn:hover { background: rgba(245, 158, 11, 0.2); border-color: var(--primary); transform: translateY(-2px); }
+        .btn:active { transform: translateY(1px); }
+        
+        .btn-primary { 
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; 
+            box-shadow: 0 5px 15px rgba(217, 119, 6, 0.4); 
+        }
+        .btn-primary:hover { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); box-shadow: 0 8px 20px rgba(217, 119, 6, 0.6); }
+        
+        .control-group { margin-bottom: 20px; }
+        .control-group label { display: flex; justify-content: space-between; font-size: 0.9rem; color: #a1a1aa; margin-bottom: 8px; font-weight: bold; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+        select { width: 100%; padding: 10px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--border); border-radius: 6px; }
+        
+        /* Visualizer */
+        canvas { width: 100%; height: 100px; background: #000; border-radius: 8px; margin-top: 20px; border: 1px solid var(--border); }
+        
+        #download-area { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .download-link { background: #3b82f6; color: white; padding: 10px; text-align: center; border-radius: 6px; text-decoration: none; font-weight: bold; }
+        .download-link:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🎹 Shadow Procedural Audio</h1>
+        <p style="color: #a1a1aa; max-width: 800px; margin: 0 auto;">
+            Generator SFX dan Musik BGM (Background Music) abadi tanpa batas. Semuanya dibentuk menggunakan murni rumus matematika dan <br><b>Web Audio API Oscillators</b> di dalam browser lo. Bebas dari limitasi AI.
+        </p>
+    </div>
+    
+    <div class="grid">
+        <!-- SFX PANEL -->
+        <div class="panel">
+            <h2>🕹️ SFX Generator</h2>
+            <p style="color: #71717a; font-size: 0.9rem;">Klik untuk men-generate dan mendengarkan efek suara prosedural. Cocok untuk UI interaktif atau Game.</p>
+            
+            <div class="sfx-grid">
+                <button class="btn" onclick="playCoin()"><span>🪙</span> Coin / Kaching</button>
+                <button class="btn" onclick="playLaser()"><span>🔫</span> Laser Shoot</button>
+                <button class="btn" onclick="playJump()"><span>⬆️</span> Jump</button>
+                <button class="btn" onclick="playExplosion()"><span>💥</span> Explosion</button>
+                <button class="btn" onclick="playPowerUp()"><span>✨</span> Power Up</button>
+                <button class="btn" onclick="playHit()"><span>💢</span> Hit / Damage</button>
+            </div>
+        </div>
+        
+        <!-- BGM PANEL -->
+        <div class="panel">
+            <h2>🎼 Infinite BGM Engine</h2>
+            <p style="color: #71717a; font-size: 0.9rem;">Generator musik latar yang tidak akan pernah putus (Infinite Loop). Atur "Vibe" dan "Tempo" sesuai selera.</p>
+            
+            <div class="control-group">
+                <label>Vibe Musik (Tangga Nada)</label>
+                <select id="bgm-scale">
+                    <option value="minor_pentatonic">Dark Cyberpunk (Minor Pentatonic)</option>
+                    <option value="major_pentatonic">Happy Arcade (Major Pentatonic)</option>
+                    <option value="phrygian">Mysterious Boss Fight (Phrygian)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Tempo (BPM): <span id="val-bpm">120</span></label>
+                <input type="range" id="inp-bpm" min="60" max="200" value="120">
+            </div>
+            
+            <div class="control-group">
+                <label>Kompleksitas Melodi: <span id="val-complex">50</span>%</label>
+                <input type="range" id="inp-complex" min="10" max="100" value="50">
+            </div>
+            
+            <div class="sfx-grid" style="margin-top: 25px;">
+                <button class="btn btn-primary" id="btn-play-bgm" style="padding: 15px;">▶️ Play Infinite BGM</button>
+                <button class="btn" id="btn-stop-bgm" style="padding: 15px;">⏹️ Stop</button>
+            </div>
+            
+            <canvas id="visualizer"></canvas>
+            
+            <!-- RECORDING SYSTEM -->
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #3f3f46;">
+                <p style="color: #a1a1aa; font-size: 0.85rem; margin-top: 0;">Mau di-save jadi file buat di project lo?</p>
+                <button class="btn" id="btn-record" style="width: 100%; color: #ef4444; border-color: #ef4444;">🔴 Mulai Rekam Audio Output</button>
+                <div id="download-area"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- GLOBAL AUDIO SETUP ---
+    let audioCtx = null;
+    let masterGain = null;
+    let destStream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let analyser = null;
+    
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.5;
+            
+            // Untuk Visualizer
+            analyser = audioCtx.createAnalyser();
+            masterGain.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            
+            // Untuk Recording
+            destStream = audioCtx.createMediaStreamDestination();
+            masterGain.connect(destStream);
+            
+            drawVisualizer();
+        }
+    }
+
+    // --- SFX GENERATORS ---
+    function playOscillator(type, freqStart, freqEnd, duration, vol, isSweep = false) {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = type;
+        osc.connect(gain);
+        gain.connect(masterGain);
+        
+        const now = audioCtx.currentTime;
+        osc.frequency.setValueAtTime(freqStart, now);
+        
+        if (isSweep) osc.frequency.exponentialRampToValueAtTime(freqEnd, now + duration);
+        else osc.frequency.setValueAtTime(freqEnd, now + duration);
+        
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    }
+
+    function playCoin() {
+        initAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.connect(gain); gain.connect(masterGain);
+        
+        osc.frequency.setValueAtTime(987.77, now); // B5
+        osc.frequency.setValueAtTime(1318.51, now + 0.1); // E6
+        
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.setValueAtTime(0.3, now + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        
+        osc.start(now); osc.stop(now + 0.5);
+    }
+
+    function playLaser() { playOscillator('sawtooth', 880, 110, 0.3, 0.5, true); }
+    function playJump() { playOscillator('square', 150, 600, 0.2, 0.3, true); }
+    function playHit() { playOscillator('square', 150, 50, 0.2, 0.5, true); }
+    function playPowerUp() {
+        initAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine'; osc.connect(gain); gain.connect(masterGain);
+        
+        // Arpeggio cepat
+        [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            osc.frequency.setValueAtTime(freq, now + (i * 0.05));
+        });
+        
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        
+        osc.start(now); osc.stop(now + 0.5);
+    }
+
+    function playExplosion() {
+        initAudio();
+        const bufferSize = audioCtx.sampleRate * 1; // 1 second
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1; // White Noise
+        
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1);
+        
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+        
+        noise.connect(filter); filter.connect(gain); gain.connect(masterGain);
+        noise.start();
+    }
+
+    // --- INFINITE BGM ENGINE ---
+    let bgmInterval = null;
+    let bgmStep = 0;
+    
+    // Frekuensi tangga nada dasar (C2 - C5)
+    const scales = {
+        minor_pentatonic: [130.81, 155.56, 174.61, 196.00, 233.08, 261.63, 311.13, 349.23, 392.00, 466.16, 523.25],
+        major_pentatonic: [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25],
+        phrygian: [130.81, 138.59, 155.56, 174.61, 196.00, 207.65, 233.08, 261.63, 277.18, 311.13, 349.23]
+    };
+
+    function playDrumKick(time) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(masterGain);
+        osc.frequency.setValueAtTime(150, time);
+        osc.frequency.exponentialRampToValueAtTime(40, time + 0.1);
+        gain.gain.setValueAtTime(1, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+        osc.start(time); osc.stop(time + 0.2);
+    }
+    
+    function playDrumSnare(time) {
+        // Simple snare pake sine wave decay cepat
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.connect(gain); gain.connect(masterGain);
+        osc.frequency.setValueAtTime(300, time);
+        gain.gain.setValueAtTime(0.5, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+        osc.start(time); osc.stop(time + 0.1);
+    }
+
+    function playNote(freq, type, duration, vol, time) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.connect(gain); gain.connect(masterGain);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(vol, time);
+        gain.gain.setTargetAtTime(0, time, duration/3); // Decay curve
+        osc.start(time); osc.stop(time + duration);
+    }
+
+    document.getElementById('btn-play-bgm').addEventListener('click', () => {
+        initAudio();
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        if(bgmInterval) clearInterval(bgmInterval);
+        
+        const bpmInput = document.getElementById('inp-bpm');
+        const complexInput = document.getElementById('inp-complex');
+        const scaleSelect = document.getElementById('bgm-scale');
+        
+        const stepDuration = 60 / parseInt(bpmInput.value) / 4; // 16th notes
+        
+        bgmStep = 0;
+        
+        // Timer Loop (Scheduling audio for precision)
+        // Kita schedule 1 ketuk ke depan secara terus menerus
+        bgmInterval = setInterval(() => {
+            const time = audioCtx.currentTime + 0.1;
+            const scale = scales[scaleSelect.value];
+            const complexity = parseInt(complexInput.value) / 100;
+            
+            // 1. Kick Drum (Step 0, 8)
+            if (bgmStep % 8 === 0) playDrumKick(time);
+            
+            // 2. Snare Drum (Step 4, 12)
+            if (bgmStep % 8 === 4) playDrumSnare(time);
+            
+            // 3. Bassline (Step genap, not rendah)
+            if (bgmStep % 2 === 0) {
+                const bassFreq = scale[0]; // Root note (C2)
+                playNote(bassFreq, 'square', 0.2, 0.4, time);
+            }
+            
+            // 4. Arpeggiator / Melody (Procedural random walking di dalam scale)
+            if (Math.random() < complexity) {
+                const noteIndex = Math.floor(Math.random() * (scale.length - 3)) + 3; // Hindari not terlalu rendah
+                playNote(scale[noteIndex], 'sawtooth', 0.1, 0.15, time);
+            }
+            
+            bgmStep = (bgmStep + 1) % 16;
+        }, stepDuration * 1000);
+    });
+
+    document.getElementById('btn-stop-bgm').addEventListener('click', () => {
+        if(bgmInterval) clearInterval(bgmInterval);
+    });
+
+    // --- UI BINDINGS ---
+    document.getElementById('inp-bpm').addEventListener('input', e => document.getElementById('val-bpm').textContent = e.target.value);
+    document.getElementById('inp-complex').addEventListener('input', e => document.getElementById('val-complex').textContent = e.target.value);
+
+    // --- VISUALIZER ---
+    const canvas = document.getElementById('visualizer');
+    const ctx = canvas.getContext('2d');
+    
+    function drawVisualizer() {
+        if(!analyser) return requestAnimationFrame(drawVisualizer);
+        requestAnimationFrame(drawVisualizer);
+        
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteTimeDomainData(dataArray);
+        
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#f59e0b';
+        ctx.beginPath();
+        
+        const sliceWidth = canvas.width * 1.0 / bufferLength;
+        let x = 0;
+        for(let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * canvas.height/2;
+            if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            x += sliceWidth;
+        }
+        ctx.lineTo(canvas.width, canvas.height/2);
+        ctx.stroke();
+    }
+
+    // --- RECORDING SYSTEM ---
+    const btnRecord = document.getElementById('btn-record');
+    const dlArea = document.getElementById('download-area');
+    let isRecording = false;
+
+    btnRecord.addEventListener('click', () => {
+        initAudio();
+        if (!isRecording) {
+            recordedChunks = [];
+            let mimeType = 'audio/webm;codecs=opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/webm'; // Fallback
+            
+            mediaRecorder = new MediaRecorder(destStream, { mimeType });
+            
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Shadow_BGM_SFX_${Date.now()}.webm`; // Kebanyakan browser simpan sbg webm audio
+                a.className = 'download-link';
+                a.innerHTML = `⬇️ Download Rekaman (${(blob.size/1024).toFixed(1)} KB)`;
+                
+                dlArea.appendChild(a);
+            };
+            
+            mediaRecorder.start();
+            isRecording = true;
+            btnRecord.textContent = '⏹️ Hentikan Rekaman & Save';
+            btnRecord.style.background = '#ef4444';
+            btnRecord.style.color = 'white';
+        } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            btnRecord.textContent = '🔴 Mulai Rekam Audio Output';
+            btnRecord.style.background = 'transparent';
+            btnRecord.style.color = '#ef4444';
+        }
+    });
+</script>
+
+</body>
+</html>

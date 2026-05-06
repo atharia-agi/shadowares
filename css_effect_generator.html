@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow CSS Effect Generator</title>
+    <style>
+        :root{--bg:#07080f;--surface:#111827;--border:#1e293b;--text:#f1f5f9;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;}
+
+        .header{text-align:center;padding:40px 20px 20px;}
+        .header h1{font-size:2.5rem;font-weight:900;background:linear-gradient(135deg,#f472b6,#a78bfa,#60a5fa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+        .header p{color:#64748b;margin-top:6px;}
+
+        .tabs{display:flex;justify-content:center;gap:6px;padding:10px 20px;flex-wrap:wrap;}
+        .tab{padding:10px 24px;border-radius:10px;border:1px solid var(--border);background:transparent;color:#94a3b8;
+            font-size:.9rem;font-weight:600;cursor:pointer;transition:.2s;}
+        .tab:hover{background:rgba(255,255,255,.04);color:#e2e8f0;}
+        .tab.active{background:rgba(139,92,246,.15);color:#c4b5fd;border-color:rgba(139,92,246,.3);}
+
+        .workspace{flex:1;display:flex;gap:20px;padding:20px;max-width:1400px;margin:0 auto;width:100%;}
+        .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;overflow-y:auto;}
+        .controls{width:320px;min-width:320px;}
+        .preview-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+            min-height:400px;position:relative;overflow:hidden;
+            background-image:linear-gradient(45deg,#1a1a2e 25%,transparent 25%),linear-gradient(-45deg,#1a1a2e 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1a1a2e 75%),linear-gradient(-45deg,transparent 75%,#1a1a2e 75%);
+            background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0px;}
+
+        .ctrl-group{margin-bottom:18px;}
+        .ctrl-label{font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between;}
+        .ctrl-label span{color:#a5f3fc;font-family:monospace;}
+        input[type="range"]{width:100%;accent-color:#8b5cf6;height:6px;border-radius:3px;outline:none;-webkit-appearance:none;appearance:none;background:#1e293b;}
+        input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:#8b5cf6;cursor:pointer;}
+        input[type="color"]{width:100%;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:transparent;}
+        select{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:#0f172a;color:#e2e8f0;font-size:.9rem;}
+
+        .preview-card{width:280px;height:200px;border-radius:20px;display:flex;flex-direction:column;justify-content:center;align-items:center;
+            transition:all .3s;cursor:pointer;text-align:center;padding:20px;}
+        .preview-card:hover{transform:scale(1.03);}
+        .preview-card h3{font-size:1.2rem;margin-bottom:6px;}
+        .preview-card p{font-size:.8rem;opacity:.7;}
+
+        .code-out{margin-top:auto;width:100%;padding:20px;}
+        .code-box{background:#0f172a;border:1px solid var(--border);border-radius:12px;padding:16px;font-family:'Cascadia Code',monospace;
+            font-size:.8rem;color:#a5f3fc;line-height:1.7;position:relative;overflow-x:auto;white-space:pre-wrap;max-height:200px;overflow-y:auto;}
+        .code-box .cp{position:absolute;top:8px;right:8px;background:#334155;color:#e2e8f0;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.7rem;}
+        .code-box .cp:hover{background:#475569;}
+
+        .hidden{display:none !important;}
+
+        @media(max-width:800px){.workspace{flex-direction:column;}.controls{width:100%;min-width:auto;}}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🧊 CSS Effect Generator</h1>
+    <p>Glassmorphism · Neumorphism · Gradient — Live preview + copy CSS</p>
+</div>
+
+<div class="tabs">
+    <button class="tab active" onclick="switchMode('glass')">🧊 Glassmorphism</button>
+    <button class="tab" onclick="switchMode('neu')">🔘 Neumorphism</button>
+    <button class="tab" onclick="switchMode('grad')">🌈 Gradient</button>
+    <button class="tab" onclick="switchMode('shadow')">🌑 Box Shadow</button>
+</div>
+
+<div class="workspace">
+    <!-- Controls Panel -->
+    <div class="panel controls" id="controls">
+        <!-- Glass controls -->
+        <div id="ctrl-glass">
+            <div class="ctrl-group">
+                <div class="ctrl-label">Background Color <span id="v-glass-bg">#8b5cf680</span></div>
+                <input type="color" id="glass-bg" value="#8b5cf6" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Opacity <span id="v-glass-op">0.15</span></div>
+                <input type="range" id="glass-op" min="0" max="100" value="15" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Blur <span id="v-glass-blur">12px</span></div>
+                <input type="range" id="glass-blur" min="0" max="40" value="12" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Border Opacity <span id="v-glass-brd">0.2</span></div>
+                <input type="range" id="glass-brd" min="0" max="100" value="20" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Border Radius <span id="v-glass-rad">20px</span></div>
+                <input type="range" id="glass-rad" min="0" max="50" value="20" oninput="update()">
+            </div>
+        </div>
+
+        <!-- Neumorphism controls -->
+        <div id="ctrl-neu" class="hidden">
+            <div class="ctrl-group">
+                <div class="ctrl-label">Surface Color <span id="v-neu-bg">#1e293b</span></div>
+                <input type="color" id="neu-bg" value="#1e293b" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Style</div>
+                <select id="neu-style" onchange="update()">
+                    <option value="flat">Flat</option><option value="concave">Concave</option>
+                    <option value="convex" selected>Convex</option><option value="pressed">Pressed</option>
+                </select>
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Distance <span id="v-neu-dist">8px</span></div>
+                <input type="range" id="neu-dist" min="1" max="30" value="8" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Blur <span id="v-neu-blur">16px</span></div>
+                <input type="range" id="neu-blur" min="1" max="60" value="16" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Border Radius <span id="v-neu-rad">20px</span></div>
+                <input type="range" id="neu-rad" min="0" max="50" value="20" oninput="update()">
+            </div>
+        </div>
+
+        <!-- Gradient controls -->
+        <div id="ctrl-grad" class="hidden">
+            <div class="ctrl-group">
+                <div class="ctrl-label">Color 1</div>
+                <input type="color" id="grad-c1" value="#8b5cf6" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Color 2</div>
+                <input type="color" id="grad-c2" value="#06b6d4" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Type</div>
+                <select id="grad-type" onchange="update()"><option value="linear">Linear</option><option value="radial">Radial</option><option value="conic">Conic</option></select>
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Angle <span id="v-grad-ang">135°</span></div>
+                <input type="range" id="grad-ang" min="0" max="360" value="135" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Border Radius <span id="v-grad-rad">20px</span></div>
+                <input type="range" id="grad-rad" min="0" max="50" value="20" oninput="update()">
+            </div>
+        </div>
+
+        <!-- Box Shadow controls -->
+        <div id="ctrl-shadow" class="hidden">
+            <div class="ctrl-group">
+                <div class="ctrl-label">Shadow Color</div>
+                <input type="color" id="shd-color" value="#8b5cf6" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">X Offset <span id="v-shd-x">0px</span></div>
+                <input type="range" id="shd-x" min="-50" max="50" value="0" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Y Offset <span id="v-shd-y">20px</span></div>
+                <input type="range" id="shd-y" min="-50" max="50" value="20" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Blur <span id="v-shd-blur">40px</span></div>
+                <input type="range" id="shd-blur" min="0" max="100" value="40" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Spread <span id="v-shd-spread">0px</span></div>
+                <input type="range" id="shd-spread" min="-30" max="30" value="0" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Opacity <span id="v-shd-op">0.4</span></div>
+                <input type="range" id="shd-op" min="0" max="100" value="40" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Border Radius <span id="v-shd-rad">20px</span></div>
+                <input type="range" id="shd-rad" min="0" max="50" value="20" oninput="update()">
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview + Code -->
+    <div class="panel preview-area" id="preview-area">
+        <div class="preview-card" id="preview-card">
+            <h3>Preview Card</h3>
+            <p>Geser slider untuk melihat perubahan live.</p>
+        </div>
+    </div>
+</div>
+
+<div class="code-out">
+    <div class="code-box" id="code-output">
+        <button class="cp" onclick="navigator.clipboard.writeText(document.getElementById('code-text').textContent)">Copy CSS</button>
+        <code id="code-text">/* Pilih mode dan geser slider */</code>
+    </div>
+</div>
+
+<script>
+    let mode = 'glass';
+
+    function switchMode(m) {
+        mode = m;
+        document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['glass','neu','grad','shadow'][i]===m));
+        document.querySelectorAll('[id^="ctrl-"]').forEach(el => el.classList.add('hidden'));
+        document.getElementById('ctrl-'+m).classList.remove('hidden');
+        update();
+    }
+
+    function hexToRGB(hex) {
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        return {r,g,b};
+    }
+
+    function adjustBrightness(hex, pct) {
+        let {r,g,b} = hexToRGB(hex);
+        r = Math.min(255, Math.max(0, Math.round(r + (255*pct))));
+        g = Math.min(255, Math.max(0, Math.round(g + (255*pct))));
+        b = Math.min(255, Math.max(0, Math.round(b + (255*pct))));
+        return `rgb(${r},${g},${b})`;
+    }
+
+    function update() {
+        const card = document.getElementById('preview-card');
+        const area = document.getElementById('preview-area');
+        const codeEl = document.getElementById('code-text');
+        let css = '';
+
+        if (mode === 'glass') {
+            const bg = document.getElementById('glass-bg').value;
+            const op = document.getElementById('glass-op').value / 100;
+            const blur = document.getElementById('glass-blur').value;
+            const brd = document.getElementById('glass-brd').value / 100;
+            const rad = document.getElementById('glass-rad').value;
+            const {r,g,b} = hexToRGB(bg);
+
+            document.getElementById('v-glass-op').textContent = op.toFixed(2);
+            document.getElementById('v-glass-blur').textContent = blur+'px';
+            document.getElementById('v-glass-brd').textContent = brd.toFixed(2);
+            document.getElementById('v-glass-rad').textContent = rad+'px';
+
+            card.style.cssText = `
+                background: rgba(${r},${g},${b},${op});
+                backdrop-filter: blur(${blur}px);
+                -webkit-backdrop-filter: blur(${blur}px);
+                border: 1px solid rgba(255,255,255,${brd});
+                border-radius: ${rad}px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                color: #fff;
+            `;
+            card.querySelector('h3').style.color = '#fff';
+            area.style.background = `linear-gradient(135deg, #667eea, #764ba2)`;
+
+            css = `.glass-card {\n  background: rgba(${r},${g},${b},${op});\n  backdrop-filter: blur(${blur}px);\n  -webkit-backdrop-filter: blur(${blur}px);\n  border: 1px solid rgba(255,255,255,${brd});\n  border-radius: ${rad}px;\n  box-shadow: 0 8px 32px rgba(0,0,0,0.3);\n}`;
+        }
+        else if (mode === 'neu') {
+            const bg = document.getElementById('neu-bg').value;
+            const style = document.getElementById('neu-style').value;
+            const dist = document.getElementById('neu-dist').value;
+            const blur = document.getElementById('neu-blur').value;
+            const rad = document.getElementById('neu-rad').value;
+
+            document.getElementById('v-neu-dist').textContent = dist+'px';
+            document.getElementById('v-neu-blur').textContent = blur+'px';
+            document.getElementById('v-neu-rad').textContent = rad+'px';
+
+            const light = adjustBrightness(bg, 0.12);
+            const dark = adjustBrightness(bg, -0.12);
+            let shadow, gradient;
+
+            if (style==='flat') { shadow = `${dist}px ${dist}px ${blur}px ${dark}, -${dist}px -${dist}px ${blur}px ${light}`; gradient = bg; }
+            else if (style==='concave') { shadow = `${dist}px ${dist}px ${blur}px ${dark}, -${dist}px -${dist}px ${blur}px ${light}`; gradient = `linear-gradient(145deg, ${adjustBrightness(bg,-0.05)}, ${adjustBrightness(bg,0.05)})`; }
+            else if (style==='convex') { shadow = `${dist}px ${dist}px ${blur}px ${dark}, -${dist}px -${dist}px ${blur}px ${light}`; gradient = `linear-gradient(145deg, ${adjustBrightness(bg,0.05)}, ${adjustBrightness(bg,-0.05)})`; }
+            else { shadow = `inset ${dist}px ${dist}px ${blur}px ${dark}, inset -${dist}px -${dist}px ${blur}px ${light}`; gradient = bg; }
+
+            card.style.cssText = `background: ${gradient}; box-shadow: ${shadow}; border-radius: ${rad}px; border:none; color:#94a3b8;`;
+            card.querySelector('h3').style.color = '#e2e8f0';
+            area.style.background = bg;
+
+            css = `.neu-card {\n  background: ${gradient};\n  box-shadow: ${shadow};\n  border-radius: ${rad}px;\n}`;
+        }
+        else if (mode === 'grad') {
+            const c1 = document.getElementById('grad-c1').value;
+            const c2 = document.getElementById('grad-c2').value;
+            const type = document.getElementById('grad-type').value;
+            const ang = document.getElementById('grad-ang').value;
+            const rad = document.getElementById('grad-rad').value;
+
+            document.getElementById('v-grad-ang').textContent = ang+'°';
+            document.getElementById('v-grad-rad').textContent = rad+'px';
+
+            let grad;
+            if (type==='linear') grad = `linear-gradient(${ang}deg, ${c1}, ${c2})`;
+            else if (type==='radial') grad = `radial-gradient(circle, ${c1}, ${c2})`;
+            else grad = `conic-gradient(from ${ang}deg, ${c1}, ${c2}, ${c1})`;
+
+            card.style.cssText = `background: ${grad}; border-radius: ${rad}px; border:none; color:#fff; box-shadow: 0 10px 40px rgba(0,0,0,0.3);`;
+            card.querySelector('h3').style.color = '#fff';
+            area.style.background = '';
+            area.style.backgroundImage = 'linear-gradient(45deg,#1a1a2e 25%,transparent 25%),linear-gradient(-45deg,#1a1a2e 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1a1a2e 75%),linear-gradient(-45deg,transparent 75%,#1a1a2e 75%)';
+
+            css = `.gradient-card {\n  background: ${grad};\n  border-radius: ${rad}px;\n}`;
+        }
+        else if (mode === 'shadow') {
+            const color = document.getElementById('shd-color').value;
+            const x = document.getElementById('shd-x').value;
+            const y = document.getElementById('shd-y').value;
+            const blur = document.getElementById('shd-blur').value;
+            const spread = document.getElementById('shd-spread').value;
+            const op = document.getElementById('shd-op').value / 100;
+            const rad = document.getElementById('shd-rad').value;
+            const {r,g,b} = hexToRGB(color);
+
+            document.getElementById('v-shd-x').textContent = x+'px';
+            document.getElementById('v-shd-y').textContent = y+'px';
+            document.getElementById('v-shd-blur').textContent = blur+'px';
+            document.getElementById('v-shd-spread').textContent = spread+'px';
+            document.getElementById('v-shd-op').textContent = op.toFixed(2);
+            document.getElementById('v-shd-rad').textContent = rad+'px';
+
+            const shadow = `${x}px ${y}px ${blur}px ${spread}px rgba(${r},${g},${b},${op})`;
+            card.style.cssText = `background: #1e293b; box-shadow: ${shadow}; border-radius: ${rad}px; border:none; color:#e2e8f0;`;
+            card.querySelector('h3').style.color = '#e2e8f0';
+            area.style.background = '#0f172a';
+
+            css = `.shadow-card {\n  background: #1e293b;\n  box-shadow: ${shadow};\n  border-radius: ${rad}px;\n}`;
+        }
+
+        codeEl.textContent = css;
+    }
+
+    // Init
+    update();
+</script>
+
+</body>
+</html>

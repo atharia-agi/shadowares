@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Audio-Reactive Engine</title>
+    <style>
+        :root { --bg: #020617; --primary: #ec4899; --text: #f8fafc; }
+        body { 
+            background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; 
+            padding: 40px; margin: 0; min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #4c1d95 0%, var(--bg) 80%);
+            overflow-x: hidden;
+        }
+        .container { max-width: 1400px; margin: 0 auto; text-align: center; }
+        
+        h1 { color: #f472b6; font-size: 3.5rem; margin-bottom: 10px; letter-spacing: -1px; text-shadow: 0 0 40px rgba(236, 72, 153, 0.4); }
+        
+        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 800px; margin: 40px auto; }
+        .upload-area { 
+            border: 2px dashed #9d174d; border-radius: 12px; padding: 30px; text-align: center; 
+            cursor: pointer; display: block;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); transition: 0.3s;
+        }
+        .upload-area:hover { border-color: var(--primary); background: rgba(236, 72, 153, 0.1); transform: translateY(-2px); }
+        input[type="file"] { display: none; }
+        
+        .btn { 
+            background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); color: white; 
+            border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; cursor: pointer; 
+            margin-top: 10px; font-size: 1.2rem; transition: 0.3s; box-shadow: 0 10px 20px rgba(190, 24, 93, 0.4);
+        }
+        .btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 15px 30px rgba(190, 24, 93, 0.6); }
+
+        .gallery { 
+            display: flex; flex-wrap: wrap; gap: 60px; justify-content: center; 
+            margin-top: 60px; perspective: 1000px;
+        }
+        
+        /* Audio Visualizer Canvas */
+        .sprite-canvas {
+            transition: transform 0.05s ease-out, filter 0.05s ease-out;
+            will-change: transform, filter;
+            border-radius: 12px;
+        }
+        
+        #audio-controls { margin-top: 30px; display: none; }
+        audio { width: 400px; border-radius: 30px; outline: none; }
+        
+        #status { color: #f9a8d4; margin-top: 20px; font-size: 1.2rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎧 Audio-Reactive Hologram</h1>
+    <p style="color: #cbd5e1; font-size: 1.2rem; max-width: 800px; margin: 0 auto;">
+        Sambungkan denyut musik ke dalam *visual asset* lo! Upload video sprite dan satu file lagu MP3. <br>
+        Sistem bakal ngebedah video lo dan ngebaca gelombang frekuensi lagu secara *real-time* untuk me-rekayasa postur, warna, dan aura karakter lo sesuai dengan ritme *Bass* dan *Treble*!
+    </p>
+    
+    <div class="upload-grid">
+        <label class="upload-area" id="label-video">
+            <span style="font-size: 1.2rem; font-weight:bold;">1. 🌌 Inject Video Sprite</span>
+            <input type="file" id="file-video" accept="video/webm, video/mp4, image/png">
+        </label>
+        
+        <label class="upload-area" id="label-audio">
+            <span style="font-size: 1.2rem; font-weight:bold;">2. 🎵 Inject Audio (MP3/WAV)</span>
+            <input type="file" id="file-audio" accept="audio/mpeg, audio/wav, audio/ogg">
+        </label>
+    </div>
+    
+    <button id="btn-process" class="btn" style="display: none;">Sinkronisasi Gelombang!</button>
+    <div id="status"></div>
+    
+    <div id="audio-controls">
+        <audio id="audio-player" controls></audio>
+    </div>
+
+    <div id="results" class="gallery"></div>
+</div>
+
+<script>
+    const fileVideo = document.getElementById('file-video');
+    const fileAudio = document.getElementById('file-audio');
+    const labelVideo = document.getElementById('label-video');
+    const labelAudio = document.getElementById('label-audio');
+    const btnProcess = document.getElementById('btn-process');
+    const statusDiv = document.getElementById('status');
+    const resultsDiv = document.getElementById('results');
+    const audioControls = document.getElementById('audio-controls');
+    const audioPlayer = document.getElementById('audio-player');
+    
+    let isVideo = false;
+    let mediaEl = null;
+    let audioReady = false;
+    let videoReady = false;
+
+    function checkReady() {
+        if (videoReady && audioReady) btnProcess.style.display = 'inline-block';
+    }
+
+    fileVideo.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        labelVideo.innerHTML = `Video: <b style="color:#fbcfe8">${file.name}</b>`;
+        isVideo = file.type.startsWith('video/');
+        if (isVideo) { mediaEl = document.createElement('video'); mediaEl.muted = true; mediaEl.loop = true; } 
+        else { mediaEl = new Image(); }
+        mediaEl.src = URL.createObjectURL(file);
+        
+        const onReady = () => { videoReady = true; checkReady(); };
+        if (isVideo) mediaEl.onloadeddata = onReady; else mediaEl.onload = onReady;
+    });
+
+    fileAudio.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        labelAudio.innerHTML = `Audio: <b style="color:#fbcfe8">${file.name}</b>`;
+        audioPlayer.src = URL.createObjectURL(file);
+        audioReady = true; checkReady();
+    });
+
+    btnProcess.addEventListener('click', () => {
+        btnProcess.style.display = 'none';
+        document.querySelector('.upload-grid').style.display = 'none';
+        statusDiv.textContent = "Menginisialisasi Audio API & Membedah Grid...";
+        resultsDiv.innerHTML = '';
+        
+        if (isVideo) {
+            mediaEl.currentTime = 0;
+            mediaEl.onseeked = () => { mediaEl.onseeked = null; initEngine(); };
+            if (mediaEl.readyState >= 2) mediaEl.play().then(() => { mediaEl.pause(); mediaEl.currentTime = 0; });
+        } else {
+            setTimeout(initEngine, 300);
+        }
+    });
+
+    function initEngine() {
+        // --- AUDIO API SETUP ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        const source = audioCtx.createMediaElementSource(audioPlayer);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        
+        audioControls.style.display = 'block';
+        
+        // --- VISION EXTRACTION (BFS) ---
+        const width = isVideo ? mediaEl.videoWidth : mediaEl.width;
+        const height = isVideo ? mediaEl.videoHeight : mediaEl.height;
+        const masterCanvas = document.createElement('canvas');
+        masterCanvas.width = width; masterCanvas.height = height;
+        const ctx = masterCanvas.getContext('2d', { willReadFrequently: true });
+        
+        ctx.drawImage(mediaEl, 0, 0, width, height);
+        const data = ctx.getImageData(0, 0, width, height).data;
+        const bgR = data[0], bgG = data[1], bgB = data[2];
+        const getDist = (r, g, b) => Math.sqrt(Math.pow(r-bgR,2) + Math.pow(g-bgG,2) + Math.pow(b-bgB,2));
+        
+        const mask = new Uint8Array(width * height);
+        for (let i = 0; i < data.length; i += 4) mask[i/4] = getDist(data[i], data[i+1], data[i+2]) <= 85 ? 0 : 1;
+        
+        const visited = new Uint8Array(width * height);
+        const rawBoxes = [];
+        const getIdx = (x, y) => y * width + x;
+        
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (mask[getIdx(x,y)] === 1 && visited[getIdx(x,y)] === 0) {
+                    let minX = x, maxX = x, minY = y, maxY = y;
+                    const queue = [[x, y]]; visited[getIdx(x,y)] = 1; let pCount = 0;
+                    
+                    while (queue.length > 0) {
+                        const [cx, cy] = queue.shift(); pCount++;
+                        if (cx < minX) minX = cx; if (cx > maxX) maxX = cx;
+                        if (cy < minY) minY = cy; if (cy > maxY) maxY = cy;
+                        const neighbors = [ [cx+1,cy], [cx-1,cy], [cx,cy+1], [cx,cy-1], [cx+1,cy+1], [cx-1,cy-1], [cx+1,cy-1], [cx-1,cy+1] ];
+                        for (const [nx, ny] of neighbors) {
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                if (mask[getIdx(nx,ny)] === 1 && visited[getIdx(nx,ny)] === 0) { visited[getIdx(nx,ny)] = 1; queue.push([nx, ny]); }
+                            }
+                        }
+                    }
+                    if (pCount > 30) rawBoxes.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
+                }
+            }
+        }
+        
+        let mBoxes = [...rawBoxes], merged = true;
+        while (merged) {
+            merged = false;
+            for (let i = 0; i < mBoxes.length; i++) {
+                for (let j = i + 1; j < mBoxes.length; j++) {
+                    const b1 = mBoxes[i], b2 = mBoxes[j], md = 10;
+                    if (!(b1.x > b2.x + b2.w + md || b1.x + b1.w + md < b2.x || b1.y > b2.y + b2.h + md || b1.y + b1.h + md < b2.y)) {
+                        b1.x = Math.min(b1.x, b2.x); b1.y = Math.min(b1.y, b2.y);
+                        b1.w = Math.max(b1.x + b1.w, b2.x + b2.w) - b1.x; b1.h = Math.max(b1.y + b1.h, b2.y + b2.h) - b1.y;
+                        mBoxes.splice(j, 1); merged = true; break;
+                    }
+                }
+                if (merged) break;
+            }
+        }
+        
+        const boxes = [];
+        mBoxes.forEach(b => { if (b.w > 30 && b.h > 30) boxes.push({ x: Math.max(0, b.x-5), y: Math.max(0, b.y-5), w: Math.min(width-b.x, b.w+10), h: Math.min(height-b.y, b.h+10) }); });
+        
+        statusDiv.textContent = `Pembedahan selesai. Play lagunya dan lihat mereka bereaksi!`;
+        
+        // Setup Canvas UI
+        const sprites = boxes.map((box, i) => {
+            const sc = document.createElement('canvas');
+            sc.className = 'sprite-canvas';
+            sc.width = box.w; sc.height = box.h;
+            resultsDiv.appendChild(sc);
+            return { ctx: sc.getContext('2d'), box, canvas: sc, seed: i }; // Seed buat efek beda-beda tiap karakter
+        });
+        
+        function loop() {
+            // Video Draw Routine
+            ctx.clearRect(0, 0, width, height); ctx.drawImage(mediaEl, 0, 0, width, height);
+            const rFrame = ctx.getImageData(0, 0, width, height); const d = rFrame.data;
+            for (let i = 0; i < d.length; i += 4) {
+                const dist = getDist(d[i], d[i+1], d[i+2]);
+                if (dist <= 55) d[i+3] = 0; else if (dist <= 85) d[i+3] = ((dist - 55) / 30) ** 2 * 255;
+            }
+            ctx.putImageData(rFrame, 0, 0);
+            
+            // Audio Routine
+            analyser.getByteFrequencyData(dataArray);
+            
+            // Rata-rata Bass (Frekuensi rendah)
+            let bass = 0; for(let i=0; i<10; i++) bass += dataArray[i]; bass /= 10;
+            
+            // Rata-rata Treble (Frekuensi tinggi)
+            let treble = 0; for(let i=50; i<100; i++) treble += dataArray[i]; treble /= 50;
+            
+            sprites.forEach(sprite => {
+                sprite.ctx.clearRect(0, 0, sprite.box.w, sprite.box.h);
+                sprite.ctx.drawImage(masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
+                
+                if (!audioPlayer.paused) {
+                    // Audio-Reactive CSS Transformations
+                    const scale = 1 + (bass / 255) * 0.4; // Karakter membesar kalo ada bass
+                    const rotY = (bass / 255) * 45 * (sprite.seed % 2 === 0 ? 1 : -1); // Puter kiri-kanan sesuai bass
+                    const rotZ = (treble / 255) * 15 * (sprite.seed % 3 === 0 ? 1 : -1); // Geter sesuai treble
+                    
+                    const hue = (bass + treble + sprite.seed * 20) % 360; // Ganti warna RGB ala neon
+                    const glow = (bass / 255) * 50;
+                    
+                    sprite.canvas.style.transform = `perspective(500px) scale(${scale}) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
+                    sprite.canvas.style.filter = `drop-shadow(0 0 ${glow}px hsl(${hue}, 100%, 50%)) hue-rotate(${hue}deg) saturate(${100 + (bass/255)*100}%)`;
+                } else {
+                    // Relaksasi kalau lagu dimatikan
+                    sprite.canvas.style.transform = `scale(1) rotateY(0deg) rotateZ(0deg)`;
+                    sprite.canvas.style.filter = `none`;
+                }
+            });
+            requestAnimationFrame(loop);
+        }
+        
+        if (isVideo) mediaEl.play();
+        
+        // Harus ada interaksi user buat play audio
+        audioPlayer.onplay = () => { if(audioCtx.state === 'suspended') audioCtx.resume(); };
+        
+        requestAnimationFrame(loop);
+    }
+</script>
+
+</body>
+</html>
