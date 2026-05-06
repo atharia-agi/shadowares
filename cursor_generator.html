@@ -207,7 +207,10 @@
         document.getElementById('np-name').style.color = t.fill;
 
         // --- GLOBAL SYNC: Notify Parent (Dashboard) to update its cursor too! ---
-        window.parent.postMessage({ type: 'shadow-cursor-set-theme', theme: key }, '*');
+        // Only send message if we're embedded in an iframe and parent is different
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'shadow-cursor-set-theme', theme: key }, '*');
+        }
     }
 
     activate('default');

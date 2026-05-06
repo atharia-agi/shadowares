@@ -214,6 +214,13 @@
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeSidebar();
     });
+
+    // --- GLOBAL SYNC: Listen for theme changes from other frames ---
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'shadow-cursor-set-theme') {
+            shadowCursor.setTheme(e.data.theme);
+        }
+    });
 </script>
 
 <!-- Global Cursor Sync -->
