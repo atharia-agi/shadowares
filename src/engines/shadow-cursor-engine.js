@@ -31,6 +31,16 @@ class ShadowCursorEngine {
             esports: { name: "Esports Arena", fill: "#ef4444", stroke: "#450a0a", glow: "#fca5a5", accent: "🏆", trail: "speed", color: "#f87171", cursorType: "crosshair", group: "gaming" },
             tactical: { name: "Tactical Ops", fill: "#22d3ee", stroke: "#083344", glow: "#67e8f9", accent: "🎖️", trail: "bullet", color: "#22d3ee", cursorType: "crosshair", group: "gaming" },
             drift: { name: "Night Drift", fill: "#a855f7", stroke: "#3b0764", glow: "#d8b4fe", accent: "💨", trail: "speed", color: "#c084fc", cursorType: "speed", group: "gaming" },
+            voxelKnight: { name: "Voxel Knight 3D", fill: "#60a5fa", stroke: "#1e3a8a", glow: "#93c5fd", accent: "🧊", trail: "pixel", color: "#60a5fa", cursorType: "sword", group: "gaming" },
+            pixelRogue: { name: "Pixel Rogue 3D", fill: "#f43f5e", stroke: "#4c0519", glow: "#fda4af", accent: "🗡️", trail: "pixel", color: "#fb7185", cursorType: "retro_arrow", group: "gaming" },
+            cubeRacer: { name: "Cube Racer 3D", fill: "#f59e0b", stroke: "#78350f", glow: "#fde68a", accent: "🧱", trail: "speed", color: "#fbbf24", cursorType: "speed", group: "gaming" },
+            dungeonVoxel: { name: "Dungeon Voxel", fill: "#7c3aed", stroke: "#3b0764", glow: "#c4b5fd", accent: "🪄", trail: "rune", color: "#8b5cf6", cursorType: "staff", group: "gaming" },
+            neonBlockFPS: { name: "Neon Block FPS", fill: "#22d3ee", stroke: "#083344", glow: "#67e8f9", accent: "🔫", trail: "neon", color: "#22d3ee", cursorType: "crosshair", group: "gaming" },
+            skyBlock: { name: "SkyBlock Adventure", fill: "#38bdf8", stroke: "#0c4a6e", glow: "#bae6fd", accent: "☁️", trail: "pixel", color: "#7dd3fc", cursorType: "sword", group: "gaming" },
+            lavaCraft: { name: "LavaCraft 3D", fill: "#ef4444", stroke: "#450a0a", glow: "#fca5a5", accent: "🔥", trail: "ember", color: "#f87171", cursorType: "sword", group: "gaming" },
+            forestBlocks: { name: "Forest Blocks", fill: "#22c55e", stroke: "#14532d", glow: "#86efac", accent: "🌳", trail: "leaf", color: "#4ade80", cursorType: "retro_arrow", group: "gaming" },
+            cyberVoxel: { name: "Cyber Voxel", fill: "#a855f7", stroke: "#4c1d95", glow: "#d8b4fe", accent: "🕹️", trail: "glitch", color: "#c084fc", cursorType: "crosshair", group: "gaming" },
+            bossRaid3D: { name: "Boss Raid 3D", fill: "#f97316", stroke: "#7c2d12", glow: "#fdba74", accent: "👹", trail: "bullet", color: "#fb923c", cursorType: "crosshair", group: "gaming" },
 
             streamer: { name: "Streamer RGB", fill: "#8b5cf6", stroke: "#4c1d95", glow: "#c4b5fd", accent: "🎥", trail: "neon", color: "#a78bfa", cursorType: "arrow", group: "creative" },
             synthwave: { name: "Synthwave 80s", fill: "#ec4899", stroke: "#831843", glow: "#f9a8d4", accent: "🌆", trail: "neon", color: "#f472b6", cursorType: "retro_arrow", group: "creative" },
@@ -173,6 +183,12 @@ class ShadowCursorEngine {
             html, body { cursor: ${idle} !important; min-height: 100vh; }
             a, button, select, [role="button"], .hoverable, [onclick] { cursor: ${hover} !important; }
             input, textarea, [contenteditable="true"], [contenteditable=""], .texting { cursor: ${texting} !important; }
+            p, span, label, li, td, th, h1, h2, h3, h4, h5, h6, small, em, strong, blockquote, code, pre {
+                cursor: ${texting} !important;
+            }
+            p a, span a, li a, label a, td a, th a, h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+                cursor: ${hover} !important;
+            }
             html:active, body:active, a:active, button:active, *:active { cursor: ${click} !important; }
             .no-select, button, a { user-select: none; -webkit-user-drag: none; }
         `;
