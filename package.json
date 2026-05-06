@@ -8,8 +8,8 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "npx rollup -c",
-    "dev": "npx rollup -c -w",
+    "build": "node build.js",
+    "dev": "node build.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "docs": "jsdoc -c jsdoc.conf.json -r .",
     "prepare": "npm run build"
