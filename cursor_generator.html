@@ -205,6 +205,9 @@
         const t = themes[key];
         document.getElementById('np-name').textContent = `${t.accent} ${t.name}`;
         document.getElementById('np-name').style.color = t.fill;
+
+        // --- GLOBAL SYNC: Notify Parent (Dashboard) to update its cursor too! ---
+        window.parent.postMessage({ type: 'shadow-cursor-set-theme', theme: key }, '*');
     }
 
     activate('default');

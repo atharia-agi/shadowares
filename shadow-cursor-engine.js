@@ -6,75 +6,26 @@
  */
 class ShadowCursorEngine {
     constructor() {
-        // Definisi Tema UMKM & Bisnis — warna unik per kategori
+        // ... (existing themes)
         this.themes = {
-            warteg: {
-                name: "Warteg / Kuliner",
-                fill: '#ef4444', stroke: '#7f1d1d', glow: '#fca5a5', accent: '🌶️',
-                trail: 'splash', color: '#ef4444'
-            },
-            warkop: {
-                name: "Warkop / Cafe",
-                fill: '#d97706', stroke: '#78350f', glow: '#fcd34d', accent: '☕',
-                trail: 'smoke', color: '#d1d5db'
-            },
-            bengkel: {
-                name: "Bengkel Otomotif",
-                fill: '#64748b', stroke: '#1e293b', glow: '#94a3b8', accent: '🔧',
-                trail: 'spark', color: '#f59e0b'
-            },
-            salon: {
-                name: "Salon & Spa",
-                fill: '#ec4899', stroke: '#831843', glow: '#f9a8d4', accent: '✂️',
-                trail: 'bubble', color: '#ec4899'
-            },
-            pasar: {
-                name: "Toko Kelontong",
-                fill: '#10b981', stroke: '#064e3b', glow: '#6ee7b7', accent: '🛒',
-                trail: 'coin', color: '#fbbf24'
-            },
-            tech: {
-                name: "Tech Startup",
-                fill: '#0ea5e9', stroke: '#0c4a6e', glow: '#7dd3fc', accent: '💻',
-                trail: 'glitch', color: '#0ea5e9'
-            },
-            default: {
-                name: "Default Magic",
-                fill: '#8b5cf6', stroke: '#3b0764', glow: '#c4b5fd', accent: '🪄',
-                trail: 'magic', color: '#8b5cf6'
-            },
-            // --- GAMING THEMES ---
-            minecraft: {
-                name: "Minecraft Sword",
-                fill: '#5eead4', stroke: '#0d9488', glow: '#99f6e4', accent: '⚔️',
-                trail: 'pixel', color: '#5eead4', cursorType: 'sword'
-            },
-            fps: {
-                name: "FPS / Shooter",
-                fill: '#ef4444', stroke: '#450a0a', glow: '#fca5a5', accent: '🎯',
-                trail: 'bullet', color: '#ef4444', cursorType: 'crosshair'
-            },
-            rpg: {
-                name: "RPG / Fantasy",
-                fill: '#a855f7', stroke: '#581c87', glow: '#d8b4fe', accent: '🔮',
-                trail: 'rune', color: '#a855f7', cursorType: 'staff'
-            },
-            retro: {
-                name: "Retro Arcade",
-                fill: '#facc15', stroke: '#713f12', glow: '#fef08a', accent: '👾',
-                trail: 'pixel', color: '#facc15', cursorType: 'retro_arrow'
-            },
-            racing: {
-                name: "Racing / Speed",
-                fill: '#f97316', stroke: '#7c2d12', glow: '#fdba74', accent: '🏎️',
-                trail: 'speed', color: '#f97316', cursorType: 'speed'
-            }
+            warteg: { name: "Warteg / Kuliner", fill: '#ef4444', stroke: '#7f1d1d', glow: '#fca5a5', accent: '🌶️', trail: 'splash', color: '#ef4444' },
+            warkop: { name: "Warkop / Cafe", fill: '#d97706', stroke: '#78350f', glow: '#fcd34d', accent: '☕', trail: 'smoke', color: '#d1d5db' },
+            bengkel: { name: "Bengkel Otomotif", fill: '#64748b', stroke: '#1e293b', glow: '#94a3b8', accent: '🔧', trail: 'spark', color: '#f59e0b' },
+            salon: { name: "Salon & Spa", fill: '#ec4899', stroke: '#831843', glow: '#f9a8d4', accent: '✂️', trail: 'bubble', color: '#ec4899' },
+            pasar: { name: "Toko Kelontong", fill: '#10b981', stroke: '#064e3b', glow: '#6ee7b7', accent: '🛒', trail: 'coin', color: '#fbbf24' },
+            tech: { name: "Tech Startup", fill: '#0ea5e9', stroke: '#0c4a6e', glow: '#7dd3fc', accent: '💻', trail: 'glitch', color: '#0ea5e9' },
+            default: { name: "Default Magic", fill: '#8b5cf6', stroke: '#3b0764', glow: '#c4b5fd', accent: '🪄', trail: 'magic', color: '#8b5cf6' },
+            minecraft: { name: "Minecraft Sword", fill: '#5eead4', stroke: '#0d9488', glow: '#99f6e4', accent: '⚔️', trail: 'pixel', color: '#5eead4', cursorType: 'sword' },
+            fps: { name: "FPS / Shooter", fill: '#ef4444', stroke: '#450a0a', glow: '#fca5a5', accent: '🎯', trail: 'bullet', color: '#ef4444', cursorType: 'crosshair' },
+            rpg: { name: "RPG / Fantasy", fill: '#a855f7', stroke: '#581c87', glow: '#d8b4fe', accent: '🔮', trail: 'rune', color: '#a855f7', cursorType: 'staff' },
+            retro: { name: "Retro Arcade", fill: '#facc15', stroke: '#713f12', glow: '#fef08a', accent: '👾', trail: 'pixel', color: '#facc15', cursorType: 'retro_arrow' },
+            racing: { name: "Racing / Speed", fill: '#f97316', stroke: '#7c2d12', glow: '#fdba74', accent: '🏎️', trail: 'speed', color: '#f97316', cursorType: 'speed' }
         };
 
         this.currentTheme = 'default';
         this.particles = [];
-        this.ripples = [];       // Click ripple rings
-        this.ghostTrail = [];    // Afterimage ghost positions
+        this.ripples = [];
+        this.ghostTrail = [];
         this.mouse = { x: -100, y: -100, isDown: false, isMoving: false };
         this.lastMouse = { x: -100, y: -100 };
         this.frameCount = 0;
@@ -83,6 +34,13 @@ class ShadowCursorEngine {
         this.bindEvents();
         this.setTheme('default');
         this.animate();
+
+        // --- GLOBAL SYNC: Listen for theme changes from other frames ---
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'shadow-cursor-set-theme') {
+                this.setTheme(e.data.theme);
+            }
+        });
     }
 
     initCanvas() {
