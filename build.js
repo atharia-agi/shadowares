@@ -2,7 +2,12 @@ const rollup = require('rollup');
 const { babel } = require('@rollup/plugin-babel');
 const commonjs = require('@rollup/plugin-commonjs');
 const nodeResolve = require('@rollup/plugin-node-resolve');
-const { terser } = require('rollup-plugin-terser');
+let terser;
+try {
+  terser = require('@rollup/plugin-terser').default;
+} catch {
+  terser = require('rollup-plugin-terser').terser;
+}
 
 async function build() {
   const inputOptions = {
