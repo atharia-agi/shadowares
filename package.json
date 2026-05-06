@@ -6,10 +6,9 @@
   "module": "dist/shadow-toolkit.esm.js",
   "browser": "dist/shadow-toolkit.umd.js",
   "types": "dist/index.d.ts",
-  "type": "module",
   "scripts": {
-    "build": "node build.cjs",
-    "dev": "node build.cjs",
+    "build": "node build.js",
+    "dev": "node build.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "docs": "jsdoc -c jsdoc.conf.json -r .",
     "prepare": "npm run build"
