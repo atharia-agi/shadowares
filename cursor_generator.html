@@ -3,280 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shadow Cursor Generator — Ultimate Edition</title>
+    <title>Shadow Cursor Generator</title>
     <style>
-        :root{--bg:#07080f;--surface:rgba(15,23,42,0.7);--border:#1e293b;--text:#f1f5f9;--primary:#8b5cf6;}
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
-
-        /* Animated BG */
-        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 0%,#1e1b4b33 0%,transparent 60%),radial-gradient(ellipse at 70% 100%,#0c4a6e22 0%,transparent 60%);pointer-events:none;z-index:0;}
-
-        .header{position:relative;z-index:10;text-align:center;padding:60px 20px 30px;
-            background:linear-gradient(180deg,rgba(30,27,75,0.5) 0%,transparent 100%);}
-        .header h1{font-size:3.2rem;font-weight:900;letter-spacing:-2px;
-            background:linear-gradient(135deg,#c084fc 0%,#60a5fa 50%,#34d399 100%);
-            -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-        .header p{color:#94a3b8;font-size:1.1rem;max-width:700px;margin:10px auto 0;}
-        .badge{display:inline-block;margin-top:15px;padding:6px 16px;border-radius:20px;font-size:.75rem;font-weight:700;letter-spacing:1px;
-            background:rgba(139,92,246,.15);color:#c084fc;border:1px solid rgba(139,92,246,.3);}
-
-        /* Section */
-        .section{max-width:1300px;margin:30px auto;padding:0 20px;position:relative;z-index:10;}
-        .section-title{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-left:5px;}
-        .section-title h2{font-size:1.6rem;color:#e2e8f0;}
-        .section-title .line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
-
-        /* Cards Grid */
-        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;}
-
-        .card{
-            background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--border);
-            border-radius:16px;padding:24px;text-align:center;transition:all .35s cubic-bezier(.4,0,.2,1);
-            position:relative;overflow:hidden;
-        }
-        .card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,var(--card-glow,transparent) 0%,transparent 70%);opacity:0;transition:opacity .3s;}
-        .card:hover::before{opacity:1;}
-        .card:hover{border-color:var(--card-color,#475569);transform:translateY(-6px);box-shadow:0 24px 48px rgba(0,0,0,.4);}
-        .card.active{border-color:var(--card-color,#22d3ee);}
-        .card.active::after{content:'ACTIVE';position:absolute;top:10px;right:10px;
-            background:var(--card-color,#22d3ee);color:#000;font-size:.65rem;font-weight:800;
-            padding:3px 10px;border-radius:12px;}
-
-        .card .icon{font-size:2.8rem;margin-bottom:8px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));}
-        .card h3{font-size:1.15rem;color:#e2e8f0;margin-bottom:4px;}
-        .card .meta{color:#64748b;font-size:.8rem;margin-bottom:12px;}
-        .card .meta span{color:var(--card-color,#94a3b8);font-weight:700;}
-        .card .states{display:flex;gap:6px;justify-content:center;margin-bottom:14px;}
-        .card .st{padding:3px 10px;border-radius:12px;font-size:.7rem;background:rgba(255,255,255,.04);color:#94a3b8;}
-        .card .btn{
-            width:100%;padding:10px;border:none;border-radius:10px;font-weight:700;font-size:.9rem;
-            color:#fff;cursor:pointer;transition:.2s;background:var(--card-color,#8b5cf6);
-            box-shadow:0 4px 12px rgba(0,0,0,.3);
-        }
-        .card .btn:hover{filter:brightness(1.15);transform:scale(1.03);}
-
-        /* Test Zone */
-        .test-zone{
-            background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--border);
-            border-radius:16px;padding:30px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
-        }
-        .zone{
-            border:1px dashed #1e293b;border-radius:12px;padding:24px;text-align:center;
-            display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;
-            transition:.3s;min-height:140px;
-        }
-        .zone:hover{background:rgba(255,255,255,.02);border-color:#334155;}
-        .zone .lbl{font-size:.7rem;color:#475569;text-transform:uppercase;letter-spacing:2px;font-weight:700;}
-        .zone button{padding:12px 28px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;border-radius:30px;font-size:.95rem;font-weight:700;cursor:pointer;transition:.2s;}
-        .zone button:hover{transform:scale(1.08);}
-        .zone button:active{transform:scale(.92);}
-        .zone a{color:#60a5fa;text-decoration:underline;font-weight:600;}
-        .zone input{padding:10px 18px;border-radius:8px;border:1px solid #1e293b;background:#0f172a;color:#fff;font-size:.95rem;outline:none;width:85%;}
-        .zone input:focus{border-color:#8b5cf6;box-shadow:0 0 15px rgba(139,92,246,.2);}
-
-        /* Code Box */
-        .code-box{
-            background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:18px 22px;
-            font-family:'Cascadia Code','Courier New',monospace;font-size:.85rem;color:#a5f3fc;
-            overflow-x:auto;line-height:1.7;position:relative;
-        }
-        .code-box .cp{position:absolute;top:8px;right:8px;background:#334155;color:#e2e8f0;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.75rem;transition:.2s;}
-        .code-box .cp:hover{background:#475569;}
-
-        /* Current Theme Banner */
-        .now-playing{
-            margin-top:30px;text-align:center;padding:20px;
-            background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:12px;
-        }
-        .now-playing .np-label{font-size:.7rem;color:#475569;text-transform:uppercase;letter-spacing:2px;}
-        .now-playing .np-name{font-size:1.5rem;font-weight:800;margin-top:4px;}
-
-        @media(max-width:768px){
-            .header h1{font-size:2rem;}
-            .test-zone{grid-template-columns:1fr;}
-            .grid{grid-template-columns:1fr 1fr;}
-        }
-        @media(max-width:480px){.grid{grid-template-columns:1fr;}}
+        :root { --bg:#07080f; --surface:rgba(15,23,42,.75); --border:#1e293b; --text:#f1f5f9; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { background:var(--bg); color:var(--text); font-family:"Segoe UI",system-ui,sans-serif; min-height:100vh; overflow-x:hidden; }
+        body::before { content:""; position:fixed; inset:0; background:radial-gradient(ellipse at 30% 0%,#1e1b4b33 0%,transparent 60%),radial-gradient(ellipse at 70% 100%,#0c4a6e22 0%,transparent 60%); pointer-events:none; }
+        .header, .section { position:relative; z-index:1; }
+        .header { text-align:center; padding:48px 20px 24px; }
+        .header h1 { font-size:3rem; font-weight:900; background:linear-gradient(135deg,#c084fc,#60a5fa,#34d399); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+        .header p { color:#94a3b8; max-width:860px; margin:10px auto 0; }
+        .badge { display:inline-block; margin-top:14px; padding:7px 14px; border:1px solid #4c1d95; border-radius:999px; font-size:.75rem; color:#c4b5fd; }
+        .controls { margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+        .controls button { border:none; border-radius:10px; color:#fff; font-weight:700; padding:11px 18px; cursor:pointer; }
+        #changeCursorBtn { background:#8b5cf6; }
+        #copyCodeBtn { background:#10b981; }
+        #copyStatus { min-height:20px; margin-top:10px; font-size:.92rem; color:#10b981; }
+        .section { max-width:1320px; margin:26px auto; padding:0 20px; }
+        .section-title { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+        .section-title h2 { font-size:1.35rem; }
+        .section-title .line { flex:1; height:1px; background:linear-gradient(90deg,var(--border),transparent); }
+        .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+        .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; transition:.2s; position:relative; overflow:hidden; }
+        .card:hover { transform:translateY(-3px); border-color:var(--card-color,#64748b); }
+        .card.active { border-color:var(--card-color,#22d3ee); box-shadow:0 0 0 1px var(--card-color,#22d3ee) inset; }
+        .card.active::after { content:"ACTIVE"; position:absolute; top:8px; right:8px; font-size:.62rem; font-weight:800; padding:2px 8px; border-radius:999px; color:#000; background:var(--card-color,#22d3ee); }
+        .icon { font-size:1.9rem; margin-bottom:6px; }
+        .meta { color:#94a3b8; font-size:.82rem; margin-top:4px; }
+        .states { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 12px; }
+        .st { font-size:.68rem; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,.06); color:#cbd5e1; }
+        .btn { width:100%; border:none; border-radius:8px; padding:9px 10px; cursor:pointer; color:#fff; font-weight:700; background:var(--card-color,#8b5cf6); }
+        .now-playing { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+        .np-label { font-size:.72rem; color:#64748b; letter-spacing:1.2px; text-transform:uppercase; }
+        .np-name { margin-top:5px; font-size:1.35rem; font-weight:900; }
+        .test-zone { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+        .zone { border:1px dashed #334155; border-radius:10px; min-height:130px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:8px; padding:12px; }
+        .zone .lbl { font-size:.7rem; letter-spacing:1px; color:#64748b; text-transform:uppercase; }
+        .zone input, .zone textarea, .zone button { width:85%; border-radius:8px; padding:10px; border:1px solid #334155; background:#0f172a; color:#fff; }
+        .zone button { border:none; background:#8b5cf6; font-weight:700; cursor:pointer; }
+        .code-box { background:#0f172a; border:1px solid #1e293b; border-radius:10px; padding:16px; font-family:"Cascadia Code","Consolas",monospace; font-size:.84rem; white-space:pre; overflow:auto; position:relative; }
+        .cp { position:absolute; top:8px; right:8px; border:none; border-radius:6px; background:#334155; color:#e2e8f0; padding:5px 10px; cursor:pointer; }
+        @media (max-width: 860px) { .header h1 { font-size:2.2rem; } .test-zone { grid-template-columns:1fr; } }
     </style>
 </head>
 <body>
-
     <div class="header">
-    <h1>Shadow Cursor Generator</h1>
-    <p>Kursor premium fully-custom untuk UMKM Indonesia &amp; Gaming. Klik tema, rasakan trail partikelnya, dan langsung pakai di project lo.</p>
-    <div class="badge">v2.0 — 12 THEMES · CLICK RIPPLE · GHOST TRAIL · AUDIO FEEDBACK</div>
-    
-    <div class="controls" style="margin: 20px 0; text-align: center;">
-        <button id="changeCursorBtn" style="padding: 12px 24px; background: #8b5cf6; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(139,92,246,0.3);">
-            🔄 Change Cursor
-        </button>
-        <button id="copyCodeBtn" style="padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; margin-left: 10px; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
-            📋 Copy Code
-        </button>
-        <div id="copyStatus" style="margin-top: 10px; color: #10b981; font-weight: 500; min-height: 20px;"></div>
-    </div>
-</div>
-
-<!-- UMKM Section -->
-<div class="section">
-    <div class="section-title"><h2>🏪 UMKM &amp; Bisnis</h2><div class="line"></div></div>
-    <div class="grid" id="grid-business"></div>
-</div>
-
-<!-- Gaming Section -->
-<div class="section">
-    <div class="section-title"><h2>🎮 Gaming</h2><div class="line"></div></div>
-    <div class="grid" id="grid-gaming"></div>
-</div>
-
-<!-- Now Playing -->
-<div class="section">
-    <div class="now-playing" id="now-playing">
-        <div class="np-label">Tema Aktif</div>
-        <div class="np-name" id="np-name">-</div>
-    </div>
-</div>
-
-<!-- Test Zone -->
-<div class="section">
-    <div class="section-title"><h2>🧪 Test Zone</h2><div class="line"></div></div>
-    <div class="test-zone">
-        <div class="zone">
-            <div class="lbl">Idle · Gerak Mouse</div>
-            <span style="font-size:2rem">🖱️</span>
-            <p style="color:#475569;font-size:.8rem;">Gerakin mouse di area ini. Perhatikan glow halo &amp; ghost trail.</p>
+        <h1>Shadow Cursor Generator</h1>
+        <p>Puluhan tema cursor siap pakai untuk UMKM, gaming, dan creative stack, lengkap state idle, hover, click, dan texting.</p>
+        <div class="badge" id="themeCountBadge">Loading themes...</div>
+        <div class="controls">
+            <button id="changeCursorBtn">Cycle Theme</button>
+            <button id="copyCodeBtn">Copy Code</button>
         </div>
-        <div class="zone">
-            <div class="lbl">Hover · Interactive</div>
-            <button>Hover Tombol Ini</button>
-            <a href="#">Hover Link Ini</a>
-            <input type="text" placeholder="Atau ketik di sini...">
-        </div>
-        <div class="zone">
-            <div class="lbl">Click · Ripple + SFX</div>
-            <button onclick="void(0)">Klik Berulang!</button>
-            <p style="color:#475569;font-size:.8rem;">Dengarkan micro-SFX &amp; lihat ripple ring expand.</p>
+        <div id="copyStatus"></div>
+    </div>
+
+    <div class="section">
+        <div class="now-playing">
+            <div class="np-label">Tema Aktif</div>
+            <div class="np-name" id="np-name">-</div>
         </div>
     </div>
-</div>
 
-<!-- Code -->
-<div class="section" style="padding-bottom:60px;">
-    <div class="section-title"><h2>📋 Integrasi</h2><div class="line"></div></div>
-    <div class="code-box">
-        <button class="cp" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').textContent)">Copy</button>
-<code>&lt;!-- Taruh di HTML --&gt;
-&lt;script src="shadow-cursor-engine.js"&gt;&lt;/script&gt;
+    <div class="section">
+        <div class="section-title"><h2>UMKM and Business</h2><div class="line"></div></div>
+        <div class="grid" id="grid-business"></div>
+    </div>
+    <div class="section">
+        <div class="section-title"><h2>Gaming</h2><div class="line"></div></div>
+        <div class="grid" id="grid-gaming"></div>
+    </div>
+    <div class="section">
+        <div class="section-title"><h2>Creative and Futuristic</h2><div class="line"></div></div>
+        <div class="grid" id="grid-creative"></div>
+    </div>
 
-&lt;!-- Pilih tema --&gt;
+    <div class="section">
+        <div class="section-title"><h2>Test Zone</h2><div class="line"></div></div>
+        <div class="test-zone">
+            <div class="zone"><div class="lbl">Idle and Move</div><span style="font-size:2rem">🖱️</span><p>Gerakin mouse dan lihat halo plus ghost trail.</p></div>
+            <div class="zone"><div class="lbl">Hover and Texting</div><button>Hover Tombol</button><input type="text" placeholder="Ketik di sini"><textarea rows="2" placeholder="Coba typing state"></textarea></div>
+            <div class="zone"><div class="lbl">Click and Ripple</div><button onclick="void(0)">Klik Cepat</button><p>Dengar SFX klik dan lihat ripple.</p></div>
+        </div>
+    </div>
+
+    <div class="section" style="padding-bottom:50px;">
+        <div class="section-title"><h2>Integrasi</h2><div class="line"></div></div>
+        <div class="code-box"><button class="cp" id="copyInlineBtn">Copy</button><code id="inlineCode">&lt;script src="shadow-cursor-engine.js"&gt;&lt;/script&gt;
 &lt;script&gt;
-  shadowCursor.setTheme('minecraft');
-  // Tema: warteg, warkop, bengkel, salon, pasar, tech,
-  //        minecraft, fps, rpg, retro, racing, default
-&lt;/script&gt;</code>
+  shadowCursor.setTheme('default');
+&lt;/script&gt;</code></div>
     </div>
-</div>
 
-<script src="shadow-cursor-engine.js"></script>
-<script>
-    const themes = shadowCursor.themes;
-    const businessKeys = ['warteg','warkop','bengkel','salon','pasar','tech','default'];
-    const gamingKeys = ['minecraft','fps','rpg','retro','racing'];
+    <script src="shadow-cursor-engine.js"></script>
+    <script>
+        const themes = shadowCursor.themes;
+        const groupToGrid = {
+            business: document.getElementById("grid-business"),
+            gaming: document.getElementById("grid-gaming"),
+            creative: document.getElementById("grid-creative")
+        };
 
-    function makeCard(key, t, container) {
-        const c = document.createElement('div');
-        c.className = 'card';
-        c.id = `card-${key}`;
-        c.style.setProperty('--card-color', t.fill);
-        c.style.setProperty('--card-glow', t.fill + '15');
-        c.innerHTML = `
-            <div class="icon">${t.accent}</div>
-            <h3>${t.name}</h3>
-            <div class="meta">Trail: <span>${t.trail}</span> · ${t.cursorType||'arrow'}</div>
-            <div class="states">
-                <div class="st">🖱️ Idle</div>
-                <div class="st">👆 Hover</div>
-                <div class="st">💥 Click</div>
-                <div class="st">🌊 Trail</div>
-            </div>
-            <button class="btn" onclick="activate('${key}')">Aktifkan</button>
-        `;
-        container.appendChild(c);
-    }
+        const themeKeys = Object.keys(themes);
+        let currentThemeIndex = themeKeys.indexOf("default");
+        if (currentThemeIndex < 0) currentThemeIndex = 0;
 
-    businessKeys.forEach(k => makeCard(k, themes[k], document.getElementById('grid-business')));
-    gamingKeys.forEach(k => makeCard(k, themes[k], document.getElementById('grid-gaming')));
+        document.getElementById("themeCountBadge").textContent = `v3.0 - ${themeKeys.length} THEMES - FULL STATE (IDLE/HOVER/CLICK/TEXTING)`;
 
-    // Array of all theme keys for cycling
-    const allThemeKeys = [...businessKeys, ...gamingKeys];
-    let currentThemeIndex = 0;
-
-    function activate(key) {
-        console.log(`Activating theme: ${key}`);
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-        document.getElementById(`card-${key}`).classList.add('active');
-        shadowCursor.setTheme(key);
-        const t = themes[key];
-        document.getElementById('np-name').textContent = `${t.accent} ${t.name}`;
-        document.getElementById('np-name').style.color = t.fill;
-
-        // --- GLOBAL SYNC: Notify Parent (Dashboard) to update its cursor too! ---
-        // Only send message if we're embedded in an iframe and parent is different
-        if (window.parent !== window) {
-            console.log(`Sending message to parent: shadow-cursor-set-theme, ${key}`);
-            window.parent.postMessage({ type: 'shadow-cursor-set-theme', theme: key }, '*');
-        } else {
-            console.log('Not sending message - not in iframe');
+        function makeCard(key, t) {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.id = `card-${key}`;
+            card.style.setProperty("--card-color", t.fill);
+            card.innerHTML = `
+                <div class="icon">${t.accent || "✨"}</div>
+                <h3>${t.name}</h3>
+                <div class="meta">Trail: <b>${t.trail}</b> · Type: ${t.cursorType || "arrow"}</div>
+                <div class="states">
+                    <div class="st">idle</div><div class="st">hover</div><div class="st">click</div><div class="st">texting</div>
+                </div>
+                <button class="btn" onclick="activate('${key}')">Aktifkan</button>
+            `;
+            (groupToGrid[t.group || "creative"] || groupToGrid.creative).appendChild(card);
         }
-    }
 
-    // Change cursor button functionality
-    document.getElementById('changeCursorBtn').addEventListener('click', () => {
-        currentThemeIndex = (currentThemeIndex + 1) % allThemeKeys.length;
-        const key = allThemeKeys[currentThemeIndex];
-        activate(key);
-        // Update active card UI
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-        document.getElementById(`card-${key}`).classList.add('active');
-    });
+        themeKeys.forEach((k) => makeCard(k, themes[k]));
 
-    // Copy code button functionality
-    document.getElementById('copyCodeBtn').addEventListener('click', async () => {
-        const code = `<!-- Put this in your HTML -->
-<script src="shadow-cursor-engine.js"><\/script>
+        function activate(key) {
+            document.querySelectorAll(".card").forEach((c) => c.classList.remove("active"));
+            const card = document.getElementById(`card-${key}`);
+            if (card) card.classList.add("active");
 
-<!-- Select theme -->
-<script>
-  shadowCursor.setTheme('${allThemeKeys[currentThemeIndex]}');
-  // Theme: warteg, warkop, bengkel, salon, pasar, tech,
-  //        minecraft, fps, rpg, retro, racing, default
-<\/script>`;
-        
-        try {
-            await navigator.clipboard.writeText(code);
-            const status = document.getElementById('copyStatus');
-            status.textContent = '✓ Code copied to clipboard!';
-            status.style.color = '#10b981';
-            
-            // Reset status after 3 seconds
-            setTimeout(() => {
-                status.textContent = '';
-            }, 3000);
-        } catch (err) {
-            const status = document.getElementById('copyStatus');
-            status.textContent = '✗ Failed to copy code';
-            status.style.color = '#ef4444';
-            
-            // Reset status after 3 seconds
-            setTimeout(() => {
-                status.textContent = '';
-            }, 3000);
+            shadowCursor.setTheme(key);
+            const t = themes[key];
+            document.getElementById("np-name").textContent = `${t.accent} ${t.name}`;
+            document.getElementById("np-name").style.color = t.fill;
+            currentThemeIndex = themeKeys.indexOf(key);
+
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: "shadow-cursor-set-theme", theme: key }, "*");
+            }
         }
-    });
 
-    activate('default');
-</script>
+        function buildCode(key) {
+            return `<!-- Put this in your HTML -->
+<script src="shadow-cursor-engine.js"><\\/script>
+<script>
+  shadowCursor.setTheme('${key}');
+<\\/script>`;
+        }
 
+        document.getElementById("changeCursorBtn").addEventListener("click", () => {
+            currentThemeIndex = (currentThemeIndex + 1) % themeKeys.length;
+            activate(themeKeys[currentThemeIndex]);
+        });
+
+        async function copyCode() {
+            const key = themeKeys[currentThemeIndex];
+            const code = buildCode(key);
+            try {
+                await navigator.clipboard.writeText(code);
+                const status = document.getElementById("copyStatus");
+                status.textContent = "Code copied";
+                status.style.color = "#10b981";
+                document.getElementById("inlineCode").textContent = code;
+                setTimeout(() => { status.textContent = ""; }, 2500);
+            } catch (_err) {
+                const status = document.getElementById("copyStatus");
+                status.textContent = "Copy failed";
+                status.style.color = "#ef4444";
+                setTimeout(() => { status.textContent = ""; }, 2500);
+            }
+        }
+
+        document.getElementById("copyCodeBtn").addEventListener("click", copyCode);
+        document.getElementById("copyInlineBtn").addEventListener("click", copyCode);
+
+        activate("default");
+        document.getElementById("inlineCode").textContent = buildCode("default");
+    </script>
 </body>
 </html>
