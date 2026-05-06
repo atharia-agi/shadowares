@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Toolkit Installation Test</title>
+</head>
+<body>
+    <h1>Shadow Toolkit Installation Test</h1>
+    
+    <!-- Test direct script inclusion -->
+    <script src="dist/shadow-toolkit.umd.js"></script>
+    
+    <div id="test-output">
+        <p>Testing Shadow Toolkit installation...</p>
+    </div>
+
+    <script>
+        // Test if ShadowToolkit is available globally
+        if (typeof ShadowToolkit !== 'undefined') {
+            document.getElementById('test-output').innerHTML += '<p>✓ Global ShadowToolkit object available</p>';
+            
+            // Test cursor engine
+            if (typeof ShadowToolkit.ShadowCursorEngine !== 'undefined') {
+                document.getElementById('test-output').innerHTML += '<p>✓ ShadowCursorEngine available</p>';
+                
+                try {
+                    const cursor = new ShadowToolkit.ShadowCursorEngine();
+                    document.getElementById('test-output').innerHTML += '<p>✓ ShadowCursorEngine instantiated successfully</p>';
+                    cursor.setTheme('minecraft');
+                    document.getElementById('test-output').innerHTML += '<p>✓ Cursor theme changed to minecraft</p>';
+                    cursor.destroy();
+                    document.getElementById('test-output').innerHTML += '<p>✓ CursorEngine destroyed successfully</p>';
+                } catch (e) {
+                    document.getElementById('test-output').innerHTML += `<p>✗ Error with ShadowCursorEngine: ${e.message}</p>`;
+                }
+            } else {
+                document.getElementById('test-output').innerHTML += '<p>✗ ShadowCursorEngine not available</p>';
+            }
+            
+            // Test physics engine
+            if (typeof ShadowToolkit.ShadowPhysicsEngine !== 'undefined') {
+                document.getElementById('test-output').innerHTML += '<p>✓ ShadowPhysicsEngine available</p>';
+                
+                try {
+                    const physicsEl = document.createElement('shadow-2d-physics');
+                    physicsEl.style.width = '200px';
+                    physicsEl.style.height = '200px';
+                    physicsEl.style.border = '1px solid #ccc';
+                    physicsEl.innerHTML = '<div style="width:100%;height:100%;background:#8b5cf6;"></div>';
+                    document.body.appendChild(physicsEl);
+                    document.getElementById('test-output').innerHTML += '<p>✓ ShadowPhysicsEngine element created and added to DOM</p>';
+                } catch (e) {
+                    document.getElementById('test-output').innerHTML += `<p>✗ Error with ShadowPhysicsEngine: ${e.message}</p>`;
+                }
+            } else {
+                document.getElementById('test-output').innerHTML += '<p>✗ ShadowPhysicsEngine not available</p>';
+            }
+            
+        } else {
+            document.getElementById('test-output').innerHTML += '<p>✗ Global ShadowToolkit object NOT available</p>';
+        }
+        
+        // Test ES module imports (would work in a module context)
+        document.getElementById('test-output').innerHTML += '<p>ℹ️ ES Module usage: import { ShadowCursorEngine } from "@shadow-toolkit/core"</p>';
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        #test-output {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        p {
+            margin: 10px 0;
+        }
+    </style>
+</body>
+</html>

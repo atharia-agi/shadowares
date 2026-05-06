@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Toolkit Final Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .controls {
+            margin: 15px 0;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px 10px 0;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        select, input {
+            padding: 8px;
+            margin: 0 5px 10px 0;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Shadow Toolkit Final Verification Test</h1>
+    <p>This test verifies that all components of the Shadow Toolkit are working correctly.</p>
+    
+    <!-- Test 1: Basic Import and Global Objects -->
+    <div class="test-section">
+        <h2>Test 1: Module Exports</h2>
+        <div id="test1-result" class="result info">Testing...</div>
+        <div class="controls">
+            <button onclick="runTest1()">Run Test</button>
+        </div>
+    </div>
+    
+    <!-- Test 2: Cursor Engine -->
+    <div class="test-section">
+        <h2>Test 2: Shadow Cursor Engine</h2>
+        <div id="test2-result" class="result info">Testing...</div>
+        <div class="controls">
+            <button onclick="runTest2()">Run Test</button>
+            <select id="cursor-theme-select">
+                <option value="default">Default</option>
+                <option value="minecraft">Minecraft</option>
+                <option value="fps">FPS</option>
+                <option value="tech">Tech</option>
+                <option value="warkop">Warkop</option>
+            </select>
+        </div>
+        <p>Move your cursor over this area to test:</p>
+        <div id="cursor-test-area" style="width: 300px; height: 150px; background: #eee; margin: 10px 0; text-align: center; line-height: 150px; font-weight: bold;">
+            Test Area
+        </div>
+    </div>
+    
+    <!-- Test 3: 2.5D Physics Engine -->
+    <div class="test-section">
+        <h2>Test 3: Shadow 2.5D Physics Engine</h2>
+        <div id="test3-result" class="result info">Testing...</div>
+        <div class="controls">
+            <button onclick="runTest3()">Run Test</button>
+        </div>
+        <div id="physics-test-area" style="width: 300px; height: 200px; border: 2px solid #ccc; margin: 10px 0; position: relative;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #666;">
+                Move mouse over me<br><small>Click for spring effect</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Test 4: Holographic Card -->
+    <div class="test-section">
+        <h2>Test 4: Shadow Holographic Card</h2>
+        <div id="test4-result" class="result info">Testing...</div>
+        <div class="controls">
+            <button onclick="runTest4()">Run Test</button>
+        </div>
+        <div id="holo-test-area" style="width: 250px; height: 330px; margin: 10px 0; perspective: 1000px;">
+            <!-- Holo card will be inserted here -->
+        </div>
+    </div>
+    
+    <!-- Test 5: Pixel Disintegration -->
+    <div class="test-section">
+        <h2>Test 5: Shadow Pixel Disintegration Engine</h2>
+        <div id="test5-result" class="result info">Testing...</div>
+        <div class="controls">
+            <button onclick="runTest5()">Run Test</button>
+        </div>
+        <div id="pixel-test-area" style="width: 250px; height: 250px; margin: 10px 0; position: relative; cursor: crosshair;">
+            <!-- Pixel snap will be inserted here -->
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #666;">
+                Click to Disintegrate
+            </div>
+        </div>
+    </div>
+    
+    <!-- Test 6: Scroll Reveal -->
+    <div class="test-section">
+        <h2>Test 6: Shadow Scroll Reveal Engine</h2>
+        <div id="test6-result" class="result info">Testing...</div>
+        <div class="controls">
+            <button onclick="runTest6()">Run Test</button>
+            <select id="scroll-animation-select">
+                <option value="fade-up">Fade Up</option>
+                <option value="zoom-in">Zoom In</option>
+                <option value="flip">Flip</option>
+                <option value="blur">Blur</option>
+            </select>
+        </div>
+        <div style="height: 800px; position: relative;">
+            <div id="scroll-test-area" style="margin: 20px; padding: 20px; background: #f0f0f0; border-radius: 8px;">
+                Scroll down to see this element animate!
+            </div>
+            <div style="height: 400px;"></div> <!-- Spacer for scrolling -->
+        </div>
+    </div>
+    
+    <!-- Test 7: Theme Manager -->
+    <div class="test-section">
+        <h2>Test 7: Shadow Theme Manager</h2>
+        <div id="test7-result" class="result info">Testing...</div>
+        <div class="controls">
+            <button onclick="runTest7()">Run Test</button>
+            <select id="theme-select">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="noir">Noir</option>
+                <option value="cyberpunk">Cyberpunk</option>
+            </select>
+        </div>
+        <div id="theme-test-area" style="width: 300px; height: 100px; margin: 10px 0; padding: 15px; border: 1px solid #ccc; border-radius: 4px;">
+            Theme preview area
+        </div>
+    </div>
+    
+    <!-- Test 8: NPM Package Simulation -->
+    <div class="test-section">
+        <h2>Test 8: NPM Package Verification</h2>
+        <div id="test8-result" class="result info">Testing...</div>
+        <div class="controls">
+            <button onclick="runTest8()">Run Test</button>
+        </div>
+    </div>
+    
+    <!-- Overall Results -->
+    <div class="test-section">
+        <h2>Overall Test Results</h2>
+        <div id="overall-result" class="result info">Running tests...</div>
+        <button onclick="runAllTests()" style="background: #28a745; font-weight: bold; padding: 12px 24px; font-size: 16px;">
+            Run All Tests
+        </button>
+    </div>
+
+    <!-- Load Shadow Toolkit from dist -->
+    <script src="dist/shadow-toolkit.umd.js"></script>
+    
+    <script>
+        // Test results tracking
+        const testResults = {
+            test1: false,
+            test2: false,
+            test3: false,
+            test4: false,
+            test5: false,
+            test6: false,
+            test7: false,
+            test8: false
+        };
+        
+        // Test 1: Module Exports
+        function runTest1() {
+            const resultDiv = document.getElementById('test1-result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                // Check if global ShadowToolkit exists
+                if (typeof ShadowToolkit === 'undefined') {
+                    throw new Error('Global ShadowToolkit object not found');
+                }
+                
+                // Check if all expected exports exist
+                const expectedExports = [
+                    'ShadowCursorEngine',
+                    'ShadowPhysicsEngine', 
+                    'ShadowHoloCard',
+                    'ShadowPixelSnap',
+                    'ShadowScrollReveal',
+                    'ShadowThemeManager'
+                ];
+                
+                const missingExports = expectedExports.filter(exportName => 
+                    typeof ShadowToolkit[exportName] === 'undefined'
+                );
+                
+                if (missingExports.length > 0) {
+                    throw new Error(`Missing exports: ${missingExports.join(', ')}`);
+                }
+                
+                // Test that we can instantiate the engines
+                const cursor = new ShadowToolkit.ShadowCursorEngine();
+                const physicsEl = document.createElement('shadow-2d-physics');
+                const holoEl = document.createElement('shadow-holo-card');
+                const pixelEl = document.createElement('shadow-pixel-snap');
+                const scrollEl = document.createElement('shadow-reveal');
+                const themeManager = new ShadowToolkit.ShadowThemeManager();
+                
+                // Cleanup
+                cursor.destroy();
+                
+                testResults.test1 = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ PASS: All exports available and functional';
+            } catch (error) {
+                testResults.test1 = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ FAIL: ${error.message}`;
+            }
+            
+            updateOverallResult();
+        }
+        
+        // Test 2: Cursor Engine
+        function runTest2() {
+            const resultDiv = document.getElementById('test2-result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                if (typeof ShadowToolkit === 'undefined' || typeof ShadowToolkit.ShadowCursorEngine === 'undefined') {
+                    throw new Error('ShadowCursorEngine not available');
+                }
+                
+                // Test instantiation
+                const cursor = new ShadowToolkit.ShadowCursorEngine();
+                
+                // Test theme changing
+                const themeSelect = document.getElementById('cursor-theme-select');
+                const theme = themeSelect.value;
+                const result = cursor.setTheme(theme);
+                
+                if (!result) {
+                    throw new Error(`Failed to set theme to ${theme}`);
+                }
+                
+                // Test that we can destroy
+                cursor.destroy();
+                
+                testResults.test2 = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ PASS: Cursor engine works with ${theme} theme`;
+            } catch (error) {
+                testResults.test2 = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ FAIL: ${error.message}`;
+            }
+            
+            updateOverallResult();
+        }
+        
+        // Test 3: 2.5D Physics Engine
+        function runTest3() {
+            const resultDiv = document.getElementById('test3-result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                if (typeof ShadowToolkit === 'undefined' || typeof ShadowToolkit.ShadowPhysicsEngine === 'undefined') {
+                    throw new Error('ShadowPhysicsEngine not available');
+                }
+                
+                // Test that we can create the element
+                const physicsEl = document.createElement('shadow-2d-physics');
+                physicsEl.style.width = '200px';
+                physicsEl.style.height = '200px';
+                physicsEl.style.border = '1px solid #ccc';
+                
+                // Add some content
+                const content = document.createElement('div');
+                content.style.width = '100%';
+                content.style.height = '100%';
+                content.style.background = 'linear-gradient(135deg, #8b5cf6, #22d3ee)';
+                content.style.display = 'flex';
+                content.style.alignItems = 'center';
+                content.style.justifyContent = 'center';
+                content.style.color = 'white';
+                content.style.fontWeight = 'bold';
+                content.textContent = 'Test';
+                physicsEl.appendChild(content);
+                
+                // Add to DOM temporarily
+                document.body.appendChild(physicsEl);
+                
+                // Test that it's actually a ShadowPhysicsEngine instance
+                if (!(physicsEl instanceof ShadowToolkit.ShadowPhysicsEngine)) {
+                    throw new Error('Created element is not instance of ShadowPhysicsEngine');
+                }
+                
+                // Cleanup
+                document.body.removeChild(physicsEl);
+                
+                testResults.test3 = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ PASS: 2.5D Physics engine creates valid elements';
+            } catch (error) {
+                testResults.test3 = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ FAIL: ${error.message}`;
+            }
+            
+            updateOverallResult();
+        }
+        
+        // Test 4: Holographic Card
+        function runTest4() {
+            const resultDiv = document.getElementById('test4-result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                if (typeof ShadowToolkit === 'undefined' || typeof ShadowToolkit.ShadowHoloCard === 'undefined') {
+                    throw new Error('ShadowHoloCard not available');
+                }
+                
+                // Test that we can create the element
+                const holoEl = document.createElement('shadow-holo-card');
+                holoEl.style.width = '200px';
+                holoEl.style.height = '260px';
+                
+                // Add some content
+                const content = document.createElement('div');
+                content.style.width = '100%';
+                content.style.height = '100%';
+                content.style.display = 'flex';
+                content.style.flexDirection = 'column';
+                content.style.alignItems = 'center';
+                content.style.justifyContent = 'center';
+                content.style.textAlign = 'center';
+                content.style.color = 'white';
+                content.innerHTML = '<div style="font-size: 2rem; margin-bottom: 10px;">🎮</div><h4>Test</h4><p>Holographic</p>';
+                holoEl.appendChild(content);
+                
+                // Add to DOM temporarily
+                document.body.appendChild(holoEl);
+                
+                // Test that it's actually a ShadowHoloCard instance
+                if (!(holoEl instanceof ShadowToolkit.ShadowHoloCard)) {
+                    throw new Error('Created element is not instance of ShadowHoloCard');
+                }
+                
+                // Cleanup
+                document.body.removeChild(holoEl);
+                
+                testResults.test4 = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ PASS: Holographic card creates valid elements';
+            } catch (error) {
+                testResults.test4 = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ FAIL: ${error.message}`;
+            }
+            
+            updateOverallResult();
+        }
+        
+        // Test 5: Pixel Disintegration
+        function runTest5() {
+            const resultDiv = document.getElementById('test5-result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                if (typeof ShadowToolkit === 'undefined' || typeof ShadowToolkit.ShadowPixelSnap === 'undefined') {
+                    throw new Error('ShadowPixelSnap not available');
+                }
+                
+                // Test that we can create the element
+                const pixelEl = document.createElement('shadow-pixel-snap');
+                pixelEl.style.width = '200px';
+                pixelEl.style.height = '200px';
+                pixelEl.style.cursor = 'crosshair';
+                
+                // Add some content
+                const content = document.createElement('div');
+                content.style.width = '100%';
+                content.style.height = '100%';
+                content.style.display = 'flex';
+                content.style.alignItems = 'center';
+                content.style.justifyContent = 'center';
+                content.style.textAlign = 'center';
+                content.style.color = 'white';
+                content.style.fontWeight = 'bold';
+                content.style.userSelect = 'none';
+                content.textContent = 'Click Me';
+                pixelEl.appendChild(content);
+                
+                // Add to DOM temporarily
+                document.body.appendChild(pixelEl);
+                
+                // Test that it's actually a ShadowPixelSnap instance
+                if (!(pixelEl instanceof ShadowToolkit.ShadowPixelSnap)) {
+                    throw new Error('Created element is not instance of ShadowPixelSnap');
+                }
+                
+                // Cleanup
+                document.body.removeChild(pixelEl);
+                
+                testResults.test5 = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ PASS: Pixel snap engine creates valid elements';
+            } catch (error) {
+                testResults.test5 = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ FAIL: ${error.message}`;
+            }
+            
+            updateOverallResult();
+        }
+        
+        // Test 6: Scroll Reveal
+        function runTest6() {
+            const resultDiv = document.getElementById('test6-result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                if (typeof ShadowToolkit === 'undefined' || typeof ShadowToolkit.ShadowScrollReveal === 'undefined') {
+                    throw new Error('ShadowScrollReveal not available');
+                }
+                
+                // Test that we can create the element
+                const scrollEl = document.createElement('shadow-reveal');
+                scrollEl.setAttribute('animation', 'fade-up');
+                scrollEl.setAttribute('delay', '0.2');
+                
+                // Add some content
+                const content = document.createElement('div');
+                content.style.padding = '20px';
+                content.style.background = '#f0f0f0';
+                content.style.borderRadius = '8px';
+                content.textContent = 'Scroll Reveal Test';
+                scrollEl.appendChild(content);
+                
+                // Add to DOM temporarily
+                document.body.appendChild(scrollEl);
+                
+                // Test that it's actually a ShadowScrollReveal instance
+                if (!(scrollEl instanceof ShadowToolkit.ShadowScrollReveal)) {
+                    throw new Error('Created element is not instance of ShadowScrollReveal');
+                }
+                
+                // Cleanup
+                document.body.removeChild(scrollEl);
+                
+                testResults.test6 = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ PASS: Scroll reveal engine creates valid elements';
+            } catch (error) {
+                testResults.test6 = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ FAIL: ${error.message}`;
+            }
+            
+            updateOverallResult();
+        }
+        
+        // Test 7: Theme Manager
+        function runTest7() {
+            const resultDiv = document.getElementById('test7-result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                if (typeof ShadowToolkit === 'undefined' || typeof ShadowToolkit.ShadowThemeManager === 'undefined') {
+                    throw new Error('ShadowThemeManager not available');
+                }
+                
+                // Test instantiation
+                const themeManager = new ShadowToolkit.ShadowThemeManager();
+                
+                // Test getting current theme
+                const currentTheme = themeManager.getCurrentTheme();
+                if (typeof currentTheme !== 'string') {
+                    throw new Error('getCurrentTheme() did not return a string');
+                }
+                
+                // Test getting available themes
+                const availableThemes = themeManager.getAvailableThemes();
+                if (!Array.isArray(availableThemes) || availableThemes.length === 0) {
+                    throw new Error('getAvailableThemes() did not return a valid array');
+                }
+                
+                // Test applying a theme
+                const themeSelect = document.getElementById('theme-select');
+                const theme = themeSelect.value;
+                themeManager.applyTheme(theme);
+                
+                // Verify theme was applied by checking CSS variables
+                const rootStyles = getComputedStyle(document.documentElement);
+                const bgColor = rootStyles.getPropertyValue('--bg').trim();
+                
+                // Basic verification - just check that we got a value
+                if (bgColor === '') {
+                    throw new Error('CSS variables were not updated');
+                }
+                
+                testResults.test7 = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ PASS: Theme manager works (current: ${currentTheme}, applied: ${theme})`;
+            } catch (error) {
+                testResults.test7 = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ FAIL: ${error.message}`;
+            }
+            
+            updateOverallResult();
+        }
+        
+        // Test 8: NPM Package Simulation
+        function runTest8() {
+            const resultDiv = document.getElementById('test8-result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                // Simulate what would happen when importing from npm
+                // Check that our dist files exist and are accessible
+                // Since we're running locally, we'll just check that the global object has everything we need
+                
+                if (typeof ShadowToolkit === 'undefined') {
+                    throw new Error('Global ShadowToolkit object not available for npm simulation');
+                }
+                
+                // Check that we can access all the main components as would be done via npm import
+                const ShadowCursorEngine = ShadowToolkit.ShadowCursorEngine;
+                const ShadowPhysicsEngine = ShadowToolkit.ShadowPhysicsEngine;
+                const ShadowHoloCard = ShadowToolkit.ShadowHoloCard;
+                const ShadowPixelSnap = ShadowToolkit.ShadowPixelSnap;
+                const ShadowScrollReveal = ShadowToolkit.ShadowScrollReveal;
+                const ShadowThemeManager = ShadowToolkit.ShadowThemeManager;
+                
+                // Verify they're all functions/classes
+                if (typeof ShadowCursorEngine !== 'function') {
+                    throw new Error('ShadowCursorEngine is not a function');
+                }
+                if (typeof ShadowPhysicsEngine !== 'function') {
+                    throw new Error('ShadowPhysicsEngine is not a function');
+                }
+                if (typeof ShadowHoloCard !== 'function') {
+                    throw new Error('ShadowHoloCard is not a function');
+                }
+                if (typeof ShadowPixelSnap !== 'function') {
+                    throw new Error('ShadowPixelSnap is not a function');
+                }
+                if (typeof ShadowScrollReveal !== 'function') {
+                    throw new Error('ShadowScrollReveal is not a function');
+                }
+                if (typeof ShadowThemeManager !== 'function') {
+                    throw new Error('ShadowThemeManager is not a function');
+                }
+                
+                // Test that we can actually use them (basic instantiation)
+                const cursor = new ShadowCursorEngine();
+                cursor.setTheme('default');
+                cursor.destroy();
+                
+                testResults.test8 = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ PASS: NPM package structure verified';
+            } catch (error) {
+                testResults.test8 = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ FAIL: ${error.message}`;
+            }
+            
+            updateOverallResult();
+        }
+        
+        // Update overall result display
+        function updateOverallResult() {
+            const passed = Object.values(testResults).filter(Boolean).length;
+            const total = Object.keys(testResults).length;
+            const percentage = Math.round((passed / total) * 100);
+            
+            const overallDiv = document.getElementById('overall-result');
+            
+            if (passed === total) {
+                overallDiv.className = 'result success';
+                overallDiv.textContent = `🎉 ALL TESTS PASSED! (${passed}/${total})`;
+            } else if (passed >= total * 0.75) {
+                overallDiv.className = 'result info';
+                overallDiv.textContent = `✅ MOSTLY PASSED (${passed}/${total}) - ${percentage}%`;
+            } else {
+                overallDiv.className = 'result error';
+                overallDiv.textContent = `❌ SOME TESTS FAILED (${passed}/${total}) - ${percentage}%`;
+            }
+        }
+        
+        // Run all tests
+        function runAllTests() {
+            // Reset results
+            Object.keys(testResults).forEach(key => testResults[key] = false);
+            
+            // Run each test with a small delay to avoid overwhelming the browser
+            setTimeout(() => runTest1(), 100);
+            setTimeout(() => runTest2(), 300);
+            setTimeout(() => runTest3(), 500);
+            setTimeout(() => runTest4(), 700);
+            setTimeout(() => runTest5(), 900);
+            setTimeout(() => runTest6(), 1100);
+            setTimeout(() => runTest7(), 1300);
+            setTimeout(() => runTest8(), 1500);
+            
+            // Update overall result after all tests complete
+            setTimeout(updateOverallResult, 1700);
+        }
+        
+        // Initialize cursor test area
+        document.getElementById('cursor-test-area').addEventListener('mousemove', (e) => {
+            // Just to make sure the area is interactive
+            document.getElementById('cursor-test-area').style.background = '#e3f2fd';
+        });
+        
+        document.getElementById('cursor-test-area').addEventListener('mouseleave', (e) => {
+            document.getElementById('cursor-test-area').style.background = '#eee';
+        });
+        
+        // Initialize physics test area
+        const physicsArea = document.getElementById('physics-test-area');
+        const physicsContent = physicsArea.querySelector('div');
+        
+        physicsArea.addEventListener('mousemove', (e) => {
+            physicsArea.style.background = '#e3f2fd';
+            physicsContent.style.color = '#0066cc';
+        });
+        
+        physicsArea.addEventListener('mouseleave', (e) => {
+            physicsArea.style.background = '#fafafa';
+            physicsContent.style.color = '#666';
+        });
+        
+        physicsArea.addEventListener('click', (e) => {
+            physicsArea.style.background = '#ffe6e6';
+            physicsContent.style.color = '#cc0000';
+            setTimeout(() => {
+                physicsArea.style.background = '#fafafa';
+                physicsContent.style.color = '#666';
+            }, 500);
+        });
+        
+        // Initialize holo test area
+        const holoArea = document.getElementById('holo-test-area');
+        setTimeout(() => {
+            if (typeof ShadowToolkit !== 'undefined' && typeof ShadowToolkit.ShadowHoloCard !== 'undefined') {
+                const holoEl = document.createElement('shadow-holo-card');
+                holoEl.style.width = '100%';
+                holoEl.style.height = '100%';
+                
+                const content = document.createElement('div');
+                content.style.width = '100%';
+                content.style.height = '100%';
+                content.style.display = 'flex';
+                content.style.flexDirection = 'column';
+                content.style.alignItems = 'center';
+                content.style.justifyContent = 'center';
+                content.style.textAlign = 'center';
+                content.style.color = 'white';
+                content.innerHTML = '<div style="font-size: 3rem; margin-bottom: 10px;">🎮</div><h4>Premium Asset</h4><p>Exclusive holographic finish</p>';
+                holoEl.appendChild(content);
+                
+                holoArea.appendChild(holoEl);
+            } else {
+                holoArea.innerHTML = '<p style="text-align: center; line-height: 330px; color: #999;">HoloCard not available</p>';
+            }
+        }, 500);
+        
+        // Initialize pixel test area
+        const pixelArea = document.getElementById('pixel-test-area');
+        setTimeout(() => {
+            if (typeof ShadowToolkit !== 'undefined' && typeof ShadowToolkit.ShadowPixelSnap !== 'undefined') {
+                const pixelEl = document.createElement('shadow-pixel-snap');
+                pixelEl.style.width = '100%';
+                pixelEl.style.height = '100%';
+                pixelEl.style.cursor = 'crosshair';
+                
+                const content = document.createElement('div');
+                content.style.width = '100%';
+                content.style.height = '100%';
+                content.style.display = 'flex';
+                content.style.alignItems = 'center';
+                content.style.justifyContent = 'center';
+                content.style.textAlign = 'center';
+                content.style.color = 'white';
+                content.style.fontWeight = 'bold';
+                content.style.userSelect = 'none';
+                content.textContent = 'Click to Disintegrate';
+                pixelEl.appendChild(content);
+                
+                pixelArea.appendChild(pixelEl);
+            } else {
+                pixelArea.innerHTML = '<p style="text-align: center; line-height: 250px; color: #999;">PixelSnap not available</p>';
+            }
+        }, 500);
+        
+        // Initialize scroll test area
+        const scrollArea = document.getElementById('scroll-test-area');
+        setTimeout(() => {
+            if (typeof ShadowToolkit !== 'undefined' && typeof ShadowToolkit.ShadowScrollReveal !== 'undefined') {
+                // Wrap the content in a shadow-reveal element
+                const revealEl = document.createElement('shadow-reveal');
+                revealEl.setAttribute('animation', 'fade-up');
+                revealEl.setAttribute('delay', '0.2');
+                
+                const content = document.createElement('div');
+                content.style.padding = '20px';
+                content.style.background = '#f0f0f0';
+                content.style.borderRadius = '8px';
+                content.textContent = 'Scroll down to see this element animate!';
+                revealEl.appendChild(content);
+                
+                // Replace the content with the reveal element
+                scrollArea.innerHTML = '';
+                scrollArea.appendChild(revealEl);
+            } else {
+                scrollArea.innerHTML = '<p style="text-align: center; color: #999;">ScrollReveal not available</p>';
+            }
+        }, 500);
+        
+        // Initialize theme test area
+        const themeArea = document.getElementById('theme-test-area');
+        function updateThemePreview(themeName) {
+            themeArea.style.background = '#f8f9fa';
+            themeArea.innerHTML = `<p><strong>Theme:</strong> ${themeName}</p>`;
+            
+            // Apply theme temporarily for preview
+            if (window.shadowTheme) {
+                window.shadowTheme.applyTheme(themeName);
+                
+                // Reset to default after a brief moment for demo purposes
+                setTimeout(() => {
+                    window.shadowTheme.applyTheme('dark');
+                }, 2000);
+            }
+        }
+        
+        // Set initial theme preview
+        updateThemePreview('dark');
+        
+        // Update theme preview when selection changes
+        document.getElementById('theme-select').addEventListener('change', (e) => {
+            updateThemePreview(e.target.value);
+        });
+        
+        // Auto-run a quick test after page loads
+        setTimeout(() => {
+            runTest1(); // Quick check that basics work
+        }, 1000);
+    </script>
+</body>
+</html>
