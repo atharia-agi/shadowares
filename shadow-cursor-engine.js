@@ -1,6 +1,7 @@
 (function loadShadowCursorEngine() {
+    if (window.shadowCursor) return;
     const script = document.createElement("script");
-    script.type = "module";
-    script.textContent = 'import "./src/engines/shadow-cursor-engine.js";';
+    script.src = "/dist/shadow-toolkit.umd.js";
+    script.defer = true;
     document.head.appendChild(script);
 }());
