@@ -212,6 +212,7 @@ class ShadowCursorEngine {
         let idle, hover, click;
         const ct = t.cursorType || 'arrow';
 
+        // Hotspot logic: crosshair center (16,16), others top-left (4,2)
         if (ct === 'sword') {
             idle  = this.svgToURI(this.buildSwordSVG(t.fill, t.stroke, t.glow), 2, 2);
             hover = this.svgToURI(this.buildSwordSVG(t.glow, t.stroke, t.fill), 2, 2);
@@ -239,9 +240,15 @@ class ShadowCursorEngine {
         }
 
         styleEl.innerHTML = `
-            * { cursor: ${idle} !important; }
-            a, button, input, [role="button"], .hoverable, label, select, textarea, [onclick] { cursor: ${hover} !important; }
-            *:active { cursor: ${click} !important; }
+            html, body, * { cursor: ${idle} !important; }
+            a, button, input, select, textarea, [role="button"], .hoverable, [onclick] { 
+                cursor: ${hover} !important; 
+            }
+            html:active, body:active, *:active { 
+                cursor: ${click} !important; 
+            }
+            /* Menghilangkan seleksi teks biar nggak ganggu visual kursor */
+            .no-select { user-select: none; }
         `;
     }
 

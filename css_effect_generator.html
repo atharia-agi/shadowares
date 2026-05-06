@@ -63,7 +63,9 @@
     <button class="tab active" onclick="switchMode('glass')">🧊 Glassmorphism</button>
     <button class="tab" onclick="switchMode('neu')">🔘 Neumorphism</button>
     <button class="tab" onclick="switchMode('grad')">🌈 Gradient</button>
-    <button class="tab" onclick="switchMode('shadow')">🌑 Box Shadow</button>
+    <button class="tab" onclick="switchMode('anim')">✨ Animated Border</button>
+    <button class="tab" onclick="switchMode('text')">🅰️ Glow Text</button>
+    <button class="tab" onclick="switchMode('flip')">🔄 3D Flip</button>
 </div>
 
 <div class="workspace">
@@ -87,10 +89,6 @@
                 <div class="ctrl-label">Border Opacity <span id="v-glass-brd">0.2</span></div>
                 <input type="range" id="glass-brd" min="0" max="100" value="20" oninput="update()">
             </div>
-            <div class="ctrl-group">
-                <div class="ctrl-label">Border Radius <span id="v-glass-rad">20px</span></div>
-                <input type="range" id="glass-rad" min="0" max="50" value="20" oninput="update()">
-            </div>
         </div>
 
         <!-- Neumorphism controls -->
@@ -110,75 +108,80 @@
                 <div class="ctrl-label">Distance <span id="v-neu-dist">8px</span></div>
                 <input type="range" id="neu-dist" min="1" max="30" value="8" oninput="update()">
             </div>
+        </div>
+
+        <!-- Animated Border controls -->
+        <div id="ctrl-anim" class="hidden">
             <div class="ctrl-group">
-                <div class="ctrl-label">Blur <span id="v-neu-blur">16px</span></div>
-                <input type="range" id="neu-blur" min="1" max="60" value="16" oninput="update()">
+                <div class="ctrl-label">Primary Color</div>
+                <input type="color" id="anim-c1" value="#8b5cf6" oninput="update()">
             </div>
             <div class="ctrl-group">
-                <div class="ctrl-label">Border Radius <span id="v-neu-rad">20px</span></div>
-                <input type="range" id="neu-rad" min="0" max="50" value="20" oninput="update()">
+                <div class="ctrl-label">Secondary Color</div>
+                <input type="color" id="anim-c2" value="#06b6d4" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Thickness <span id="v-anim-th">3px</span></div>
+                <input type="range" id="anim-th" min="1" max="10" value="3" oninput="update()">
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Speed <span id="v-anim-sp">3s</span></div>
+                <input type="range" id="anim-sp" min="1" max="10" value="3" oninput="update()">
             </div>
         </div>
 
-        <!-- Gradient controls -->
-        <div id="ctrl-grad" class="hidden">
+        <!-- Glow Text controls -->
+        <div id="ctrl-text" class="hidden">
             <div class="ctrl-group">
-                <div class="ctrl-label">Color 1</div>
-                <input type="color" id="grad-c1" value="#8b5cf6" oninput="update()">
+                <div class="ctrl-label">Text Color</div>
+                <input type="color" id="text-color" value="#ffffff" oninput="update()">
             </div>
             <div class="ctrl-group">
-                <div class="ctrl-label">Color 2</div>
-                <input type="color" id="grad-c2" value="#06b6d4" oninput="update()">
+                <div class="ctrl-label">Glow Color</div>
+                <input type="color" id="text-glow" value="#8b5cf6" oninput="update()">
             </div>
             <div class="ctrl-group">
-                <div class="ctrl-label">Type</div>
-                <select id="grad-type" onchange="update()"><option value="linear">Linear</option><option value="radial">Radial</option><option value="conic">Conic</option></select>
-            </div>
-            <div class="ctrl-group">
-                <div class="ctrl-label">Angle <span id="v-grad-ang">135°</span></div>
-                <input type="range" id="grad-ang" min="0" max="360" value="135" oninput="update()">
-            </div>
-            <div class="ctrl-group">
-                <div class="ctrl-label">Border Radius <span id="v-grad-rad">20px</span></div>
-                <input type="range" id="grad-rad" min="0" max="50" value="20" oninput="update()">
+                <div class="ctrl-label">Glow Strength <span id="v-text-str">20px</span></div>
+                <input type="range" id="text-str" min="0" max="50" value="20" oninput="update()">
             </div>
         </div>
 
-        <!-- Box Shadow controls -->
-        <div id="ctrl-shadow" class="hidden">
+        <!-- 3D Flip controls -->
+        <div id="ctrl-flip" class="hidden">
             <div class="ctrl-group">
-                <div class="ctrl-label">Shadow Color</div>
-                <input type="color" id="shd-color" value="#8b5cf6" oninput="update()">
+                <div class="ctrl-label">Flip Direction</div>
+                <select id="flip-dir" onchange="update()">
+                    <option value="horizontal">Horizontal</option>
+                    <option value="vertical">Vertical</option>
+                </select>
             </div>
             <div class="ctrl-group">
-                <div class="ctrl-label">X Offset <span id="v-shd-x">0px</span></div>
-                <input type="range" id="shd-x" min="-50" max="50" value="0" oninput="update()">
+                <div class="ctrl-label">Perspective <span id="v-flip-pers">1000px</span></div>
+                <input type="range" id="flip-pers" min="500" max="2000" value="1000" oninput="update()">
             </div>
-            <div class="ctrl-group">
-                <div class="ctrl-label">Y Offset <span id="v-shd-y">20px</span></div>
-                <input type="range" id="shd-y" min="-50" max="50" value="20" oninput="update()">
-            </div>
-            <div class="ctrl-group">
-                <div class="ctrl-label">Blur <span id="v-shd-blur">40px</span></div>
-                <input type="range" id="shd-blur" min="0" max="100" value="40" oninput="update()">
-            </div>
-            <div class="ctrl-group">
-                <div class="ctrl-label">Spread <span id="v-shd-spread">0px</span></div>
-                <input type="range" id="shd-spread" min="-30" max="30" value="0" oninput="update()">
-            </div>
-            <div class="ctrl-group">
-                <div class="ctrl-label">Opacity <span id="v-shd-op">0.4</span></div>
-                <input type="range" id="shd-op" min="0" max="100" value="40" oninput="update()">
-            </div>
-            <div class="ctrl-group">
-                <div class="ctrl-label">Border Radius <span id="v-shd-rad">20px</span></div>
-                <input type="range" id="shd-rad" min="0" max="50" value="20" oninput="update()">
-            </div>
+        </div>
+
+        <!-- Common (Radius) -->
+        <div class="ctrl-group" style="border-top:1px solid #1e293b; padding-top:15px; margin-top:15px;">
+            <div class="ctrl-label">Border Radius <span id="v-rad">20px</span></div>
+            <input type="range" id="glob-rad" min="0" max="60" value="20" oninput="update()">
         </div>
     </div>
 
     <!-- Preview + Code -->
     <div class="panel preview-area" id="preview-area">
+        <!-- Special wrapper for flip -->
+        <div id="flip-wrapper" style="perspective: 1000px; display:none;">
+            <div id="flip-inner" style="width:280px; height:200px; transition: 0.6s; transform-style: preserve-3d; position: relative;">
+                <div id="flip-front" class="preview-card" style="position: absolute; inset:0; backface-visibility: hidden;">
+                    <h3>Front Side</h3><p>Hover me to flip!</p>
+                </div>
+                <div id="flip-back" class="preview-card" style="position: absolute; inset:0; backface-visibility: hidden; transform: rotateY(180deg);">
+                    <h3>Back Side</h3><p>Ultimate 3D Effect</p>
+                </div>
+            </div>
+        </div>
+
         <div class="preview-card" id="preview-card">
             <h3>Preview Card</h3>
             <p>Geser slider untuk melihat perubahan live.</p>
@@ -198,9 +201,15 @@
 
     function switchMode(m) {
         mode = m;
-        document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['glass','neu','grad','shadow'][i]===m));
+        const tabs = ['glass','neu','grad','anim','text','flip'];
+        document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabs[i]===m));
         document.querySelectorAll('[id^="ctrl-"]').forEach(el => el.classList.add('hidden'));
         document.getElementById('ctrl-'+m).classList.remove('hidden');
+        
+        // Toggle preview visibility
+        document.getElementById('preview-card').style.display = (m === 'flip') ? 'none' : 'flex';
+        document.getElementById('flip-wrapper').style.display = (m === 'flip') ? 'block' : 'none';
+        
         update();
     }
 
@@ -209,18 +218,13 @@
         return {r,g,b};
     }
 
-    function adjustBrightness(hex, pct) {
-        let {r,g,b} = hexToRGB(hex);
-        r = Math.min(255, Math.max(0, Math.round(r + (255*pct))));
-        g = Math.min(255, Math.max(0, Math.round(g + (255*pct))));
-        b = Math.min(255, Math.max(0, Math.round(b + (255*pct))));
-        return `rgb(${r},${g},${b})`;
-    }
-
     function update() {
         const card = document.getElementById('preview-card');
         const area = document.getElementById('preview-area');
         const codeEl = document.getElementById('code-text');
+        const rad = document.getElementById('glob-rad').value + 'px';
+        document.getElementById('v-rad').textContent = rad;
+        
         let css = '';
 
         if (mode === 'glass') {
@@ -228,106 +232,102 @@
             const op = document.getElementById('glass-op').value / 100;
             const blur = document.getElementById('glass-blur').value;
             const brd = document.getElementById('glass-brd').value / 100;
-            const rad = document.getElementById('glass-rad').value;
             const {r,g,b} = hexToRGB(bg);
 
             document.getElementById('v-glass-op').textContent = op.toFixed(2);
             document.getElementById('v-glass-blur').textContent = blur+'px';
             document.getElementById('v-glass-brd').textContent = brd.toFixed(2);
-            document.getElementById('v-glass-rad').textContent = rad+'px';
 
             card.style.cssText = `
                 background: rgba(${r},${g},${b},${op});
                 backdrop-filter: blur(${blur}px);
                 -webkit-backdrop-filter: blur(${blur}px);
                 border: 1px solid rgba(255,255,255,${brd});
-                border-radius: ${rad}px;
+                border-radius: ${rad};
                 box-shadow: 0 8px 32px rgba(0,0,0,0.3);
                 color: #fff;
             `;
-            card.querySelector('h3').style.color = '#fff';
-            area.style.background = `linear-gradient(135deg, #667eea, #764ba2)`;
-
-            css = `.glass-card {\n  background: rgba(${r},${g},${b},${op});\n  backdrop-filter: blur(${blur}px);\n  -webkit-backdrop-filter: blur(${blur}px);\n  border: 1px solid rgba(255,255,255,${brd});\n  border-radius: ${rad}px;\n  box-shadow: 0 8px 32px rgba(0,0,0,0.3);\n}`;
+            css = `.glass-card {\n  background: rgba(${r},${g},${b},${op});\n  backdrop-filter: blur(${blur}px);\n  border: 1px solid rgba(255,255,255,${brd});\n  border-radius: ${rad};\n}`;
         }
         else if (mode === 'neu') {
             const bg = document.getElementById('neu-bg').value;
             const style = document.getElementById('neu-style').value;
             const dist = document.getElementById('neu-dist').value;
-            const blur = document.getElementById('neu-blur').value;
-            const rad = document.getElementById('neu-rad').value;
-
+            const {r,g,b} = hexToRGB(bg);
+            
             document.getElementById('v-neu-dist').textContent = dist+'px';
-            document.getElementById('v-neu-blur').textContent = blur+'px';
-            document.getElementById('v-neu-rad').textContent = rad+'px';
-
-            const light = adjustBrightness(bg, 0.12);
-            const dark = adjustBrightness(bg, -0.12);
-            let shadow, gradient;
-
-            if (style==='flat') { shadow = `${dist}px ${dist}px ${blur}px ${dark}, -${dist}px -${dist}px ${blur}px ${light}`; gradient = bg; }
-            else if (style==='concave') { shadow = `${dist}px ${dist}px ${blur}px ${dark}, -${dist}px -${dist}px ${blur}px ${light}`; gradient = `linear-gradient(145deg, ${adjustBrightness(bg,-0.05)}, ${adjustBrightness(bg,0.05)})`; }
-            else if (style==='convex') { shadow = `${dist}px ${dist}px ${blur}px ${dark}, -${dist}px -${dist}px ${blur}px ${light}`; gradient = `linear-gradient(145deg, ${adjustBrightness(bg,0.05)}, ${adjustBrightness(bg,-0.05)})`; }
-            else { shadow = `inset ${dist}px ${dist}px ${blur}px ${dark}, inset -${dist}px -${dist}px ${blur}px ${light}`; gradient = bg; }
-
-            card.style.cssText = `background: ${gradient}; box-shadow: ${shadow}; border-radius: ${rad}px; border:none; color:#94a3b8;`;
-            card.querySelector('h3').style.color = '#e2e8f0';
+            const light = `rgba(${Math.min(255,r+30)},${Math.min(255,g+30)},${Math.min(255,b+30)},0.5)`;
+            const dark = `rgba(${Math.max(0,r-40)},${Math.max(0,g-40)},${Math.max(0,b-40)},0.5)`;
+            
+            let shadow = `${dist}px ${dist}px ${dist*2}px ${dark}, -${dist}px -${dist}px ${dist*2}px ${light}`;
+            if(style === 'pressed') shadow = `inset ${dist}px ${dist}px ${dist*2}px ${dark}, inset -${dist}px -${dist}px ${dist*2}px ${light}`;
+            
+            card.style.cssText = `background: ${bg}; box-shadow: ${shadow}; border-radius: ${rad}; border:none; color:#94a3b8;`;
             area.style.background = bg;
-
-            css = `.neu-card {\n  background: ${gradient};\n  box-shadow: ${shadow};\n  border-radius: ${rad}px;\n}`;
+            css = `.neu-card {\n  background: ${bg};\n  box-shadow: ${shadow};\n  border-radius: ${rad};\n}`;
         }
-        else if (mode === 'grad') {
-            const c1 = document.getElementById('grad-c1').value;
-            const c2 = document.getElementById('grad-c2').value;
-            const type = document.getElementById('grad-type').value;
-            const ang = document.getElementById('grad-ang').value;
-            const rad = document.getElementById('grad-rad').value;
-
-            document.getElementById('v-grad-ang').textContent = ang+'°';
-            document.getElementById('v-grad-rad').textContent = rad+'px';
-
-            let grad;
-            if (type==='linear') grad = `linear-gradient(${ang}deg, ${c1}, ${c2})`;
-            else if (type==='radial') grad = `radial-gradient(circle, ${c1}, ${c2})`;
-            else grad = `conic-gradient(from ${ang}deg, ${c1}, ${c2}, ${c1})`;
-
-            card.style.cssText = `background: ${grad}; border-radius: ${rad}px; border:none; color:#fff; box-shadow: 0 10px 40px rgba(0,0,0,0.3);`;
-            card.querySelector('h3').style.color = '#fff';
-            area.style.background = '';
-            area.style.backgroundImage = 'linear-gradient(45deg,#1a1a2e 25%,transparent 25%),linear-gradient(-45deg,#1a1a2e 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1a1a2e 75%),linear-gradient(-45deg,transparent 75%,#1a1a2e 75%)';
-
-            css = `.gradient-card {\n  background: ${grad};\n  border-radius: ${rad}px;\n}`;
+        else if (mode === 'anim') {
+            const c1 = document.getElementById('anim-c1').value;
+            const c2 = document.getElementById('anim-c2').value;
+            const th = document.getElementById('anim-th').value;
+            const sp = document.getElementById('anim-sp').value;
+            
+            document.getElementById('v-anim-th').textContent = th+'px';
+            document.getElementById('v-anim-sp').textContent = sp+'s';
+            
+            card.style.cssText = `
+                position: relative; background: #0f172a; border-radius: ${rad}; padding: ${th}px; overflow: hidden; border:none;
+            `;
+            card.innerHTML = `<div style="position:absolute; inset: -100%; background: conic-gradient(${c1}, ${c2}, ${c1}); animation: spin ${sp}s linear infinite;"></div>
+                              <div style="position:relative; background:#0f172a; width:100%; height:100%; border-radius: calc(${rad} - ${th}px); display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                                <h3>Animated Border</h3><p>Pure CSS Logic</p>
+                              </div>`;
+            
+            css = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }\n\n.anim-border {\n  position: relative;\n  overflow: hidden;\n  padding: ${th}px;\n}\n.anim-border::before {\n  content: '';\n  position: absolute;\n  inset: -100%;\n  background: conic-gradient(${c1}, ${c2}, ${c1});\n  animation: spin ${sp}s linear infinite;\n}`;
         }
-        else if (mode === 'shadow') {
-            const color = document.getElementById('shd-color').value;
-            const x = document.getElementById('shd-x').value;
-            const y = document.getElementById('shd-y').value;
-            const blur = document.getElementById('shd-blur').value;
-            const spread = document.getElementById('shd-spread').value;
-            const op = document.getElementById('shd-op').value / 100;
-            const rad = document.getElementById('shd-rad').value;
-            const {r,g,b} = hexToRGB(color);
-
-            document.getElementById('v-shd-x').textContent = x+'px';
-            document.getElementById('v-shd-y').textContent = y+'px';
-            document.getElementById('v-shd-blur').textContent = blur+'px';
-            document.getElementById('v-shd-spread').textContent = spread+'px';
-            document.getElementById('v-shd-op').textContent = op.toFixed(2);
-            document.getElementById('v-shd-rad').textContent = rad+'px';
-
-            const shadow = `${x}px ${y}px ${blur}px ${spread}px rgba(${r},${g},${b},${op})`;
-            card.style.cssText = `background: #1e293b; box-shadow: ${shadow}; border-radius: ${rad}px; border:none; color:#e2e8f0;`;
-            card.querySelector('h3').style.color = '#e2e8f0';
-            area.style.background = '#0f172a';
-
-            css = `.shadow-card {\n  background: #1e293b;\n  box-shadow: ${shadow};\n  border-radius: ${rad}px;\n}`;
+        else if (mode === 'text') {
+            const color = document.getElementById('text-color').value;
+            const glow = document.getElementById('text-glow').value;
+            const str = document.getElementById('text-str').value;
+            
+            document.getElementById('v-text-str').textContent = str+'px';
+            
+            card.style.cssText = `background: #07080f; border-radius: ${rad}; border: 1px solid #1e293b;`;
+            card.innerHTML = `<h3 style="color:${color}; text-shadow: 0 0 ${str}px ${glow}, 0 0 ${str*2}px ${glow}; font-size: 2rem;">GLOWING</h3>`;
+            
+            css = `.glow-text {\n  color: ${color};\n  text-shadow: 0 0 ${str}px ${glow}, 0 0 ${str*2}px ${glow};\n}`;
+        }
+        else if (mode === 'flip') {
+            const dir = document.getElementById('flip-dir').value;
+            const pers = document.getElementById('flip-pers').value;
+            
+            document.getElementById('v-flip-pers').textContent = pers+'px';
+            document.getElementById('flip-wrapper').style.perspective = pers + 'px';
+            
+            const inner = document.getElementById('flip-inner');
+            const back = document.getElementById('flip-back');
+            
+            if(dir === 'vertical') {
+                back.style.transform = 'rotateX(180deg)';
+                inner.onmouseover = () => inner.style.transform = 'rotateX(180deg)';
+            } else {
+                back.style.transform = 'rotateY(180deg)';
+                inner.onmouseover = () => inner.style.transform = 'rotateY(180deg)';
+            }
+            inner.onmouseout = () => inner.style.transform = 'rotate(0deg)';
+            
+            css = `.flip-card { perspective: ${pers}px; }\n.flip-inner { transition: 0.6s; transform-style: preserve-3d; }\n.flip-card:hover .flip-inner { transform: ${dir==='vertical'?'rotateX(180deg)':'rotateY(180deg)'}; }`;
         }
 
         codeEl.textContent = css;
     }
 
-    // Init
-    update();
+    // Add Keyframes to document for animated border
+    const style = document.createElement('style');
+    style.innerHTML = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+    document.head.appendChild(style);
+
+    switchMode('glass');
 </script>
 
 </body>
