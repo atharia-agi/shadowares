@@ -199,6 +199,7 @@
     gamingKeys.forEach(k => makeCard(k, themes[k], document.getElementById('grid-gaming')));
 
     function activate(key) {
+        console.log(`Activating theme: ${key}`);
         document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
         document.getElementById(`card-${key}`).classList.add('active');
         shadowCursor.setTheme(key);
@@ -209,7 +210,10 @@
         // --- GLOBAL SYNC: Notify Parent (Dashboard) to update its cursor too! ---
         // Only send message if we're embedded in an iframe and parent is different
         if (window.parent !== window) {
+            console.log(`Sending message to parent: shadow-cursor-set-theme, ${key}`);
             window.parent.postMessage({ type: 'shadow-cursor-set-theme', theme: key }, '*');
+        } else {
+            console.log('Not sending message - not in iframe');
         }
     }
 
