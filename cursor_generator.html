@@ -244,14 +244,14 @@
     // Copy code button functionality
     document.getElementById('copyCodeBtn').addEventListener('click', async () => {
         const code = `<!-- Put this in your HTML -->
-<script src="shadow-cursor-engine.js"></script>
+<script src="shadow-cursor-engine.js"><\/script>
 
 <!-- Select theme -->
 <script>
   shadowCursor.setTheme('${allThemeKeys[currentThemeIndex]}');
   // Theme: warteg, warkop, bengkel, salon, pasar, tech,
   //        minecraft, fps, rpg, retro, racing, default
-</script>`;
+<\/script>`;
         
         try {
             await navigator.clipboard.writeText(code);
