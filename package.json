@@ -6,6 +6,7 @@
   "module": "dist/shadow-toolkit.esm.js",
   "browser": "dist/shadow-toolkit.umd.js",
   "types": "dist/index.d.ts",
+  "type": "module",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
@@ -45,8 +46,9 @@
     "@rollup/plugin-babel": "^6.0.0",
     "@rollup/plugin-commonjs": "^24.0.0",
     "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-terser": "^7.0.2",
     "rollup": "^3.10.0",
-    "rollup-plugin-terser": "^7.0.2",
     "jsdoc": "^4.0.0"
   }
+}
 }
