@@ -191,12 +191,12 @@ canvas.main-canvas{background:#fff;border-radius:8px;cursor:crosshair;display:bl
 
       <!-- Action Bar -->
       <div class="action-bar" id="actionBar" style="display:none">
-        <button class="btn btn-primary" onclick="SM.exportSheet()">📦 Export Sheet</button>
-        <button class="btn btn-primary" onclick="SM.exportStrip()">📊 Export Strip</button>
-        <button class="btn btn-accent" onclick="SM.exportIndividual()">💾 Individual PNGs</button>
-        <button class="btn btn-secondary" onclick="SM.copySheetToClipboard()">📋 Copy to Clipboard</button>
-        <button class="btn btn-secondary" onclick="SM.exportJSON()">📋 Sprite Data JSON</button>
-        <button class="btn btn-danger" onclick="SM.copyDataURIs()">📋 Copy Data URIs</button>
+        <button class="btn btn-primary" onclick="SM.exportSheet()" title="Export as sprite sheet PNG">📦 Export Sheet</button>
+        <button class="btn btn-primary" onclick="SM.exportStrip()" title="Export as sprite strip PNG">📊 Export Strip</button>
+        <button class="btn btn-accent" onclick="SM.exportAllIndividual()" title="Download all sprites as individual PNGs">💾 All PNGs</button>
+        <button class="btn btn-secondary" onclick="SM.copySheetToClipboard()" title="Copy sheet to clipboard">📋 Copy Sheet</button>
+        <button class="btn btn-secondary" onclick="SM.exportJSON()" title="Copy sprite data JSON">📋 JSON Data</button>
+        <button class="btn btn-secondary" onclick="SM.copyDataURIs()" title="Copy all data URIs">🖼️ Copy Data URIs</button>
       </div>
 
       <!-- Sprite Grid -->
@@ -252,10 +252,10 @@ canvas.main-canvas{background:#fff;border-radius:8px;cursor:crosshair;display:bl
 
 <script>
 /* ============================================
-   SPRITE MAPPER v5.0 — MAX LEVEL
-   Flood fill extraction, grid slicing,
-   sprite sheet packing, multi-format export
-   ============================================ */
+    SPRITE MAPPER v5.2.0 — MAX LEVEL
+    Flood fill extraction, grid slicing,
+    sprite sheet packing, multi-format export
+    ============================================ */
 
 const SM = {
   canvas: null,
@@ -301,6 +301,9 @@ const SM = {
     // Keyboard shortcuts
     document.addEventListener('keydown', e => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') e.preventDefault();
+      if (e.key === 's' && e.ctrlKey) { e.preventDefault(); SM.exportSheet(); }
+      if (e.key === 'e') SM.detect();
+      if (e.key === 'r') SM.loadDemo();
     });
   },
 
@@ -488,10 +491,19 @@ const SM = {
       const cell = document.createElement('div');
       cell.className = 'output-cell';
 
+      // Thumbnail canvas — cap preview at 128px for performance
+      const maxPreview = 128;
+      const scale = Math.min(maxPreview / (sprite.w + padding * 2), maxPreview / (sprite.h + padding * 2), 1);
+      const pw = Math.round((sprite.w + padding * 2) * scale);
+      const ph = Math.round((sprite.h + padding * 2) * scale);
+
       const c = document.createElement('canvas');
       c.width = sprite.w + padding * 2;
       c.height = sprite.h + padding * 2;
+      c.style.width = pw + 'px';
+      c.style.height = ph + 'px';
       const cc = c.getContext('2d');
+      cc.imageSmoothingEnabled = false;
 
       // Transparent background
       cc.clearRect(0, 0, c.width, c.height);
@@ -499,14 +511,14 @@ const SM = {
 
       const name = `sprite_${String(i).padStart(3, '0')}`;
       cell.innerHTML = `
-        <canvas></canvas>
-        <div class="sprite-name">${name}</div>
         <div class="cell-actions">
-          <button onclick="SM.copySprite(${i})" title="Copy">📋</button>
-          <button onclick="SM.downloadSprite(${i})" title="Download">💾</button>
+          <button onclick="event.stopPropagation();SM.copySprite(${i})" title="Copy to clipboard">📋</button>
+          <button onclick="event.stopPropagation();SM.downloadSprite(${i})" title="Download PNG">💾</button>
+          <button onclick="event.stopPropagation();SM.previewSprite(${i})" title="Preview full size">🔍</button>
         </div>
+        <div class="sprite-name">${name} (${sprite.w}×${sprite.h})</div>
       `;
-      cell.querySelector('canvas').replaceWith(c);
+      cell.insertBefore(c, cell.firstChild);
       cell.onclick = () => this._selectSprite(cell, i);
       grid.appendChild(cell);
     });
@@ -528,7 +540,29 @@ const SM = {
     overlay.style.width = (s.w * scale) + 'px';
     overlay.style.height = (s.h * scale) + 'px';
     overlay.classList.add('active');
-  }
+  },
+
+  previewSprite(idx) {
+    const sprite = this.sprites[idx];
+    const c = document.createElement('canvas');
+    c.width = sprite.w; c.height = sprite.h;
+    c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0, sprite.w, sprite.h);
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:99999;cursor:pointer';
+    overlay.onclick = () => document.body.removeChild(overlay);
+
+    const img = document.createElement('img');
+    img.src = c.toDataURL('image/png');
+    img.style.cssText = 'max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.5);image-rendering:pixelated';
+
+    const close = document.createElement('div');
+    close.textContent = '✕ Close (click anywhere)';
+    close.style.cssText = 'position:absolute;top:16px;right:20px;color:#fff;font-size:1rem;font-family:inherit;cursor:pointer';
+    overlay.appendChild(close);
+    overlay.appendChild(img);
+    document.body.appendChild(overlay);
+  },
 
   // ===== EXPORT FUNCTIONS =====
 
@@ -616,6 +650,21 @@ const SM = {
       this._downloadCanvas(c, 'sprite_0000.png');
       this.toast('💾 First sprite downloaded (add JSZip for batch)');
     }
+  }
+
+  exportAllIndividual() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+
+    this.sprites.forEach((sprite, i) => {
+      const c = document.createElement('canvas');
+      c.width = sprite.w; c.height = sprite.h;
+      c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+      const link = document.createElement('a');
+      link.download = `sprite_${String(i).padStart(4,'0')}.png`;
+      link.href = c.toDataURL('image/png');
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    });
+    this.toast(`💾 ${this.sprites.length} sprites downloaded individually!`);
   }
 
   copySprite(idx) {
@@ -819,6 +868,10 @@ const SM = {
     c.width = sprite.w; c.height = sprite.h;
     c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
     return c.toDataURL('image/png');
+  }
+
+  _dataURLToBase64(dataUrl) {
+    return dataUrl.split(',')[1];
   }
 
   _downloadCanvas(c, name) {

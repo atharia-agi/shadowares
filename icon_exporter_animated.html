@@ -145,10 +145,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
       <button class="btn btn-secondary" onclick="AI.onionSkinToggle()" style="width:100%;margin-bottom:16px">🧅 Onion Skin</button>
 
       <button class="btn btn-primary" onclick="AI.playPreview()" style="width:100%;margin-bottom:6px" id="playPreviewBtn">▶️ Play Preview</button>
-      <button class="btn btn-accent" onclick="AI.exportGIF()" style="width:100%">📦 Export GIF</button>
-      <button class="btn btn-primary" onclick="AI.exportWebM()" style="width:100%;margin-top:6px">📦 Export WebM</button>
-      <button class="btn btn-secondary" onclick="AI.exportSpriteSheet()" style="width:100%;margin-top:6px">📊 Export Sprite Sheet</button>
-      <button class="btn btn-secondary" onclick="AI.exportCSS()" style="width:100%;margin-top:6px">📋 Copy CSS Keyframes</button>
+      <button class="btn btn-accent" onclick="AI.exportGIF()" style="width:100%" title="Export all frames as animated GIF">📦 Export GIF</button>
+      <button class="btn btn-primary" onclick="AI.exportWebM()" style="width:100%;margin-top:6px" title="Export all frames as WebM video">📦 Export WebM</button>
+      <button class="btn btn-secondary" onclick="AI.exportSpriteSheet()" style="width:100%;margin-top:6px" title="Export as sprite sheet PNG">📊 Export Sprite Sheet</button>
+      <button class="btn btn-secondary" onclick="AI.exportAllFrames()" style="width:100%;margin-top:6px" title="Download all frames as individual PNGs">📸 Download All Frames</button>
+      <button class="btn btn-secondary" onclick="AI.exportCSS()" style="width:100%;margin-top:6px" title="Copy CSS @keyframes to clipboard">📋 Copy CSS Keyframes</button>
+      <button class="btn btn-secondary" onclick="AI.exportSelectedFrame()" style="width:100%;margin-top:6px" title="Download current frame only">📷 Download Current Frame</button>
     </div>
 
     <!-- Main -->
@@ -186,6 +188,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         <button class="btn btn-secondary" onclick="AI.copyToClipboard()">📋 Copy Canvas to Clipboard</button>
         <button class="btn btn-danger" onclick="AI.downloadPNG()">💾 Download PNG</button>
         <button class="btn btn-accent" onclick="AI.exportData()">🔗 Copy Data URL</button>
+        <button class="btn btn-secondary" onclick="AI.exportAllFrames()" title="Download all frames as PNGs">📸 All Frames PNG</button>
+        <button class="btn btn-secondary" onclick="AI.exportSelectedFrame()" title="Download current frame">📷 Current Frame PNG</button>
       </div>
     </div>
   </div>
@@ -195,9 +199,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <script>
 /* ============================================
-   ANIMATED ICON EXPORTER v5.0 — MAX LEVEL
-   Full pixel editor with animation timeline
-   ============================================ */
+    ANIMATED ICON EXPORTER v5.2.0 — MAX LEVEL
+    Full pixel editor with animation timeline
+    ============================================ */
 
 const AI = {
   canvas: null,
@@ -603,52 +607,112 @@ const AI = {
     this.toast('💾 PNG downloaded!');
   },
 
+  exportSelectedFrame() {
+    const link = document.createElement('a');
+    link.download = `icon-${this.size}px-frame${this.currentFrame + 1}.png`;
+    link.href = this.canvas.toDataURL('image/png');
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    this.toast(`💾 Frame ${this.currentFrame + 1} downloaded!`);
+  },
+
+  exportAllFrames() {
+    if (this.frames.length === 0) { this.toast('⚠️ No frames!'); return; }
+    this.frames.forEach((data, i) => {
+      const link = document.createElement('a');
+      link.download = `icon-${this.size}px-frame${String(i + 1).padStart(3, '0')}.png`;
+      link.href = data;
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    });
+    this.toast(`💾 ${this.frames.length} frames downloaded!`);
+  },
+
   exportGIF() {
-    // Generate GIF using canvas-based approach (no external lib)
-    // For true GIF encoding, we use a simple LZW-free approach via data URLs
-    this.toast('⏳ Generating GIF...');
-    setTimeout(() => {
-      // Create animated GIF using simple approach
-      const gifData = this._createGIF();
-      const blob = this._base64toBlob(gifData, 'image/gif');
-      this._downloadBlob(blob, `animated-icon-${this.size}x${this.size}.gif`);
-    }, 500);
+    if (this.frames.length === 0) { this.toast('⚠️ No frames!'); return; }
+    this.toast('⏳ Generating GIF…');
+    setTimeout(async () => {
+      try {
+        const gifData = await this._createGIF();
+        if (gifData) {
+          const blob = this._base64toBlob(gifData, 'image/gif');
+          this._downloadBlob(blob, `animated-icon-${this.size}x${this.size}.gif`);
+          this.toast(`✅ GIF exported! (${this.frames.length} frames)`);
+        } else {
+          this.toast('⚠️ GIF encoding failed, trying WebM instead');
+          this.exportWebM();
+        }
+      } catch (e) {
+        this.toast('⚠️ GIF export failed, trying WebM…');
+        this.exportWebM();
+      }
+    }, 300);
   },
 
   exportWebM() {
-    this.toast('⏳ Generating WebM video...');
+    if (this.frames.length < 2) { this.toast('⚠️ Need at least 2 frames for video'); return; }
+    this.toast('⏳ Generating WebM video…');
     const fps = parseInt(document.getElementById('fps').value);
-    const totalFrames = parseInt(document.getElementById('frameCount').value) || this.frames.length;
-
-    // Use MediaRecorder approach or fall back to canvas sequence
     const chunks = [];
-    const mediaRecorder = new MediaRecorder(this._canvasStream(), { mimeType: 'video/webm;codecs=vp9' });
+    const stream = this.canvas.captureStream(fps);
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
 
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     mediaRecorder.onstop = () => {
       const blob = new Blob(chunks, { type: 'video/webm' });
       this._downloadBlob(blob, `animation-${this.size}x${this.size}.webm`);
-      this.toast(`✅ WebM exported! (${chunks.length} frames)`);
+      this.toast(`✅ WebM exported! (${this.frames.length} frames)`);
     };
 
     mediaRecorder.start();
     let frame = 0;
-    const interval = setInterval(() => {
+    const renderNext = () => {
       if (frame < this.frames.length) {
         const img = new Image();
-        img.onload = () => { this.ctx.clearRect(0, 0, this.size, this.size); this.ctx.drawImage(img, 0, 0); };
+        img.onload = () => {
+          this.ctx.clearRect(0, 0, this.size, this.size);
+          this.ctx.drawImage(img, 0, 0);
+          frame++;
+          setTimeout(renderNext, 0);
+        };
         img.src = this.frames[frame];
-        frame++;
       } else {
-        clearInterval(interval);
-        mediaRecorder.stop();
+        setTimeout(() => mediaRecorder.stop(), 100);
       }
-    }, 1000 / fps);
-  },
+    };
+    renderNext();
+},
 
-  _canvasStream() {
-    // Create canvas capture stream
-    return this.canvas.captureStream(parseInt(document.getElementById('fps').value));
+  exportWebM() {
+    if (this.frames.length < 2) { this.toast('⚠️ Need at least 2 frames for video'); return; }
+    this.toast('⏳ Generating WebM video…');
+    const fps = parseInt(document.getElementById('fps').value);
+    const chunks = [];
+    const stream = this.canvas.captureStream(fps);
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      this._downloadBlob(blob, `animation-${this.size}x${this.size}.webm`);
+      this.toast(`✅ WebM exported! (${this.frames.length} frames)`);
+    };
+
+    mediaRecorder.start();
+    let frame = 0;
+    const renderNext = () => {
+      if (frame < this.frames.length) {
+        const img = new Image();
+        img.onload = () => {
+          this.ctx.clearRect(0, 0, this.size, this.size);
+          this.ctx.drawImage(img, 0, 0);
+          frame++;
+          setTimeout(renderNext, 0);
+        };
+        img.src = this.frames[frame];
+      } else {
+        setTimeout(() => mediaRecorder.stop(), 100);
+      }
+    };
+    renderNext();
   },
 
   exportSpriteSheet() {
@@ -659,16 +723,6 @@ const AI = {
     sheet.height = rows * this.size;
     const ctx = sheet.getContext('2d');
 
-    this.frames.forEach((data, i) => {
-      const img = new Image();
-      img.src = data;
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      // Synchronous drawing won't work with async image load
-      // So we use a promise approach
-    });
-
-    // Better approach: wait for all images
     Promise.all(this.frames.map(src => {
       return new Promise(resolve => {
         const img = new Image();
@@ -758,19 +812,222 @@ ${this.frames.map((_, i) => `.frame-${this.size}p.f${i} {
 
   // ===== UTILITIES =====
 
-  _createGIF() {
-    // Simple GIF89a encoder (basic)
-    // For production, use gif.js library
-    // This creates a simple single-frame GIF as fallback
-    const gif = this._encodeGIF(this.frames, this.size, this.size);
-    return gif || this.frames[0]; // Fallback to first frame data URL
-  },
+_createGIF() {
+     if (!this.frames.length) return Promise.resolve(null);
+     const w = this.size, h = this.size;
+     const fps = parseInt(document.getElementById('fps').value) || 10;
 
-  _encodeGIF(frames, w, h) {
-    // Placeholder — in production, integrate gif.js
-    this.toast('ℹ️ GIF encoding: Add gif.js for full GIF support');
-    return null;
-  },
+     // Load all frames into ImageData objects (async)
+     return Promise.all(this.frames.map(src => {
+       return new Promise(resolve => {
+         const c = document.createElement('canvas');
+         c.width = w; c.height = h;
+         const ctx = c.getContext('2d');
+         const img = new Image();
+         img.onload = () => { ctx.drawImage(img, 0, 0, w, h); resolve(ctx.getImageData(0, 0, w, h)); };
+         img.onerror = () => resolve(null);
+         img.src = src;
+       });
+     })).then(frames => {
+       frames = frames.filter(Boolean);
+       if (!frames.length) return null;
+       const delay = Math.round(100 / fps);
+       return this._encodeGIF(frames, w, h, delay);
+     });
+   },
+
+   _encodeGIF(frames, w, h, delay) {
+     // GIF89a encoder with LZW compression
+     const colorDepth = 8;
+     const colorTableSize = 256;
+     const header = ['GIF89a'];
+
+     // Build global color table from first frame
+     const pixels = frames[0].data;
+     const palette = this._buildPalette(pixels, colorTableSize);
+
+     // Logical Screen Descriptor
+     header.push(
+       this._writeShort(w),
+       this._writeShort(h),
+       String.fromCharCode(0xF0 | (colorDepth - 1)), // packed: global CT, color depth
+       0, // background color index
+       0  // pixel aspect ratio
+     );
+
+     // Global Color Table
+     for (let i = 0; i < palette.length; i++) {
+       header.push(String.fromCharCode(palette[i][0], palette[i][1], palette[i][2]));
+     }
+     // Pad palette to 2^colorDepth
+     const palSize = 1 << colorDepth;
+     for (let i = palette.length; i < palSize; i++) {
+       header.push('\x00\x00\x00');
+     }
+
+     // Graphics Control Extension (for delay and transparency)
+     if (frames.length > 1) {
+       header.push(
+         '!', String.fromCharCode(0xF9), // extension introducer + GCE label
+         String.fromCharCode(4), // block size
+         String.fromCharCode(0x04), // packed: disposal method (restore to bg)
+         this._writeShort(delay), // delay time
+         0, // transparent color index (none)
+         0  // block terminator
+       );
+     }
+
+     // Application Extension for Netscape looping
+     if (frames.length > 1) {
+       header.push(
+         '!', String.fromCharCode(0xFF), // extension introducer
+         String.fromCharCode(11), // block size
+         'NETSCAPE2.0',
+         String.fromCharCode(3), // sub-block size
+         String.fromCharCode(1), // loop sub-block ID
+         this._writeShort(0), // loop count (0 = infinite)
+         0 // block terminator
+       );
+     }
+
+     // Image descriptors and LZW-compressed data for each frame
+     for (let fi = 0; fi < frames.length; fi++) {
+       const frame = frames[fi];
+       const indexed = this._indexPixels(frame.data, palette);
+
+       // Image Descriptor
+       header.push(
+         ',',
+         this._writeShort(0), // image left position
+         this._writeShort(0), // image top position
+         this._writeShort(w),
+         this._writeShort(h),
+         String.fromCharCode(0), // no local CT, no interlace, no sort, reserved, size=0
+       );
+
+       // LZW minimum code size
+       const minCodeSize = colorDepth;
+       header.push(String.fromCharCode(minCodeSize));
+
+       // LZW compress
+       const compressed = this._lzwEncode(indexed, minCodeSize + 1);
+       // Sub-blocks
+       for (let i = 0; i < compressed.length; i += 255) {
+         const block = compressed.slice(i, i + 255);
+         header.push(String.fromCharCode(block.length));
+         for (let j = 0; j < block.length; j++) {
+           header.push(String.fromCharCode(block[j]));
+         }
+       }
+       header.push('\x00'); // block terminator
+     }
+
+     // Trailer
+     header.push(';');
+     return 'data:image/gif;base64,' + btoa(header.join(''));
+   },
+
+   _buildPalette(pixels, maxColors) {
+     const colorMap = new Map();
+     for (let i = 0; i < pixels.length; i += 4) {
+       const r = Math.round(pixels[i] / 51) * 51;  // quantize to ~51 levels
+       const g = Math.round(pixels[i + 1] / 51) * 51;
+       const b = Math.round(pixels[i + 2] / 51) * 51;
+       const key = (r << 16) | (g << 8) | b;
+       if (!colorMap.has(key)) {
+         colorMap.set(key, [r, g, b]);
+         if (colorMap.size >= maxColors) break;
+       }
+     }
+     // Ensure at least 2 colors
+     if (colorMap.size < 2) colorMap.set(0, [0, 0, 0]);
+     if (colorMap.size < 2) colorMap.set(1, [255, 255, 255]);
+     return Array.from(colorMap.values());
+   },
+
+   _indexPixels(pixels, palette) {
+     const result = [];
+     for (let i = 0; i < pixels.length; i += 4) {
+       let minDist = Infinity, idx = 0;
+       for (let p = 0; p < palette.length; p++) {
+         const dr = pixels[i] - palette[p][0];
+         const dg = pixels[i + 1] - palette[p][1];
+         const db = pixels[i + 2] - palette[p][2];
+         const dist = dr * dr + dg * dg + db * db;
+         if (dist < minDist) { minDist = dist; idx = p; }
+       }
+       result.push(idx);
+     }
+     return result;
+   },
+
+   _lzwEncode(data, minCodeSize) {
+     const clearCode = 1 << minCodeSize;
+     const eoiCode = clearCode + 1;
+     const maxCode = (1 << 12) - 1;
+
+     let codeSize = minCodeSize + 1;
+     let nextCode = eoiCode + 1;
+     const dict = new Map();
+     for (let i = 0; i < clearCode; i++) dict.set(String(i), i);
+
+     const output = [];
+     let buffer = '';
+
+     const writeCode = (code) => {
+       let bits = codeSize;
+       let shift = 0;
+       while (bits > 0) {
+         if (!this._bitBuffer) this._bitBuffer = { val: 0, len: 0 };
+         const take = Math.min(bits, 8 - this._bitBuffer.len);
+         this._bitBuffer.val |= ((code >> shift) & ((1 << take) - 1)) << this._bitBuffer.len;
+         this._bitBuffer.len += take;
+         if (this._bitBuffer.len === 8) {
+           output.push(this._bitBuffer.val);
+           this._bitBuffer = { val: 0, len: 0 };
+         }
+         bits -= take;
+         shift += take;
+       }
+     };
+
+     writeCode(clearCode);
+
+     for (const pixel of data) {
+       const key = buffer + pixel;
+       if (dict.has(key)) {
+         buffer = key;
+       } else {
+         writeCode(dict.get(buffer));
+         if (nextCode <= maxCode) {
+           dict.set(key, nextCode++);
+           if (nextCode > (1 << codeSize) && codeSize < 12) codeSize++;
+         } else {
+           writeCode(clearCode);
+           dict.clear();
+           for (let i = 0; i < clearCode; i++) dict.set(String(i), i);
+           nextCode = eoiCode + 1;
+           codeSize = minCodeSize + 1;
+         }
+         buffer = String(pixel);
+       }
+     }
+
+     if (buffer) writeCode(dict.get(buffer));
+     writeCode(eoiCode);
+
+     // Flush bit buffer
+     if (this._bitBuffer && this._bitBuffer.len > 0) {
+       output.push(this._bitBuffer.val);
+     }
+     this._bitBuffer = null;
+
+     return output;
+   },
+
+   _writeShort(n) {
+     return String.fromCharCode(n & 0xFF, (n >> 8) & 0xFF);
+   },
 
   _base64toBlob(base64, type) {
     const bin = atob(base64.split(',')[1]);
