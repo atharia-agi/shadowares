@@ -606,13 +606,13 @@ downloadParams() {
      setTimeout(() => URL.revokeObjectURL(url), 1000);
    },
 
-  // Per-layer export
-  _layerGenerators = {
-    bass: { fn: (t, s, d) => this._kick(t), label: 'Kick/Bass', dur: 0.2 },
-    snare: { fn: (t, s, d) => { this._snare(t); }, label: 'Snare', dur: 0.15 },
-    hat: { fn: (t, s, d) => { this._hat(t, 0.1); }, label: 'Hi-Hat', dur: 0.1 },
-    melody: { fn: (t, s, d) => { this._melodyNote(440, s, t, false); }, label: 'Melody', dur: 0.5 },
-  };
+   // Per-layer export
+   _layerGenerators: {
+     bass: { fn: (t, s, d) => this._kick(t), label: 'Kick/Bass', dur: 0.2 },
+     snare: { fn: (t, s, d) => { this._snare(t); }, label: 'Snare', dur: 0.15 },
+     hat: { fn: (t, s, d) => { this._hat(t, 0.1); }, label: 'Hi-Hat', dur: 0.1 },
+     melody: { fn: (t, s, d) => { this._melodyNote(440, s, t, false); }, label: 'Melody', dur: 0.5 },
+   },
 
   _generateLayerWav(layerName) {
     // Render one cycle of the soundscape to an OfflineAudioContext

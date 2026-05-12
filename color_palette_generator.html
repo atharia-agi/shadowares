@@ -127,6 +127,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,san
       </div>
 
       <button class="btn btn-primary" onclick="CP.generate()" style="width:100%;margin-bottom:8px">🎲 Generate New</button>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input type="text" id="aiPalettePrompt" placeholder="AI: Describe palette (e.g. 'sunset ocean vibes')" style="flex:1;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.75rem;font-family:inherit">
+        <button class="btn btn-primary" onclick="CP.aiGenerate()" style="padding:6px 12px;font-size:.72rem;white-space:nowrap">✨ AI</button>
+      </div>
       <button class="btn btn-secondary" onclick="CP.shuffle()" style="width:100%;margin-bottom:8px">🔀 Shuffle Order</button>
       <button class="btn btn-secondary" onclick="CP.lockUnlock()" style="width:100%">🔒 Toggle Lock</button>
 
@@ -232,49 +236,53 @@ const CP = {
   },
 
   generate() {
-    if(this.locked) return;
-    const method = document.getElementById('method').value;
-    const baseColor = document.getElementById('baseColor').value;
-    const count = parseInt(document.getElementById('count').value);
-    const sat = parseInt(document.getElementById('saturation').value);
-    const light = parseInt(document.getElementById('lightness').value);
-    const [h, s, l] = this.hexToHsl(baseColor);
+    // Let go of any locked colors
+    const harmony = document.getElementById('harmony').value;
+    const base = document.getElementById('baseColor').value;
+    const count = parseInt(document.getElementById('colorCount').value);
 
-    let colors = [];
-    switch(method) {
-      case 'monochromatic':
-        for(let i=0;i<count;i++) colors.push(this.hslToHex(h, sat, Math.max(5,Math.min(95, light - 30 + (i/(count-1))*60))));
-        break;
-      case 'complementary':
-        colors.push(this.hslToHex(h, sat, l));
-        colors.push(this.hslToHex((h+180)%360, sat, l));
-        for(let i=0;i<count-2;i++) colors.push(this.hslToHex(h, sat, Math.max(10, Math.min(90, 20+(i/(count-2))*60))));
-        break;
-      case 'triadic':
-        [0,120,240].forEach(o => colors.push(this.hslToHex((h+o)%360, sat, l)));
-        for(let i=0;i<count-3;i++) colors.push(this.hslToHex((h+Math.random()*60)%360, sat, 30+Math.random()*50));
-        break;
-      case 'analogous':
-        for(let i=0;i<count;i++) colors.push(this.hslToHex((h+i*(30/(count-1?count-1:1))-15+360)%360, sat, l));
-        break;
-      case 'tetradic':
-        [0,90,180,270].forEach((o,i) => { if(i<count) colors.push(this.hslToHex((h+o)%360, sat, l)); });
-        while(colors.length<count) colors.push(this.hslToHex((Math.random()*360)%360, sat, 30+Math.random()*40));
-        break;
-      case 'split-complement':
-        colors.push(this.hslToHex(h, sat, l));
-        colors.push(this.hslToHex((h+150)%360, sat, l));
-        colors.push(this.hslToHex((h+210)%360, sat, l));
-        for(let i=0;i<count-3;i++) colors.push(this.hslToHex(h, sat, 25+(i/(count-2))*50));
-        break;
-      default: // random
-        colors = Array.from({length:count}, ()=>'#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'));
-    }
+    let colors = this._generateHarmony(base, harmony, count);
+    // Apply saturation/variation
+    const sat = parseInt(document.getElementById('saturation').value);
+    const varAmt = parseInt(document.getElementById('variation').value);
+    colors = colors.map((c, i) => this._adjustColor(c, sat, varAmt, i, colors.length));
 
     this.palette = colors;
     this.renderPalette();
-    this.addToHistory(colors);
-    this.updateCode();
+    this._saveHistory(colors);
+    this.toast('🎲 Palette generated!');
+  },
+
+  async aiGenerate() {
+    const prompt = document.getElementById('aiPalettePrompt')?.value?.trim();
+    if (!prompt) { this.toast('⚠️ Enter a palette description'); return; }
+    this.toast('🤖 Generating AI palette...');
+    try {
+      const nvidia = window.shadowStudio?._nvidia;
+      if (!nvidia?.isAvailable) {
+        // Fallback: pick a quick palette based on keywords
+        const kw = prompt.toLowerCase();
+        const qp = this.quickPalettes;
+        let match = qp.find(p => kw.includes(p.name.toLowerCase())) || qp[Math.floor(Math.random() * qp.length)];
+        this.palette = [...match.colors];
+        this.renderPalette();
+        this.toast('⚡ AI unavailable — applied matching quick palette');
+        return;
+      }
+      const res = await nvidia.prompt(
+        'You are a color palette AI. Return ONLY a JSON array of 5 hex colors that match the description. Example: ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7"]',
+        `Generate a color palette for: "${prompt}". Consider the mood and theme.`
+      );
+      const json = JSON.parse(res.match(/\[[\s\S]*\]/)?.[0] || '[]');
+      if (json.length >= 3) {
+        this.palette = json.slice(0, 8);
+        this.renderPalette();
+        this.toast('✨ AI palette generated!');
+      } else throw new Error('Invalid palette');
+    } catch(e) {
+      this.generate();
+      this.toast('⚠️ AI failed — random palette generated');
+    }
   },
 
   renderPalette() {
@@ -428,7 +436,7 @@ ${this.palette.map((c,i) => `  --color-${i+1}: ${c};`).join('\n')}
       const b = parseInt(color.slice(5,7),16);
       gpl += `${r} ${g} ${b}\tColor ${i+1}\n`;
     });
-    shadowStudio.get('utils').download('palette.gpl', gpl, 'application/x-gimp-palette');
+    shadowStudio?.get?.('utils')?.download('palette.gpl', gpl, 'application/x-gimp-palette') || this._fallbackDownload('palette.gpl', gpl, 'text/plain');
     this.toast('🖌️ GIMP palette downloaded!');
   },
 
@@ -446,7 +454,7 @@ ${this.palette.map((c,i) => `  --color-${i+1}: ${c};`).join('\n')}
     css += `  background: linear-gradient(135deg, ${this.palette.join(', ')});\n`;
     css += `}`;
 
-    shadowStudio.get('utils').download('palette.css', css, 'text/css');
+    shadowStudio?.get?.('utils')?.download('palette.css', css, 'text/css') || this._fallbackDownload('palette.css', css, 'text/css');
     this.toast('💾 CSS file downloaded!');
   },
 
@@ -511,6 +519,18 @@ ${this.palette.map((c,i) => `  --color-${i+1}: ${c};`).join('\n')}
     document.body.removeChild(ta);
   },
 
+  _fallbackDownload(filename, content, mime) {
+    const blob = new Blob([content], { type: mime || 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
+
   toast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
@@ -521,6 +541,7 @@ ${this.palette.map((c,i) => `  --color-${i+1}: ${c};`).join('\n')}
 };
 
 document.addEventListener('DOMContentLoaded', () => CP.init());
+document.getElementById('aiPalettePrompt')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') CP.aiGenerate(); });
 </script>
 </body>
 </html>

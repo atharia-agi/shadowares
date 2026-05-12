@@ -295,6 +295,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,san
           <input type="range" id="nbGlow" min="0" max="40" value="8">
         </div>
       </div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="display:flex;gap:6px">
+          <input type="text" id="aiCssPrompt" placeholder="AI: 'cyberpunk glass button'" style="flex:1;padding:6px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.72rem;font-family:inherit">
+          <button class="btn btn-primary" onclick="CE.aiGenerate()" style="padding:5px 12px;font-size:.7rem">✨ AI</button>
+        </div>
+        <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn-outline" style="padding:2px 8px;font-size:.6rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-muted);border-radius:4px;font-family:inherit" onclick="document.getElementById('aiCssPrompt').value='neon glow button';CE.aiGenerate()">Neon</button>
+          <button class="btn-outline" style="padding:2px 8px;font-size:.6rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-muted);border-radius:4px;font-family:inherit" onclick="document.getElementById('aiCssPrompt').value='glassmorphism card';CE.aiGenerate()">Glass</button>
+          <button class="btn-outline" style="padding:2px 8px;font-size:.6rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-muted);border-radius:4px;font-family:inherit" onclick="document.getElementById('aiCssPrompt').value='3D tilt hover card';CE.aiGenerate()">3D Tilt</button>
+        </div>
+      </div>
     </div>
 
     <!-- Preview -->
@@ -717,8 +728,18 @@ const CE = {
 
   async copyCSS() {
     const css = this.generateCSS();
-    await shadowStudio.get('utils').copy(css);
-    this.toast('✅ CSS copied to clipboard! Paste into your code.');
+    try {
+      await shadowStudio?.get?.('utils')?.copy(css);
+    } catch(e) {
+      // Fallback: use clipboard API directly
+      navigator.clipboard?.writeText(css).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = css; ta.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta);
+      });
+    }
+    this.toast('📋 CSS copied!');
   },
 
   async downloadPNG() {
@@ -844,7 +865,7 @@ const CE = {
 body{margin:0;padding:40px;min-height:100vh;background:#0a0b14;display:flex;align-items:center;justify-content:center;font-family:sans-serif}
 .demo{width:320px;height:180px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:700;${css.split('{').pop().replace('.glass-effect','').replace('.neon-glow','').replace('.tilt-3d','').replace('.animated-gradient','').replace('.shimmer','').replace('.pulse-effect','').replace('.deep-shadow','').replace('.frosted','').replace('.gradient-text','').replace('.neon-border','')}}
 </style></head><body><div class="${effectName.replace('-','-')} demo">${effectName}</div></body></html>`;
-    shadowStudio.get('utils').download(`${effectName}-export.html`, html, 'text/html');
+    shadowStudio?.get?.('utils')?.download(`${effectName}-export.html`, html, 'text/html') || this._fallbackDownload(`${effectName}-export.html`, html, 'text/html');
     this.toast('✅ HTML exported!');
   },
 
@@ -867,10 +888,62 @@ body{margin:0;padding:40px;min-height:100vh;background:#0a0b14;display:flex;alig
     link.download = filename;
     link.href = canvas.toDataURL('image/png');
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  },
+
+  _fallbackDownload(filename, content, mime) {
+    const blob = new Blob([content], { type: mime || 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
+
+  async aiGenerate() {
+    const prompt = document.getElementById('aiCssPrompt')?.value?.trim();
+    if (!prompt) { this.toast('⚠️ Enter a description'); return; }
+    this.toast('🤖 Generating CSS effect...');
+    const nvidia = window.shadowStudio?._nvidia;
+    const effects = ['glassmorphism','neon-glow','3d-tilt','animated-gradient','shimmer','pulse','deep-shadow','frosted-glass','gradient-text','neon-border'];
+    // Fallback: keyword-based
+    const kw = prompt.toLowerCase();
+    let match = 'neon-glow';
+    if (kw.includes('glass')||kw.includes('frost')||kw.includes('transparent')) match = 'glassmorphism';
+    else if (kw.includes('neon')||kw.includes('glow')||kw.includes('cyber')) match = 'neon-glow';
+    else if (kw.includes('tilt')||kw.includes('3d')||kw.includes('hover')) match = '3d-tilt';
+    else if (kw.includes('gradient')||kw.includes('animat')) match = 'animated-gradient';
+    else if (kw.includes('shimmer')||kw.includes('shine')) match = 'shimmer';
+    else if (kw.includes('pulse')||kw.includes('beat')) match = 'pulse';
+    else if (kw.includes('shadow')||kw.includes('depth')) match = 'deep-shadow';
+    else if (kw.includes('border')||kw.includes('outline')) match = 'neon-border';
+    
+    if (!nvidia?.isAvailable) {
+      this.applyEffect(match);
+      this.toast('⚡ AI offline — applied matching effect');
+      return;
+    }
+    try {
+      const res = await nvidia.prompt(
+        'You are a CSS effect selector AI. Given a description, return ONLY the effect ID from: ' + effects.join(', '),
+        `Which CSS effect fits: "${prompt}"? Return just one word ID.`
+      );
+      const id = (res || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+      if (effects.includes(id)) {
+        this.applyEffect(id);
+        this.toast('✨ AI selected: ' + id);
+      } else {
+        this.applyEffect(match);
+        this.toast('⚡ AI suggested unknown effect, using: ' + match);
+      }
+    } catch(e) {
+      this.applyEffect(match);
+      this.toast('⚠️ AI failed — applied: ' + match);
+    }
   }
 };
 
 document.addEventListener('DOMContentLoaded', () => CE.init());
+document.getElementById('aiCssPrompt')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') CE.aiGenerate(); });
 document.getElementById('demoBox').style.background = 'linear-gradient(135deg, rgba(124,77,255,0.3), rgba(0,229,255,0.1))';
 </script>
 </body>
