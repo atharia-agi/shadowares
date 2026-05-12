@@ -62,9 +62,56 @@
             border-radius: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
             cursor: grab; transform-style: preserve-3d;
             transition: border-color 0.3s ease;
+            overflow: hidden;
         }
         .sprite-wrapper:hover { border-color: rgba(6, 182, 212, 0.5); }
         .sprite-wrapper:active { cursor: grabbing; }
+
+        /* Sprite Action Bar */
+        .sprite-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
+        }
+        .sprite-wrapper:hover .sprite-actions { opacity: 1; }
+        .sprite-action-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .sprite-action-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+        .sprite-action-btn[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            top: 120%;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            white-space: nowrap;
+            pointer-events: none;
+        }
 
         .sprite-canvas {
             max-width: 90%; max-height: 90%; object-fit: contain;
@@ -106,8 +153,8 @@
         </p>
         
         <label class="upload-area" id="upload-label">
-            <span style="font-size: 1.2rem; color: #d1d5db; font-weight:bold;">🛸 Inject Master File (WebM/MP4) Di Sini</span>
-            <input type="file" id="file-input" accept="video/*">
+            <span style="font-size: 1.2rem; color: #d1d5db; font-weight:bold;">🛸 Drop / Pilih File (PNG/JPG/WebP + WebM/MP4)</span>
+            <input type="file" id="file-input" accept="image/*,video/webm,video/mp4" multiple>
         </label>
         
         <div id="status"></div>
@@ -175,11 +222,8 @@
     const cursorLight = document.getElementById('cursor-light');
     const exportBar = document.getElementById('export-bar');
     
-    let videoUrl = null;
-    let videoEl = document.createElement('video');
-    videoEl.muted = true;
-    videoEl.loop = true;
     let sprites = [];
+    let sources = []; // Each source: { file, mediaEl, isVideo, masterCanvas, ctx, width, height, getDist }
 
     // FIX: Pastikan browse selalu triggered
     uploadLabel.addEventListener('click', (e) => {
@@ -196,19 +240,20 @@
     });
 
     fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
         
-        uploadLabel.innerHTML = `Materi Gelap Terdeteksi: <b style="color:#22d3ee">${file.name}</b>`;
+        sources = [];
+        sprites = [];
+        resultsDiv.innerHTML = '';
+        exportBar.style.display = 'none';
+        document.getElementById('effects-panel').style.display = 'none';
+        
+        const fileNames = files.map(f => f.name).join(', ');
+        uploadLabel.innerHTML = `<b style="color:#22d3ee">${files.length} file</b> terdeteksi: ${fileNames.substring(0, 60)}${fileNames.length > 60 ? '...' : ''}`;
         document.getElementById('export-settings').style.display = 'block';
-        videoUrl = URL.createObjectURL(file);
-        videoEl.src = videoUrl;
-        
-        videoEl.onloadeddata = () => {
-            statusDiv.textContent = `Sistem siap. Resolusi ${videoEl.videoWidth}x${videoEl.videoHeight}.`;
-            btnProcess.style.display = 'inline-block';
-            exportBar.style.display = 'none';
-        };
+        statusDiv.textContent = `Memuat ${files.length} file...`;
+        btnProcess.style.display = 'inline-block';
     });
 
     // Cursor Tracking for Global Ambient Light
@@ -217,152 +262,182 @@
         cursorLight.style.top = e.clientY + 'px';
     });
 
-    btnProcess.addEventListener('click', () => {
+    btnProcess.addEventListener('click', async () => {
         btnProcess.style.display = 'none';
-        statusDiv.textContent = "Menjalankan Quantum BFS Isolation... (Sinkronisasi Frame)";
+        statusDiv.textContent = "Menjalankan Quantum BFS Isolation... (Multi-File Mode)";
         resultsDiv.innerHTML = '';
+        sprites = [];
         
-        videoEl.currentTime = 0;
-        videoEl.onseeked = () => {
-            videoEl.onseeked = null; // Biar ga ke-trigger dua kali
-            processPlayground();
-        };
-        // Trigger pencarian frame jika video masih nge-blank
-        if (videoEl.readyState >= 2) {
-            // Kadang onseeked ga jalan kalau udah di posisi 0, pancing play sebentar lalu pause
-            videoEl.play().then(() => {
-                videoEl.pause();
-                videoEl.currentTime = 0;
+        const files = Array.from(fileInput.files);
+        sources = [];
+        
+        for (const file of files) {
+            const isVideo = file.type.startsWith('video/');
+            const mediaEl = isVideo ? document.createElement('video') : new Image();
+            if (isVideo) { mediaEl.muted = true; mediaEl.loop = true; }
+            
+            const url = URL.createObjectURL(file);
+            mediaEl.src = url;
+            
+            await new Promise((resolve) => {
+                if (isVideo) {
+                    mediaEl.onloadeddata = () => resolve();
+                    mediaEl.onerror = () => resolve();
+                } else {
+                    mediaEl.onload = () => resolve();
+                    mediaEl.onerror = () => resolve();
+                }
             });
+            
+            if (isVideo && mediaEl.readyState >= 2) {
+                mediaEl.currentTime = 0;
+                await new Promise(r => { mediaEl.onseeked = () => { mediaEl.onseeked = null; r(); }; });
+            }
+            
+            sources.push({ file, mediaEl, isVideo, url });
         }
+        
+        processPlayground();
     });
 
     function processPlayground() {
-        const width = videoEl.videoWidth;
-        const height = videoEl.videoHeight;
-        
         const CORE_TOLERANCE = parseInt(document.getElementById('inp-tolerance').value);
         const FEATHER = parseInt(document.getElementById('inp-feather').value);
         const MIN_PIXELS = parseInt(document.getElementById('inp-minpx').value);
         const MERGE_DISTANCE = parseInt(document.getElementById('inp-merge').value);
         
-        const masterCanvas = document.createElement('canvas');
-        masterCanvas.width = width; masterCanvas.height = height;
-        const ctx = masterCanvas.getContext('2d', { willReadFrequently: true });
+        let globalSpriteIndex = 0;
         
-        ctx.drawImage(videoEl, 0, 0, width, height);
-        const data = ctx.getImageData(0, 0, width, height).data;
-        const bgR = data[0], bgG = data[1], bgB = data[2];
-        
-        const getDist = (r, g, b) => Math.sqrt(Math.pow(r-bgR,2) + Math.pow(g-bgG,2) + Math.pow(b-bgB,2));
-        
-        // BFS Isolation (Sama presisinya dengan exporter)
-        const mask = new Uint8Array(width * height);
-        for (let i = 0; i < data.length; i += 4) {
-            mask[i/4] = getDist(data[i], data[i+1], data[i+2]) <= (CORE_TOLERANCE + FEATHER) ? 0 : 1;
-        }
-        
-        const visited = new Uint8Array(width * height);
-        const rawBoxes = [];
-        const getIdx = (x, y) => y * width + x;
-        
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const idx = getIdx(x, y);
-                if (mask[idx] === 1 && visited[idx] === 0) {
-                    let minX = x, maxX = x, minY = y, maxY = y;
-                    const queue = [[x, y]];
-                    visited[idx] = 1;
-                    let pixelCount = 0;
-                    
-                    while (queue.length > 0) {
-                        const [cx, cy] = queue.shift();
-                        pixelCount++;
-                        if (cx < minX) minX = cx; if (cx > maxX) maxX = cx;
-                        if (cy < minY) minY = cy; if (cy > maxY) maxY = cy;
+        sources.forEach((src, srcIdx) => {
+            const width = src.isVideo ? src.mediaEl.videoWidth : src.mediaEl.width;
+            const height = src.isVideo ? src.mediaEl.videoHeight : src.mediaEl.height;
+            
+            const masterCanvas = document.createElement('canvas');
+            masterCanvas.width = width; masterCanvas.height = height;
+            const ctx = masterCanvas.getContext('2d', { willReadFrequently: true });
+            
+            ctx.drawImage(src.mediaEl, 0, 0, width, height);
+            const data = ctx.getImageData(0, 0, width, height).data;
+            const bgR = data[0], bgG = data[1], bgB = data[2];
+            
+            const getDist = (r, g, b) => Math.sqrt(Math.pow(r-bgR,2) + Math.pow(g-bgG,2) + Math.pow(b-bgB,2));
+            
+            // BFS Isolation
+            const mask = new Uint8Array(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                mask[i/4] = getDist(data[i], data[i+1], data[i+2]) <= (CORE_TOLERANCE + FEATHER) ? 0 : 1;
+            }
+            
+            const visited = new Uint8Array(width * height);
+            const rawBoxes = [];
+            const getIdx = (x, y) => y * width + x;
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = getIdx(x, y);
+                    if (mask[idx] === 1 && visited[idx] === 0) {
+                        let minX = x, maxX = x, minY = y, maxY = y;
+                        const queue = [[x, y]];
+                        visited[idx] = 1;
+                        let pixelCount = 0;
                         
-                        const neighbors = [ [cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1], [cx+1, cy+1], [cx-1, cy-1], [cx+1, cy-1], [cx-1, cy+1] ];
-                        for (const [nx, ny] of neighbors) {
-                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                                const nIdx = getIdx(nx, ny);
-                                if (mask[nIdx] === 1 && visited[nIdx] === 0) {
-                                    visited[nIdx] = 1; queue.push([nx, ny]);
+                        while (queue.length > 0) {
+                            const [cx, cy] = queue.shift();
+                            pixelCount++;
+                            if (cx < minX) minX = cx; if (cx > maxX) maxX = cx;
+                            if (cy < minY) minY = cy; if (cy > maxY) maxY = cy;
+                            
+                            const neighbors = [ [cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1], [cx+1, cy+1], [cx-1, cy-1], [cx+1, cy-1], [cx-1, cy+1] ];
+                            for (const [nx, ny] of neighbors) {
+                                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                    const nIdx = getIdx(nx, ny);
+                                    if (mask[nIdx] === 1 && visited[nIdx] === 0) {
+                                        visited[nIdx] = 1; queue.push([nx, ny]);
+                                    }
                                 }
                             }
                         }
-                    }
-                    if (pixelCount > MIN_PIXELS) rawBoxes.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
-                }
-            }
-        }
-        
-        let mergedBoxes = [...rawBoxes];
-        let merged = true;
-        
-        while (merged) {
-            merged = false;
-            for (let i = 0; i < mergedBoxes.length; i++) {
-                for (let j = i + 1; j < mergedBoxes.length; j++) {
-                    const b1 = mergedBoxes[i]; const b2 = mergedBoxes[j];
-                    if (!(b1.x > b2.x + b2.w + MERGE_DISTANCE || b1.x + b1.w + MERGE_DISTANCE < b2.x || b1.y > b2.y + b2.h + MERGE_DISTANCE || b1.y + b1.h + MERGE_DISTANCE < b2.y)) {
-                        b1.x = Math.min(b1.x, b2.x); b1.y = Math.min(b1.y, b2.y);
-                        b1.w = Math.max(b1.x + b1.w, b2.x + b2.w) - b1.x; b1.h = Math.max(b1.y + b1.h, b2.y + b2.h) - b1.y;
-                        mergedBoxes.splice(j, 1); merged = true; break;
+                        if (pixelCount > MIN_PIXELS) rawBoxes.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
                     }
                 }
-                if (merged) break;
             }
-        }
-        
-        const boundingBoxes = [];
-        mergedBoxes.forEach(box => {
-            if (box.w > 30 && box.h > 30) {
-                const pad = 5;
-                boundingBoxes.push({ x: Math.max(0, box.x - pad), y: Math.max(0, box.y - pad), w: Math.min(width - box.x, box.w + pad*2), h: Math.min(height - box.y, box.h + pad*2) });
+            
+            let mergedBoxes = [...rawBoxes];
+            let merged = true;
+            while (merged) {
+                merged = false;
+                for (let i = 0; i < mergedBoxes.length; i++) {
+                    for (let j = i + 1; j < mergedBoxes.length; j++) {
+                        const b1 = mergedBoxes[i]; const b2 = mergedBoxes[j];
+                        if (!(b1.x > b2.x + b2.w + MERGE_DISTANCE || b1.x + b1.w + MERGE_DISTANCE < b2.x || b1.y > b2.y + b2.h + MERGE_DISTANCE || b1.y + b1.h + MERGE_DISTANCE < b2.y)) {
+                            b1.x = Math.min(b1.x, b2.x); b1.y = Math.min(b1.y, b2.y);
+                            b1.w = Math.max(b1.x + b1.w, b2.x + b2.w) - b1.x; b1.h = Math.max(b1.y + b1.h, b2.y + b2.h) - b1.y;
+                            mergedBoxes.splice(j, 1); merged = true; break;
+                        }
+                    }
+                    if (merged) break;
+                }
             }
+            
+            const boundingBoxes = [];
+            mergedBoxes.forEach(box => {
+                if (box.w > 30 && box.h > 30) {
+                    const pad = 5;
+                    boundingBoxes.push({ x: Math.max(0, box.x - pad), y: Math.max(0, box.y - pad), w: Math.min(width - box.x, box.w + pad*2), h: Math.min(height - box.y, box.h + pad*2) });
+                }
+            });
+            
+            // Store source data for render loop
+            src.masterCanvas = masterCanvas;
+            src.ctx = ctx;
+            src.width = width;
+            src.height = height;
+            src.getDist = getDist;
+            src.boxes = boundingBoxes;
+            
+            // Create sprite DOM for this source
+            boundingBoxes.forEach((box) => {
+                const idx = globalSpriteIndex++;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'sprite-wrapper';
+                
+                const sc = document.createElement('canvas');
+                sc.className = 'sprite-canvas';
+                sc.width = box.w; sc.height = box.h;
+                
+                const actions = document.createElement('div');
+                actions.className = 'sprite-actions';
+                actions.innerHTML = `
+                    <button class="sprite-action-btn" title="Download PNG" onclick="event.stopPropagation(); exportSpritePNG(${idx})">📷</button>
+                    <button class="sprite-action-btn" title="Download WebM" onclick="event.stopPropagation(); exportSpriteWebM(${idx})">🎬</button>
+                `;
+
+                wrapper.appendChild(sc);
+                wrapper.appendChild(actions);
+                resultsDiv.appendChild(wrapper);
+                
+                sprites.push({ 
+                    ctx: sc.getContext('2d'), 
+                    box, 
+                    wrapper, 
+                    canvas: sc,
+                    source: src,
+                    sourceIdx: srcIdx,
+                    physicsState: { isJumping: false }
+                });
+            });
         });
         
-        statusDiv.textContent = `Berhasil membangkitkan ${boundingBoxes.length} Entitas! Gerakkan mouse lo.`;
+        statusDiv.textContent = `Berhasil membangkitkan ${sprites.length} Entitas dari ${sources.length} file! Gerakkan mouse lo.`;
         document.querySelector('.header-card').style.padding = "20px";
-        
-        // Buat DOM 2.5D
-        const spriteData = boundingBoxes.map((box, i) => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'sprite-wrapper';
-            
-            const sc = document.createElement('canvas');
-            sc.className = 'sprite-canvas';
-            sc.width = box.w; sc.height = box.h;
-            
-            // Download button per sprite
-            const dlBtn = document.createElement('button');
-            dlBtn.className = 'btn';
-            dlBtn.style.cssText = 'padding:6px 12px;font-size:.75rem;margin-top:4px;position:absolute;bottom:2px;right:2px;opacity:0;transition:opacity .2s';
-            dlBtn.textContent = '⬇️ WebM';
-            dlBtn.onclick = (e) => { e.stopPropagation(); exportSpriteWebM(i); };
-            
-            wrapper.appendChild(sc);
-            wrapper.appendChild(dlBtn);
-            wrapper.addEventListener('mouseenter', () => dlBtn.style.opacity = '1');
-            wrapper.addEventListener('mouseleave', () => dlBtn.style.opacity = '0');
-            resultsDiv.appendChild(wrapper);
-            
-            return { 
-                ctx: sc.getContext('2d'), 
-                box, 
-                wrapper, 
-                canvas: sc,
-                physicsState: { isJumping: false }
-            };
-        });
-        sprites = spriteData;
         
         // Export Bar
         exportBar.style.display = 'flex';
         exportBar.innerHTML = `
-            <button class="btn" onclick="bulkExportWebM()" style="font-size:.85rem;padding:8px 20px">📦 Export All as WebM</button>
+            <button class="btn" onclick="bulkExportWebM()" style="font-size:.85rem;padding:8px 20px">📦 Export All WebM</button>
+            <button class="btn" onclick="bulkExportPNG()" style="font-size:.85rem;padding:8px 20px;background:linear-gradient(135deg,#8b5cf6,#7c3aed)">🖼️ Export All PNG</button>
             <button class="btn" onclick="bulkExportZIP()" style="font-size:.85rem;padding:8px 20px;background:linear-gradient(135deg,#10b981,#059669)">🗜️ Download All ZIP</button>
-            <span style="color:#9ca3af;font-size:.82rem;align-self:center">${spriteData.length} sprites</span>
+            <span style="color:#9ca3af;font-size:.82rem;align-self:center">${sprites.length} sprites</span>
         `;
         
         document.getElementById('effects-panel').style.display = 'block';
@@ -420,7 +495,6 @@
                 const near = proximity > 0.5;
                 const veryNear = proximity > 0.8;
                 
-                // Build transform
                 let tx = '';
                 let tiltX = 0, tiltY = 0, scaleVal = 1.0, transX = 0, transY = 0, wobbleRot = 0, wobbleScale = 0;
                 
@@ -443,7 +517,6 @@
                 tx = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scaleVal}) translateX(${transX}px) translateY(${transY}px)`;
                 if (effects.wobble) tx += ` rotateZ(${wobbleRot}deg)`;
                 
-                // Build filter
                 const safeDist = Math.max(distance, 1);
                 let flt = '';
                 if (effects.shadow) {
@@ -471,7 +544,7 @@
             });
         });
         
-        // 2. Click = Physics Bump + Ripple Chain
+        // Click = Physics Bump + Ripple Chain
         sprites.forEach(sprite => {
             sprite.wrapper.addEventListener('mousedown', () => {
                 if(sprite.physicsState.isJumping) return;
@@ -482,11 +555,9 @@
                 sprite.canvas.style.transform = `perspective(800px) translateY(-80px) scale(1.4) rotateZ(${randomRot}deg)`;
                 sprite.canvas.style.filter = `drop-shadow(0px 80px 30px rgba(0, 0, 0, 0.5)) drop-shadow(0px 0px 40px rgba(6, 182, 212, 1))`;
                 
-                // Ripple shockwave
                 if (effects.ripple) {
                     const rect = sprite.wrapper.getBoundingClientRect();
                     ripples.push({ x: rect.left+rect.width/2, y: rect.top+rect.height/2, radius: 0, maxRadius: 400, life: 1 });
-                    // Chain reaction: nearby sprites also jump
                     sprites.forEach(other => {
                         if (other === sprite || other.physicsState.isJumping) return;
                         const oRect = other.wrapper.getBoundingClientRect();
@@ -529,27 +600,35 @@
             }, 300);
         }
 
-        // 3. Real-time Video Render Loop + Ripple render
-        videoEl.play();
+        // Real-time Render Loop - handles both video (animated) and image (static) sources
+        sources.filter(s => s.isVideo).forEach(s => s.mediaEl.play());
+        
         function renderLoop() {
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(videoEl, 0, 0, width, height);
-            const rFrame = ctx.getImageData(0, 0, width, height);
-            const d = rFrame.data;
-            
-            for (let i = 0; i < d.length; i += 4) {
-                const dist = getDist(d[i], d[i+1], d[i+2]);
-                if (dist <= CORE_TOLERANCE) { d[i+3] = 0; } 
-                else if (dist <= CORE_TOLERANCE + FEATHER) {
-                    const ratio = (dist - CORE_TOLERANCE) / FEATHER;
-                    d[i+3] = (ratio * ratio * (3 - 2 * ratio)) * 255;
+            sources.forEach(src => {
+                if (!src.isVideo) return; // Static images don't need redraw
+                
+                const { ctx, masterCanvas, mediaEl, width, height, getDist } = src;
+                ctx.clearRect(0, 0, width, height);
+                ctx.drawImage(mediaEl, 0, 0, width, height);
+                const rFrame = ctx.getImageData(0, 0, width, height);
+                const d = rFrame.data;
+                
+                for (let i = 0; i < d.length; i += 4) {
+                    const dist = getDist(d[i], d[i+1], d[i+2]);
+                    if (dist <= CORE_TOLERANCE) { d[i+3] = 0; } 
+                    else if (dist <= CORE_TOLERANCE + FEATHER) {
+                        const ratio = (dist - CORE_TOLERANCE) / FEATHER;
+                        const smooth = ratio * ratio * ratio * (ratio * (ratio * 6 - 15) + 10);
+                        d[i+3] = Math.round(smooth * 255);
+                    }
                 }
-            }
-            ctx.putImageData(rFrame, 0, 0);
+                ctx.putImageData(rFrame, 0, 0);
+            });
             
             sprites.forEach(sprite => {
+                const src = sprite.source;
                 sprite.ctx.clearRect(0, 0, sprite.box.w, sprite.box.h);
-                sprite.ctx.drawImage(masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
+                sprite.ctx.drawImage(src.masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
             });
             
             // Render ripples
@@ -558,8 +637,6 @@
                 ripples.forEach(r => {
                     r.radius += 6;
                     r.life -= 0.02;
-                    const alpha = r.life * 0.4;
-                    // Ripple ring on visible sprites
                     sprites.forEach(sprite => {
                         const sr = sprite.wrapper.getBoundingClientRect();
                         const sc = { x: sr.left+sr.width/2, y: sr.top+sr.height/2 };
@@ -703,6 +780,24 @@
     };
 
     // === EXPORT FUNCTIONS ===
+    window.exportSpritePNG = function(idx) {
+        const sprite = sprites[idx];
+        if (!sprite) return;
+        const canvas = document.createElement('canvas');
+        canvas.width = sprite.box.w;
+        canvas.height = sprite.box.h;
+        const c = canvas.getContext('2d');
+        c.drawImage(sprite.canvas, 0, 0);
+        const url = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sprite_${idx+1}_${sprite.box.w}x${sprite.box.h}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        statusDiv.textContent = `✅ Sprite ${idx+1} PNG snapshot saved!`;
+    };
+
     window.exportSpriteWebM = function(idx) {
         const sprite = sprites[idx];
         if (!sprite) return;
@@ -740,6 +835,23 @@
             }
         };
         captureFrame();
+    };
+
+    window.bulkExportPNG = function() {
+        if (sprites.length === 0) return;
+        let current = 0;
+        statusDiv.textContent = `🖼️ Exporting ${sprites.length} PNG snapshots...`;
+        const exportNext = () => {
+            if (current >= sprites.length) {
+                statusDiv.textContent = `✅ All ${sprites.length} PNG snapshots exported!`;
+                return;
+            }
+            exportSpritePNG(current);
+            current++;
+            statusDiv.textContent = `🖼️ Exported PNG ${current}/${sprites.length}...`;
+            setTimeout(exportNext, 150);
+        };
+        exportNext();
     };
 
     window.bulkExportWebM = function() {
