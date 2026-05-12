@@ -3,244 +3,456 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🗺️ Sprite Mapper v5.0 — Shadow Studio</title>
+<title>🗺️ Sprite Mapper v5.2 — Shadow Studio</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0b14;--surface:#15172a;--border:#2a2d4a;--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff}
+:root{--bg:#0a0b14;--surface:#15172a;--surface2:#1a1d30;--border:#2a2d4a;--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff;--success:#22c55e;--warn:#f59e0b;--error:#ef4444}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
-.container{max-width:1400px;margin:0 auto;padding:24px}
-.header{text-align:center;margin-bottom:28px}
-.header h1{font-size:2rem;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,#7c4dff,#00e5ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.header p{color:var(--text-muted);font-size:.92rem}
+.container{max-width:1500px;margin:0 auto;padding:20px}
+.header{text-align:center;margin-bottom:20px}
+.header h1{font-size:1.9rem;font-weight:800;margin-bottom:4px;background:linear-gradient(135deg,#7c4dff,#00e5ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--text-muted);font-size:.88rem}
 
-/* Layout */
-.studio{display:grid;grid-template-columns:300px 1fr;gap:20px}
-.panel{background:var(--surface);border-radius:12px;padding:20px;border:1px solid var(--border)}
-.panel h2{font-size:.95rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.layout{display:grid;grid-template-columns:280px 1fr;gap:16px}
+.panel{background:var(--surface);border-radius:12px;padding:16px;border:1px solid var(--border)}
+.panel h2{font-size:.88rem;margin-bottom:12px;display:flex;align-items:center;gap:6px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.panel h2 .ico{font-size:1.1rem}
 
-/* Upload */
-.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:.3s;margin-bottom:16px;background:rgba(255,255,255,.02)}
+/* Mode Tabs */
+.mode-tabs{display:flex;gap:3px;margin-bottom:16px;background:var(--bg);border-radius:10px;padding:3px}
+.mode-tab{flex:1;padding:9px 8px;border-radius:8px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap}
+.mode-tab:hover{color:var(--text)}
+.mode-tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(124,77,255,.3)}
+
+/* Upload Zone */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:.3s;background:rgba(255,255,255,.02);margin-bottom:12px}
 .upload-zone:hover,.upload-zone.dragover{border-color:var(--primary);background:rgba(124,77,255,.05)}
-.upload-zone .icon{font-size:2.5rem;margin-bottom:8px}
+.upload-zone .icon{font-size:2.2rem;margin-bottom:6px}
+.upload-zone small{color:var(--text-muted);font-size:.75rem}
+
+/* URL Loader */
+.url-loader{display:flex;gap:6px;margin-bottom:12px}
+.url-loader input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.8rem;font-family:inherit}
+.url-loader button{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--primary);color:#fff;cursor:pointer;font-size:.8rem;font-family:inherit}
+
+/* Recent Files */
+.recent-files{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;max-height:180px;overflow-y:auto}
+.recent-file{padding:6px 10px;border-radius:6px;background:var(--bg);display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.78rem;transition:all .15s;border:1px solid transparent}
+.recent-file:hover{border-color:var(--primary);background:rgba(124,77,255,.06)}
+.recent-file .thumb{width:32px;height:32px;border-radius:4px;object-fit:cover;background:var(--border)}
+.recent-file .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent-file .del{color:var(--text-muted);cursor:pointer;font-size:.7rem;padding:2px 4px;border-radius:4px}
+.recent-file .del:hover{color:var(--error)}
 
 /* Controls */
-.control-group{margin-bottom:14px}
-.control-group label{display:block;font-size:.75rem;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.control-group input[type="range"]{width:100%;height:5px;-webkit-appearance:none;background:var(--border);border-radius:3px}
-.control-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--primary);border-radius:50%;cursor:pointer}
-.control-group .val{text-align:right;font-size:.72rem;color:var(--accent)}
-.control-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.control-group{margin-bottom:12px}
+.control-group label{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+.control-group label .val{color:var(--accent);font-weight:700}
+.control-group input[type="range"]{width:100%;height:5px;-webkit-appearance:none;background:var(--border);border-radius:3px;outline:none}
+.control-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--primary);border-radius:50%;cursor:pointer;box-shadow:0 0 6px rgba(124,77,255,.3)}
+.control-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.control-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.control-row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
 
-/* Main Canvas */
-.canvas-wrap{background:var(--surface);border-radius:12px;border:1px solid var(--border);padding:12px;overflow:auto;position:relative;min-height:320px}
-canvas.main-canvas{background:#fff;border-radius:8px;cursor:crosshair;display:block;max-width:100%}
-.canvas-info{position:absolute;top:16px;right:16px;font-size:.7rem;color:var(--text-muted);background:rgba(0,0,0,.5);padding:4px 10px;border-radius:6px}
+select,input[type="number"],input[type="text"]{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.8rem;font-family:inherit;width:100%}
+select:focus,input:focus{outline:none;border-color:var(--primary)}
 
-/* Extracted sprites */
-.output-section{margin-top:20px}
-.output-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
-.output-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
-.output-cell:hover{border-color:var(--primary);transform:translateY(-2px)}
-.output-cell canvas{width:100%;image-rendering:pixelated}
-.output-cell .sprite-name{font-size:.62rem;color:var(--text-muted);margin-top:4px}
-.cell-actions{position:absolute;top:4px;right:4px;display:none;gap:2px}
-.output-cell:hover .cell-actions{display:flex}
-.cell-actions button{background:rgba(0,0,0,.6);border:none;color:#fff;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:.65rem;display:flex;align-items:center;justify-content:center}
+/* Canvas Area */
+.canvas-area{position:relative;min-height:300px;display:flex;align-items:flex-start;justify-content:center}
+.canvas-wrap{background:var(--surface);border-radius:12px;border:1px solid var(--border);padding:8px;overflow:auto;flex:1;position:relative;min-height:300px}
+canvas.main-canvas{background:#fff;border-radius:8px;display:block;max-width:100%;cursor:crosshair;image-rendering:pixelated}
+.canvas-info{position:absolute;top:12px;right:12px;font-size:.68rem;color:var(--text-muted);background:rgba(0,0,0,.6);padding:4px 10px;border-radius:6px;pointer-events:none}
+.canvas-stats{position:absolute;bottom:12px;left:12px;font-size:.68rem;color:var(--text-muted);background:rgba(0,0,0,.6);padding:4px 10px;border-radius:6px;pointer-events:none;display:flex;gap:12px}
+canvas.overlay-canvas{position:absolute;top:8px;left:8px;pointer-events:none;border-radius:8px}
 
-/* Action Bar */
-.action-bar{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap;justify-content:center}
-.btn{padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;transition:all .2s;border:none;font-size:.82rem;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+/* Detection Overlay Legend */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;font-size:.72rem;color:var(--text-muted)}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+
+/* Buttons */
+.btn{padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;transition:all .15s;border:none;font-size:.78rem;display:inline-flex;align-items:center;gap:5px;font-family:inherit;white-space:nowrap}
 .btn-primary{background:linear-gradient(135deg,#7c4dff,#9c6bff);color:#fff}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(124,77,255,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 3px 12px rgba(124,77,255,.3)}
 .btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--primary)}
+.btn-secondary:hover{border-color:var(--primary);background:rgba(124,77,255,.05)}
 .btn-accent{background:linear-gradient(135deg,#00e5ff,#22d3ee);color:#0a0b14;font-weight:700}
-.btn-accent:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,229,255,.3)}
+.btn-accent:hover{transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,229,255,.3)}
+.btn-success{background:linear-gradient(135deg,#22c55e,#4ade80);color:#0a0b14;font-weight:700}
 .btn-danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
+.btn-sm{padding:5px 10px;font-size:.72rem}
+.btn-row{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;justify-content:center}
+.btn-row-center{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;justify-content:center}
 
-/* Sprite Sheet Preview */
-.sheet-preview{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;overflow:auto;margin-top:16px;display:none}
-.sheet-preview.show{display:block}
+/* Sprite Grid */
+.output-section{margin-top:16px}
+.output-section h3{font-size:.85rem;margin-bottom:8px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+.output-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:400px;overflow-y:auto;padding:4px}
+.output-cell{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.output-cell:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.output-cell.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,229,255,.3)}
+.output-cell canvas{width:100%;image-rendering:pixelated}
+.output-cell .sprite-meta{font-size:.6rem;color:var(--text-muted);margin-top:3px}
+.output-cell .sprite-name{font-size:.62rem;color:var(--text-muted);margin-top:2px;word-break:break-all}
+.cell-actions{position:absolute;top:3px;right:3px;display:none;gap:2px;z-index:2}
+.output-cell:hover .cell-actions{display:flex}
+.cell-actions button{background:rgba(0,0,0,.7);border:none;color:#fff;width:20px;height:20px;border-radius:4px;cursor:pointer;font-size:.6rem;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.cell-actions button:hover{background:var(--primary)}
+
+/* Sheet Preview */
+.sheet-preview{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;overflow:auto;margin-top:16px;max-height:400px}
 .sheet-preview h3{font-size:.85rem;margin-bottom:10px;color:var(--text-muted)}
 
-/* Export Options */
-.export-panels{margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-.export-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
-.export-panel h3{font-size:.88rem;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.export-panel p{font-size:.75rem;color:var(--text-muted);margin-bottom:12px}
+/* Audit Table */
+.audit-table{width:100%;border-collapse:collapse;font-size:.75rem}
+.audit-table th{position:sticky;top:0;background:var(--surface2);padding:8px 6px;text-align:left;border-bottom:2px solid var(--border);color:var(--text-muted);font-weight:700;cursor:pointer;user-select:none;white-space:nowrap}
+.audit-table th:hover{color:var(--primary)}
+.audit-table td{padding:6px;border-bottom:1px solid rgba(42,45,74,.4);vertical-align:middle}
+.audit-table tr:hover td{background:rgba(124,77,255,.04)}
+.audit-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.audit-scroll{max-height:500px;overflow-y:auto;border-radius:8px}
+.audit-info{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;font-size:.78rem;color:var(--text-muted)}
+.audit-info b{color:var(--accent)}
 
-/* Sprite Sheet Config */
-.sheet-config{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.sheet-config .control-group{margin-bottom:0}
+/* Color Swatch */
+.color-swatch{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid rgba(255,255,255,.1);vertical-align:middle}
+
+/* Presets */
+.preset-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.preset-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:.72rem;font-family:inherit;transition:all .15s}
+.preset-btn:hover{border-color:var(--primary);color:var(--text)}
+.preset-btn.active{border-color:var(--primary);background:rgba(124,77,255,.15);color:var(--primary)}
+
+/* Checkbox Toggle */
+.toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;font-size:.82rem}
+.toggle-row input[type="checkbox"]{width:16px;height:16px;accent-color:var(--primary);cursor:pointer}
+
+/* Tooltip */
+.tooltip{position:relative}
+.tooltip::after{content:attr(data-tip);position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:4px 8px;border-radius:6px;font-size:.7rem;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s}
+.tooltip:hover::after{opacity:1}
+
+/* Progress bar */
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:2px;transition:width .3s}
 
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.85rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
 .toast.show{opacity:1;transform:translateY(0)}
 
-/* Selection overlay */
-.selection-overlay{position:absolute;border:2px dashed var(--accent);pointer-events:none;display:none;z-index:5}
-.selection-overlay.active{display:block}
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--primary)}
 
-/* Status bar */
-.status-bar{display:flex;gap:16px;padding:8px 12px;background:rgba(0,0,0,.2);border-radius:8px;margin:12px 0;font-size:.75rem;color:var(--text-muted)}
-.status-bar span{display:flex;align-items:center;gap:4px}
+/* Section visibility */
+.section{display:none}.section.active{display:block}
 
-/* Mode tabs */
-.mode-tabs{display:flex;gap:4px;margin-bottom:16px}
-.mode-tab{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:.8rem;transition:all .2s}
-.mode-tab:hover{color:var(--text);border-color:var(--primary)}
-.mode-tab.active{background:rgba(124,77,255,.15);color:var(--primary);border-color:var(--primary)}
+/* Export Panels */
+.export-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:16px}
+.export-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+.export-panel h3{font-size:.82rem;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.export-panel p{font-size:.72rem;color:var(--text-muted);margin-bottom:8px}
+
+/* Sheet Config */
+.sheet-config{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.sheet-config .control-group{margin-bottom:0}
+
+/* Search filter for audit */
+.search-box{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.82rem;font-family:inherit;width:100%;margin-bottom:8px}
+.search-box:focus{outline:none;border-color:var(--primary)}
+
+/* Badge */
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:700}
+.badge-green{background:rgba(34,197,94,.15);color:#22c55e}
+.badge-blue{background:rgba(0,229,255,.15);color:#00e5ff}
+.badge-purple{background:rgba(124,77,255,.15);color:#7c4dff}
+.badge-orange{background:rgba(245,158,11,.15);color:#f59e0b}
+.badge-red{background:rgba(239,68,68,.15);color:#ef4444}
+
+/* Bulk actions bar */
+.bulk-bar{display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:10px;margin-bottom:12px;border:1px solid var(--border);flex-wrap:wrap}
+.bulk-bar span{font-size:.8rem;color:var(--text-muted);margin-right:auto}
+.bulk-bar .count{color:var(--accent);font-weight:700}
+
+@media(max-width:900px){.layout{grid-template-columns:1fr}.container{padding:12px}}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>🗺️ Sprite Mapper v5.0</h1>
-    <p>Upload spritesheets → Extract frames → Export as sheet, strip, or individual PNGs</p>
+    <h1>🗺️ Sprite Mapper v5.2</h1>
+    <p>Upload spritesheets → Extract frames → Deep audit → Multi-format export — 100% offline</p>
   </div>
 
-  <div class="studio">
-    <!-- Left Panel: Controls -->
-    <div class="panel">
-      <h2>🎛️ Options</h2>
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="SM.switchMode('browse')">📂 Browse</button>
+    <button class="mode-tab" onclick="SM.switchMode('extract')">🎯 Extract</button>
+    <button class="mode-tab" onclick="SM.switchMode('audit')">📊 Audit</button>
+    <button class="mode-tab" onclick="SM.switchMode('export')">📦 Export</button>
+  </div>
 
-      <div class="mode-tabs">
-        <button class="mode-tab active" onclick="SM.setMode('extract')">🔍 Extract</button>
-        <button class="mode-tab" onclick="SM.setMode('slice')">✂️ Grid Slice</button>
-        <button class="mode-tab" onclick="SM.setMode('select')">📐 Select</button>
+  <div class="layout">
+    <!-- Left Panel -->
+    <div class="panel" id="leftPanel">
+      <!-- Browse Panel -->
+      <div id="panelBrowse" class="section active">
+        <h2><span class="ico">📂</span> File Browser</h2>
+        <div class="upload-zone" id="uploadZone">
+          <div class="icon">📤</div>
+          <strong>Drop spritesheet here or click to upload</strong>
+          <br><small>Supports PNG, JPG, GIF, BMP, WebP</small>
+          <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+        </div>
+        <div class="url-loader">
+          <input type="text" id="imgUrl" placeholder="Paste image URL…">
+          <button onclick="SM.loadFromUrl()">Load</button>
+        </div>
+        <button class="btn btn-secondary" onclick="SM.loadDemo()" style="width:100%;margin-bottom:6px">🧪 Load Demo Sprite</button>
+        <div style="margin-top:12px">
+          <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600">Recent Files</div>
+          <div class="recent-files" id="recentFiles"></div>
+        </div>
       </div>
 
-      <!-- Extract mode controls -->
-      <div id="extract-controls">
+      <!-- Extract Panel -->
+      <div id="panelExtract" class="section">
+        <h2><span class="ico">🎯</span> Detection Settings</h2>
+        <div class="preset-row">
+          <button class="preset-btn active" onclick="SM.applyPreset('auto')">⚡ Auto</button>
+          <button class="preset-btn" onclick="SM.applyPreset('tight')">🔒 Tight</button>
+          <button class="preset-btn" onclick="SM.applyPreset('loose')">🔓 Loose</button>
+          <button class="preset-btn" onclick="SM.applyPreset('chars')">👤 Characters</button>
+          <button class="preset-btn" onclick="SM.applyPreset('tiles')">🧱 Tiles</button>
+          <button class="preset-btn" onclick="SM.applyPreset('items')">🎮 Items</button>
+          <button class="preset-btn" onclick="SM.applyPreset('fine')">🔬 Fine Detail</button>
+        </div>
+
+        <label style="font-size:.72rem;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <input type="checkbox" id="livePreview" checked onchange="SM.toggleLivePreview()"> 🔴 Live Preview
+        </label>
+
         <div class="control-group">
-          <label>Threshold</label>
-          <input type="range" id="threshold" min="1" max="254" value="100">
-          <span class="val" id="tVal">100</span>
+          <label>Threshold <span class="val" id="tVal">100</span></label>
+          <div class="control-row">
+            <input type="range" id="threshold" min="1" max="254" value="100" oninput="SM.updateSetting('threshold')">
+            <input type="number" id="thresholdNum" min="1" max="254" value="100" style="width:55px" onchange="SM.updateSetting('thresholdNum')">
+          </div>
         </div>
         <div class="control-row">
           <div class="control-group">
-            <label>Min Width</label>
-            <input type="range" id="minW" min="4" max="128" value="16">
-            <span class="val" id="minWVal">16</span>
+            <label>Min Width <span class="val" id="minWVal">16</span></label>
+            <input type="range" id="minW" min="2" max="256" value="16" oninput="SM.updateSetting('minW')">
           </div>
           <div class="control-group">
-            <label>Min Height</label>
-            <input type="range" id="minH" min="4" max="128" value="16">
-            <span class="val" id="minHVal">16</span>
+            <label>Max Width <span class="val" id="maxWVal">512</span></label>
+            <input type="range" id="maxW" min="8" max="2048" value="512" oninput="SM.updateSetting('maxW')">
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="control-group">
+            <label>Min Height <span class="val" id="minHVal">16</span></label>
+            <input type="range" id="minH" min="2" max="256" value="16" oninput="SM.updateSetting('minH')">
+          </div>
+          <div class="control-group">
+            <label>Max Height <span class="val" id="maxHVal">512</span></label>
+            <input type="range" id="maxH" min="8" max="2048" value="512" oninput="SM.updateSetting('maxH')">
           </div>
         </div>
         <div class="control-group">
-          <label>Padding: <span class="val" id="padVal">2</span>px</label>
-          <input type="range" id="padding" min="0" max="16" value="2">
+          <label>Padding <span class="val" id="padVal">2</span>px</label>
+          <input type="range" id="padding" min="0" max="32" value="2" oninput="SM.updateSetting('padding')">
+        </div>
+        <div class="control-group">
+          <label>Min Pixel Area <span class="val" id="minAreaVal">64</span> px</label>
+          <input type="range" id="minArea" min="4" max="2000" value="64" oninput="SM.updateSetting('minArea')">
         </div>
         <div class="control-group">
           <label>Background Detection</label>
-          <select id="bgMode">
+          <select id="bgMode" onchange="SM.detectPreview()">
             <option value="alpha">Alpha Transparency</option>
-            <option value="top-left">Top-Left Pixel Color</option>
+            <option value="top-left">Top-Left Pixel</option>
             <option value="flood">Flood Fill (0,0)</option>
+            <option value="edge">Edge Detection</option>
+            <option value="contrast">Contrast Based</option>
           </select>
         </div>
-      </div>
-
-      <!-- Grid slice controls -->
-      <div id="slice-controls" style="display:none">
-        <div class="control-row">
-          <div class="control-group">
-            <label>Columns</label>
-            <input type="range" id="cols" min="1" max="32" value="8">
-            <span class="val" id="colsVal">8</span>
-          </div>
-          <div class="control-group">
-            <label>Rows</label>
-            <input type="range" id="rows" min="1" max="32" value="4">
-            <span class="val" id="rowsVal">4</span>
-          </div>
-        </div>
         <div class="control-group">
-          <label>Spacing: <span class="val" id="spacingVal">0</span>px</label>
-          <input type="range" id="spacing" min="0" max="32" value="0">
+          <label>Grid Snap <span class="val" id="gridSnapVal">—</span>px</label>
+          <input type="range" id="gridSnap" min="0" max="64" value="0" oninput="SM.updateSetting('gridSnap')">
+        </div>
+
+        <label style="font-size:.72rem;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:6px;margin:10px 0 6px">
+          <input type="checkbox" id="mergeOverlapping" checked onchange="SM.detectPreview()"> Merge Overlapping
+        </label>
+        <label style="font-size:.72rem;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <input type="checkbox" id="showConfidence" checked onchange="SM.detectPreview()"> Show Confidence
+        </label>
+
+        <button class="btn btn-primary" onclick="SM.detect()" style="width:100%;margin-top:8px;margin-bottom:6px">🔍 Detect Sprites</button>
+        <button class="btn btn-secondary" onclick="SM.refreshPreview()" style="width:100%;margin-bottom:4px">🔄 Refresh Preview</button>
+
+        <div class="loading-bar" id="loadingBar" style="display:none">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+          <div style="font-size:.72rem;color:var(--accent);text-align:center" id="progressText">Detecting…</div>
         </div>
       </div>
 
-      <button class="btn btn-primary" onclick="SM.detect()" style="width:100%;margin-bottom:8px">🔍 Detect Sprites</button>
-      <button class="btn btn-secondary" onclick="SM.loadDemo()" style="width:100%;margin-bottom:8px">🧪 Load Demo Sprite</button>
-      <button class="btn btn-accent" onclick="SM.clearAll()" style="width:100%">🗑️ Clear</button>
+      <!-- Audit Panel -->
+      <div id="panelAudit" class="section">
+        <h2><span class="ico">📋</span> Sprite Audit</h2>
+        <div class="audit-info" id="auditInfo" style="display:none">
+          <span>Total: <b id="auditTotal">0</b></span>
+          <span>Avg Size: <b id="auditAvg">—</b></span>
+          <span>Unique Colors: <b id="auditColors">0</b></span>
+        </div>
+        <input type="text" class="search-box" id="auditSearch" placeholder="🔍 Search sprites by name, size, color…" oninput="SM.filterAudit()">
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button class="btn btn-sm btn-secondary" onclick="SM.exportAuditCSV()">📄 CSV</button>
+          <button class="btn btn-sm btn-secondary" onclick="SM.exportAuditJSON()">📋 JSON</button>
+          <button class="btn btn-sm btn-secondary" onclick="SM.exportAuditHTML()">📄 Report</button>
+        </div>
+        <div class="audit-scroll" id="auditContainer"></div>
+      </div>
 
-      <div class="status-bar" style="margin-top:16px">
-        <span>Sprites: <b id="spriteCount">0</b></span>
-        <span>Canvas: <b id="canvasSize">—</b></span>
+      <!-- Export Panel -->
+      <div id="panelExport" class="section">
+        <h2><span class="ico">📦</span> Export Options</h2>
+        <div class="export-panels">
+          <div class="export-panel">
+            <h3>🖼️ Sprite Sheet</h3>
+            <p>Pack all sprites into one image</p>
+            <div class="sheet-config">
+              <div class="control-group">
+                <label>Columns</label>
+                <input type="range" id="sheetCols" min="1" max="16" value="4" oninput="SM.sheetColVal(this.value)">
+                <span class="val" id="sheetColsVal">4</span>
+              </div>
+              <div class="control-group">
+                <label>Max Size</label>
+                <select id="sheetMaxSize">
+                  <option value="512">512px</option>
+                  <option value="1024" selected>1024px</option>
+                  <option value="2048">2048px</option>
+                  <option value="4096">4096px</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label>Padding</label>
+                <input type="range" id="sheetPad" min="0" max="32" value="2" oninput="document.getElementById('sheetPadVal').textContent=this.value">
+                <span class="val" id="sheetPadVal">2</span>
+              </div>
+              <div class="control-group">
+                <label>BG Color</label>
+                <input type="color" id="sheetBg" value="#00000000" style="height:30px;padding:2px">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="SM.packAndExport()" style="width:100%;margin-top:6px">✨ Generate & Export</button>
+          </div>
+          <div class="export-panel">
+            <h3>📊 Sprite Strip</h3>
+            <p>Horizontal strip of all sprites</p>
+            <button class="btn btn-primary" onclick="SM.exportStrip()" style="width:100%;margin-top:6px">📊 Export Strip</button>
+          </div>
+          <div class="export-panel">
+            <h3>💾 Individual PNGs</h3>
+            <p>Download each sprite separately</p>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <button class="btn btn-accent" onclick="SM.exportAllIndividual()" style="flex:1">📸 All PNGs</button>
+              <button class="btn btn-secondary" onclick="SM.exportSelectedOnly()" style="flex:1">📷 Selected Only</button>
+            </div>
+          </div>
+          <div class="export-panel">
+            <h3>📋 Code & Data</h3>
+            <p>CSS spritesheet, JSON data, AI-ready export</p>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+              <button class="btn btn-secondary" onclick="SM.copyCSS()" style="width:100%">📋 CSS Spritesheet</button>
+              <button class="btn btn-secondary" onclick="SM.exportJSON()" style="width:100%">📋 Sprite Data JSON</button>
+              <button class="btn btn-secondary" onclick="SM.copyForAI()" style="width:100%">🤖 AI-Ready JSON</button>
+              <button class="btn btn-secondary" onclick="SM.copyDataURIs()" style="width:100%">🖼️ Data URLs</button>
+            </div>
+          </div>
+          <div class="export-panel">
+            <h3>📦 Bundle Export</h3>
+            <p>ZIP or clipboard bundle</p>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+              <button class="btn btn-success" onclick="SM.exportZIP()" style="width:100%">🗜️ Download ZIP</button>
+              <button class="btn btn-secondary" onclick="SM.copySheetToClipboard()" style="width:100%">📋 Copy Sheet</button>
+              <button class="btn btn-secondary" onclick="SM.copyDataURLSheet()" style="width:100%">🖼️ Copy Data URL</button>
+            </div>
+          </div>
+          <div class="export-panel">
+            <h3>🔧 Select & Bulk</h3>
+            <p>Manage exported sprites</p>
+            <div class="bulk-bar" id="bulkBar" style="display:none">
+              <span><span class="count" id="selectedCount">0</span> selected</span>
+              <button class="btn btn-sm btn-secondary" onclick="SM.bulkCopyPNG()">📋 Copy All</button>
+              <button class="btn btn-sm btn-accent" onclick="SM.bulkDownloadPNG()">💾 Download All</button>
+              <button class="btn btn-sm btn-danger" onclick="SM.bulkClear()">✕ Clear</button>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <button class="btn btn-sm btn-secondary" onclick=" SM.selectAll()" style="flex:1">✓ Select All</button>
+              <button class="btn btn-sm btn-secondary" onclick="SM.deselectAll()" style="flex:1">✕ Deselect All</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Right: Canvas + Output -->
+    <!-- Main Area -->
     <div>
-      <!-- Upload zone -->
-      <div class="upload-zone" id="uploadZone">
-        <div class="icon">📤</div>
-        <strong>Drop spritesheet here or click to upload</strong>
-        <input type="file" id="fileInput" accept="image/*" style="display:none">
-      </div>
-
-      <!-- Canvas -->
-      <div class="canvas-wrap" id="canvasWrap">
-        <canvas class="main-canvas" id="mainCanvas"></canvas>
-        <div class="canvas-info" id="canvasInfo">No image loaded</div>
-        <div class="selection-overlay" id="selectionOverlay"></div>
-      </div>
-
-      <!-- Action Bar -->
-      <div class="action-bar" id="actionBar" style="display:none">
-        <button class="btn btn-primary" onclick="SM.exportSheet()" title="Export as sprite sheet PNG">📦 Export Sheet</button>
-        <button class="btn btn-primary" onclick="SM.exportStrip()" title="Export as sprite strip PNG">📊 Export Strip</button>
-        <button class="btn btn-accent" onclick="SM.exportAllIndividual()" title="Download all sprites as individual PNGs">💾 All PNGs</button>
-        <button class="btn btn-secondary" onclick="SM.copySheetToClipboard()" title="Copy sheet to clipboard">📋 Copy Sheet</button>
-        <button class="btn btn-secondary" onclick="SM.exportJSON()" title="Copy sprite data JSON">📋 JSON Data</button>
-        <button class="btn btn-secondary" onclick="SM.copyDataURIs()" title="Copy all data URIs">🖼️ Copy Data URIs</button>
-      </div>
-
-      <!-- Sprite Grid -->
-      <div class="output-section">
-        <h3 style="font-size:.9rem;margin-bottom:8px;color:var(--text-muted)">Extracted Sprites</h3>
-        <div class="output-grid" id="spriteGrid"></div>
-      </div>
-
-      <!-- Sprite Sheet Preview -->
-      <div class="sheet-preview" id="sheetPreview">
-        <h3>🖼️ Sprite Sheet Preview</h3>
-        <canvas id="sheetCanvas"></canvas>
-      </div>
-
-      <!-- Export Options -->
-      <div class="export-panels">
-        <div class="export-panel">
-          <h3>📦 Export as Sprite Sheet</h3>
-          <p>Pack all sprites into a single image</p>
-          <div class="sheet-config">
-            <div class="control-group">
-              <label>Columns</label>
-              <input type="range" id="sheetCols" min="1" max="16" value="4">
-              <span class="val" id="sheetColsVal">4</span>
-            </div>
-            <div class="control-group">
-              <label>Max Size</label>
-              <select id="sheetMaxSize">
-                <option value="512">512px</option>
-                <option value="1024" selected>1024px</option>
-                <option value="2048">2048px</option>
-                <option value="4096">4096px</option>
-              </select>
-            </div>
+      <!-- Browse Section -->
+      <div id="sectionBrowse" class="section active">
+        <div class="panel" style="min-height:350px">
+          <div id="uploadZone" class="upload-zone" style="margin-bottom:0">
+            <div class="icon">📤</div>
+            <strong>Drop spritesheet here or click to browse</strong>
+            <br><small>Supports PNG, JPG, GIF, BMP, WebP — drag & drop or click</small>
           </div>
-          <button class="btn btn-primary" onclick="SM.packAndExport()" style="width:100%">✨ Generate & Export</button>
+          <div id="browseThumbnails" style="display:none;margin-top:16px">
+            <h3 style="font-size:.85rem;margin-bottom:8px;color:var(--text-muted)">📁 Loaded Images</h3>
+            <div id="browseGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px"></div>
+          </div>
         </div>
-        <div class="export-panel">
-          <h3>🔄 Copy to Coding Agent</h3>
-          <p>Get structured data for AI-assisted workflows</p>
-          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-            <button class="btn btn-secondary" onclick="SM.copyForAI()" style="width:100%">🤖 AI-Ready JSON</button>
-            <button class="btn btn-secondary" onclick="SM.copyCSS()" style="width:100%">📋 CSS Spritesheet</button>
-            <button class="btn btn-secondary" onclick="SM.copyDataURLSheet()" style="width:100%">🖼️ Data URL Sheet</button>
+      </div>
+
+      <!-- Extract Section -->
+      <div id="sectionExtract" class="section">
+        <div class="canvas-wrap" id="canvasWrap" style="margin-bottom:16px;position:relative">
+          <canvas class="main-canvas" id="mainCanvas"></canvas>
+          <canvas class="overlay-canvas" id="overlayCanvas"></canvas>
+          <div class="canvas-info" id="canvasInfo">No image loaded</div>
+          <div class="canvas-stats" id="canvasStats" style="display:none"></div>
+          <div class="selection-overlay" id="selectionOverlay"></div>
+        </div>
+        <div class="legend" id="detectionLegend" style="display:none;margin-bottom:12px">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> High confidence (>0.8)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--warn)"></div> Medium (0.5–0.8)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--error)"></div> Low (<0.5)</div>
+        </div>
+        <div class="output-section">
+          <h3>🎯 Detected Sprites <span id="detectCount" style="font-size:.75rem;color:var(--text-muted)">(0)</span></h3>
+          <div class="output-grid" id="spriteGrid"></div>
+        </div>
+      </div>
+
+      <!-- Audit Section -->
+      <div id="sectionAudit" class="section">
+        <div class="panel" style="padding:0;overflow:hidden">
+          <div id="auditContainer" class="audit-scroll" style="max-height:calc(100vh - 250px)"></div>
+          <div style="padding:16px" id="auditEmpty">
+            <p style="color:var(--text-muted);text-align:center;font-size:.85rem">Run detection first, then switch to Audit to see detailed analysis.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export Section -->
+      <div id="sectionExport" class="section">
+        <div class="panel" id="exportPanel" style="opacity:.6;pointer-events:none">
+          <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+            <div style="font-size:2.5rem;margin-bottom:12px">📦</div>
+            <p>Run detection first, then export your sprites here.</p>
           </div>
         </div>
       </div>
@@ -251,159 +463,364 @@ canvas.main-canvas{background:#fff;border-radius:8px;cursor:crosshair;display:bl
 <div class="toast" id="toast"></div>
 
 <script>
-/* ============================================
-    SPRITE MAPPER v5.2.0 — MAX LEVEL
-    Flood fill extraction, grid slicing,
-    sprite sheet packing, multi-format export
-    ============================================ */
+/* ===============================================================
+   SPRITE MAPPER v5.2.0 — ULTIMATE LEVEL
+   Deep Audit, Live Detection, File Browser, Precision Settings
+   =============================================================== */
 
 const SM = {
-  canvas: null,
-  ctx: null,
-  imgData: null,
-  width: 0,
-  height: 0,
-  sprites: [],
+  canvas: null, ctx: null, overlay: null, octx: null,
+  imgData: null, width: 0, height: 0, pixels: null,
   originalImage: null,
-  mode: 'extract',
+  sprites: [],
+  mode: 'browse',
+  selectedSprites: new Set(),
+  recentFiles: [],
+  _liveTimer: null,
+  _auditData: [],
+
+  // ===== PRESETS =====
+  presets: {
+    auto:       {threshold:100, minW:16, minH:16, maxW:512, maxH:512, minArea:64, padding:2, gridSnap:0, merge:true, name:'Auto'},
+    tight:      {threshold:140, minW:32, minH:32, maxW:256, maxH:256, minArea:200, padding:1, gridSnap:0, merge:false, name:'Tight'},
+    loose:      {threshold:60,  minW:8,  minH:8,  maxW:1024,maxH:1024,minArea:16,  padding:4, gridSnap:0, merge:true, name:'Loose'},
+    chars:      {threshold:120, minW:24, minH:24, maxW:512, maxH:512, minArea:100, padding:2, gridSnap:0, merge:true, name:'Characters'},
+    tiles:      {threshold:80,  minW:16, minH:16, maxW:256, maxH:256, minArea:64,  padding:0, gridSnap:16,merge:true, name:'Tiles'},
+    items:      {threshold:110, minW:16, minH:16, maxW:384, maxH:384, minArea:64,  padding:2, gridSnap:0, merge:true, name:'Items'},
+    fine:       {threshold:60,  minW:4,  minH:4,  maxW:512, maxH:512, minArea:4,   padding:1, gridSnap:0, merge:false, name:'Fine Detail'}
+  },
 
   init() {
     this.canvas = document.getElementById('mainCanvas');
     this.ctx = this.canvas.getContext('2d');
+    this.overlay = document.getElementById('overlayCanvas');
+    this.octx = this.overlay.getContext('2d');
+    this.loadRecentFiles();
     this.bindEvents();
+    this.renderRecentFiles();
   },
 
   bindEvents() {
     // File upload
     document.getElementById('uploadZone').addEventListener('click', () => document.getElementById('fileInput').click());
-    document.getElementById('fileInput').addEventListener('change', e => { if(e.target.files[0]) this.loadFile(e.target.files[0]); });
+    document.getElementById('fileInput').addEventListener('change', e => {
+      if (e.target.files.length === 1) this.loadFile(e.target.files[0]);
+      else if (e.target.files.length > 1) this.loadMultipleFiles(e.target.files);
+    });
 
     const uz = document.getElementById('uploadZone');
     uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('dragover'); });
     uz.addEventListener('dragleave', () => uz.classList.remove('dragover'));
-    uz.addEventListener('drop', e => { e.preventDefault(); uz.classList.remove('dragover'); if(e.dataTransfer.files[0]) this.loadFile(e.dataTransfer.files[0]); });
+    uz.addEventListener('drop', e => {
+      e.preventDefault(); uz.classList.remove('dragover');
+      if (e.dataTransfer.files.length === 1) this.loadFile(e.dataTransfer.files[0]);
+      else if (e.dataTransfer.files.length > 1) this.loadMultipleFiles(e.dataTransfer.files);
+    });
 
-    // Controls
-    ['threshold','minW','minH','padding'].forEach(id => {
-      document.getElementById(id).addEventListener('input', e => {
-        document.getElementById(id+'Val').textContent = e.target.value;
-      });
+    // Real-time live preview
+    ['threshold','minW','minH','maxW','maxH','minArea','padding','bgMode','gridSnap'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', () => { if(document.getElementById('livePreview').checked) SM.detectPreview(); });
     });
-    ['cols','rows','spacing'].forEach(id => {
-      document.getElementById(id).addEventListener('input', e => {
-        document.getElementById(id+'Val').textContent = e.target.value;
-      });
-    });
-    document.getElementById('sheetCols').addEventListener('input', e => {
-      document.getElementById('sheetColsVal').textContent = e.target.value;
+    ['mergeOverlapping','showConfidence'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => { if(document.getElementById('livePreview').checked) SM.detectPreview(); });
     });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', e => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') e.preventDefault();
-      if (e.key === 's' && e.ctrlKey) { e.preventDefault(); SM.exportSheet(); }
-      if (e.key === 'e') SM.detect();
-      if (e.key === 'r') SM.loadDemo();
+      if (e.key === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.packAndExport(); }
+      if (e.key === 'e' && !e.ctrlKey) this.detect();
+      if (e.key === 'r' && !e.ctrlKey) this.loadDemo();
+      if (e.key === 'a' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.selectAll(); }
     });
   },
 
-  setMode(mode) {
+  // ===== MODE SWITCHING =====
+  switchMode(mode) {
     this.mode = mode;
     document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     event.target.classList.add('active');
-    document.getElementById('extract-controls').style.display = mode === 'extract' ? 'block' : 'none';
-    document.getElementById('slice-controls').style.display = mode === 'slice' ? 'block' : 'none';
+    document.getElementById('section'+mode.charAt(0).toUpperCase()+mode.slice(1)).classList.add('active');
+    document.getElementById('panel'+mode.charAt(0).toUpperCase()+mode.slice(1)).classList.add('active');
+
+    // Resize overlay when switching to extract
+    if (mode === 'extract' && this.originalImage) {
+      this._fitCanvas();
+      this.detectPreview();
+    }
+    if (mode === 'audit') this.renderAudit();
+    if (mode === 'export') {
+      document.getElementById('exportPanel').style.opacity = this.sprites.length ? '1' : '.6';
+      document.getElementById('exportPanel').style.pointerEvents = this.sprites.length ? 'auto' : 'none';
+      document.getElementById('bulkBar').style.display = this.sprites.length ? 'flex' : 'none';
+    }
   },
 
+  // ===== FILE BROWSER =====
   loadFile(file) {
     const reader = new FileReader();
     reader.onload = e => {
       const img = new Image();
       img.onload = () => {
-        this.originalImage = img;
-        this.canvas.width = img.width;
-        this.canvas.height = img.height;
-        this.width = img.width;
-        this.height = img.height;
-        this.ctx.drawImage(img, 0, 0);
-        document.getElementById('canvasInfo').textContent = `${img.width} × ${img.height}px`;
-        document.getElementById('canvasSize').textContent = `${img.width}×${img.height}`;
-        document.getElementById('uploadZone').style.display = 'none';
-        document.getElementById('actionBar').style.display = 'flex';
-        this.imgData = this.ctx.getImageData(0, 0, this.width, this.height);
-        document.getElementById('spriteGrid').innerHTML = '';
-        this.sprites = [];
+        this._setImage(img, file.name);
+        this._addRecentFile(file.name, img.src);
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   },
 
+  loadMultipleFiles(files) {
+    let loaded = 0;
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => { loaded++; this._setImage(img, file.name); };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  },
+
+  loadFromUrl() {
+    const url = document.getElementById('imgUrl').value.trim();
+    if (!url) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { this._setImage(img, url.split('/').pop() || 'image'); this.toast('✅ Image loaded from URL'); };
+    img.onerror = () => this.toast('❌ Failed to load image from URL');
+    img.src = url;
+  },
+
   loadDemo() {
-    // Generate a demo spritesheet inline
     const size = 256;
     this.canvas.width = size * 4;
-    this.canvas.height = size * 2;
+    this.canvas.height = size * 3;
     this.width = this.canvas.width;
     this.height = this.canvas.height;
 
     const ctx = this.ctx;
-    const colors = ['#7c4dff','#00e5ff','#ff6b81','#f59e0b','#22c55e','#ef4444','#a855f7','#ec4899'];
+    const colors = ['#7c4dff','#00e5ff','#ff6b81','#f59e0b','#22c55e','#ef4444','#a855f7','#ec4899','#f97316','#06b6d4','#84cc16','#e11d48'];
+    const shapes = ['circle','rect','diamond','triangle','star'];
 
-    for (let row = 0; row < 2; row++) {
+    for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 4; col++) {
-        const x = col * size;
-        const y = row * size;
+        const x = col * size, y = row * size;
         const ci = row * 4 + col;
-
-        // Background
         ctx.fillStyle = '#1a1d2e';
         ctx.fillRect(x, y, size, size);
-
-        // Shape
-        ctx.fillStyle = colors[ci];
+        ctx.fillStyle = colors[ci % colors.length];
+        const cx = x + size/2, cy = y + size/2, s = size * 0.35;
         ctx.beginPath();
-        const shapes = ['circle','rect','diamond','triangle'];
         const shape = shapes[ci % shapes.length];
-        const cx = x + size/2, cy = y + size/2;
-        const s = size * 0.35;
-
-        if (shape === 'circle') {
-          ctx.arc(cx, cy, s, 0, Math.PI * 2);
-        } else if (shape === 'rect') {
-          ctx.rect(cx - s, cy - s, s * 2, s * 2);
-        } else if (shape === 'diamond') {
-          ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s, cy);
-          ctx.lineTo(cx, cy + s); ctx.lineTo(cx - s, cy);
-        } else {
-          ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s, cy + s);
-          ctx.lineTo(cx - s, cy + s);
+        if (shape === 'circle') { ctx.arc(cx, cy, s, 0, Math.PI*2); ctx.fill(); }
+        else if (shape === 'rect') { ctx.rect(cx-s, cy-s, s*2, s*2); ctx.fill(); }
+        else if (shape === 'diamond') { ctx.moveTo(cx,cy-s); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s); ctx.lineTo(cx-s,cy); ctx.closePath(); ctx.fill(); }
+        else if (shape === 'triangle') { ctx.moveTo(cx,cy-s); ctx.lineTo(cx+s,cy+s); ctx.lineTo(cx-s,cy+s); ctx.closePath(); ctx.fill(); }
+        else if (shape === 'star') {
+          for (let p = 0; p < 5; p++) { const a = p*Math.PI*2/5-Math.PI/2; const b = a+Math.PI/5; ctx.lineTo(cx+Math.cos(a)*s,cy+Math.sin(a)*s); ctx.lineTo(cx+Math.cos(b)*s*0.4,cy+Math.sin(b)*s*0.4); }
+          ctx.closePath(); ctx.fill();
         }
-        ctx.fill();
-
-        // Highlight
-        ctx.fillStyle = 'rgba(255,255,255,0.15)';
-        ctx.beginPath();
-        ctx.arc(cx - s * 0.2, cy - s * 0.2, s * 0.3, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.beginPath(); ctx.arc(cx-s*0.2,cy-s*0.2,s*0.25,0,Math.PI*2); ctx.fill();
       }
     }
 
-    this.imgData = this.ctx.getImageData(0, 0, this.width, this.height);
-    document.getElementById('canvasInfo').textContent = `${this.width} × ${this.height}px`;
-    document.getElementById('canvasSize').textContent = `${this.width}×${this.height}`;
-    document.getElementById('uploadZone').style.display = 'none';
-    document.getElementById('actionBar').style.display = 'flex';
-    document.getElementById('spriteGrid').innerHTML = '';
-    this.sprites = [];
+    this.originalImage = new Image();
+    this.originalImage.src = this.canvas.toDataURL();
+    this.originalImage.onload = () => {
+      this.imgData = this.ctx.getImageData(0, 0, this.width, this.height);
+      document.getElementById('canvasInfo').textContent = `${this.width} × ${this.height}px`;
+      this._fitCanvas();
+      document.getElementById('uploadZone').style.display = 'none';
+    };
   },
 
-  detect() {
-    if (!this.imgData) { this.toast('⚠️ Upload an image first!'); return; }
+  _setImage(img, name) {
+    this.originalImage = img;
+    this.canvas.width = img.width;
+    this.canvas.height = img.height;
+    this.width = img.width;
+    this.height = img.height;
+    this.ctx.drawImage(img, 0, 0);
+    this.imgData = this.ctx.getImageData(0, 0, this.width, this.height);
+    document.getElementById('canvasInfo').textContent = `${img.width} × ${img.height}px — ${name}`;
+    document.getElementById('canvasStats').style.display = 'flex';
+    this._updateCanvasStats();
+    this._fitCanvas();
+    document.getElementById('uploadZone').style.display = 'none';
+    this.sprites = [];
+    this.selectedSprites.clear();
+    this._renderSprites();
+    this._renderOverlay();
+    this.switchMode('extract');
+    this.toast(`📷 ${name} loaded — ${img.width}×${img.height}px`);
+  },
 
+  _fitCanvas() {
+    const wrap = document.getElementById('canvasWrap');
+    const maxW = wrap.clientWidth - 16;
+    const maxH = Math.max(400, window.innerHeight * 0.5);
+    const scale = Math.min(maxW / this.width, maxH / this.height, 2);
+    this.canvas.style.width = (this.width * scale) + 'px';
+    this.canvas.style.height = (this.height * scale) + 'px';
+    this.overlay.width = this.width * scale;
+    this.overlay.height = this.height * scale;
+    this.overlay.style.width = (this.width * scale) + 'px';
+    this.overlay.style.height = (this.height * scale) + 'px';
+  },
+
+  _updateCanvasStats() {
+    const st = document.getElementById('canvasStats');
+    if (!this.imgData) { st.innerHTML = ''; return; }
+    const d = this.imgData.data;
+    let nonBg = 0, totalA = 0;
+    for (let i = 3; i < d.length; i += 4) { totalA += d[i]; if (d[i] > 128) nonBg++; }
+    const pct = ((nonBg / (d.length/4)) * 100).toFixed(1);
+    const colors = new Set();
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i+3] > 0) colors.add(`${d[i]},${d[i+1]},${d[i+2]}`);
+    }
+    st.innerHTML = `<span>🎨 Colors: <b>${colors.size}</b></span><span>⬜ Pixels: <b>${nonBg.toLocaleString()}</b></span><span>📐 Size: <b>${(this.width*this.height).toLocaleString()}</b></span>`;
+  },
+
+  // ===== RECENT FILES =====
+  loadRecentFiles() {
+    try { this.recentFiles = JSON.parse(localStorage.getItem('spriteMapperRecent') || '[]'); } catch(e) { this.recentFiles = []; }
+  },
+
+  saveRecentFiles() {
+    localStorage.setItem('spriteMapperRecent', JSON.stringify(this.recentFiles.slice(0, 12)));
+  },
+
+  _addRecentFile(name, dataUrl) {
+    this.recentFiles = this.recentFiles.filter(f => f.name !== name);
+    this.recentFiles.unshift({ name, dataUrl: dataUrl.substring(0, 200) + '...' });
+    if (this.recentFiles.length > 12) this.recentFiles.pop();
+    this.saveRecentFiles();
+    this.renderRecentFiles();
+  },
+
+  renderRecentFiles() {
+    const el = document.getElementById('recentFiles');
+    if (!this.recentFiles.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:.78rem;padding:8px">No recent files</p>'; return; }
+    // Fix: store full dataUrl in _addRecentFile for loading
+    el.innerHTML = this.recentFiles.map((f, i) =>
+      `<div class="recent-file" onclick="SM._loadRecent(${i})">
+        <img class="thumb" src="${f.dataUrl}">
+        <span class="name">${f.name}</span>
+        <span class="del" onclick="event.stopPropagation();SM._deleteRecent(${i})">✕</span>
+      </div>`
+    ).join('');
+  },
+
+  _loadRecent(idx) {
+    // For now reload via URL — full dataURL stored would be too large
+    const f = this.recentFiles[idx];
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => this._setImage(img, f.name);
+    img.onerror = () => this.toast('❌ Failed to load recent file');
+    // We stored truncated URL, can't reload from it. Just notify.
+    this.toast('ℹ️ Recent file needs re-upload or URL load');
+  },
+
+  _deleteRecent(idx) {
+    this.recentFiles.splice(idx, 1);
+    this.saveRecentFiles();
+    this.renderRecentFiles();
+  },
+
+  // ===== LIVE DETECTION PREVIEW =====
+  toggleLivePreview() {
+    const on = document.getElementById('livePreview').checked;
+    if (on && this.imgData) this.detectPreview();
+    else this._clearOverlay();
+  },
+
+  updateSetting(name) {
+    const el = document.getElementById(name);
+    if (el) document.getElementById(name+'Num').value = el.value;
+    if (document.getElementById('livePreview').checked && this.imgData) {
+      clearTimeout(this._liveTimer);
+      this._liveTimer = setTimeout(() => this.detectPreview(), 150);
+    }
+  },
+
+  updateSettingFromNum(name) {
+    // sync number input to slider
+    const numEl = document.getElementById(name+'Num');
+    const sliderEl = document.getElementById(name);
+    if (numEl && sliderEl) {
+      sliderEl.value = numEl.value;
+      if (document.getElementById('livePreview').checked && this.imgData) {
+        clearTimeout(this._liveTimer);
+        this._liveTimer = setTimeout(() => this.detectPreview(), 150);
+      }
+    }
+  },
+
+  applyPreset(name) {
+    const p = this.presets[name];
+    if (!p) return;
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('threshold').value = p.threshold;
+    document.getElementById('thresholdNum').value = p.threshold;
+    document.getElementById('minW').value = p.minW;
+    document.getElementById('minH').value = p.minH;
+    document.getElementById('maxW').value = p.maxW;
+    document.getElementById('maxH').value = p.maxH;
+    document.getElementById('minArea').value = p.minArea;
+    document.getElementById('padding').value = p.padding;
+    document.getElementById('gridSnap').value = p.gridSnap;
+    document.getElementById('mergeOverlapping').checked = p.merge;
+    this._updateValDisplays(p);
+    if (this.imgData) this.detectPreview();
+    this.toast(`🔄 Preset: ${p.name} applied`);
+  },
+
+  _updateValDisplays(p) {
+    ['threshold','minW','minH','maxW','maxH','minArea','padding','gridSnap'].forEach(id => {
+      const v = document.getElementById(id)?.value;
+      const el = document.getElementById(id+'Val');
+      if (el) el.textContent = v;
+    });
+  },
+
+  detectPreview() {
+    if (!this.imgData) return;
+    this._showLoading('Previewing…');
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const result = this._runDetection(true);
+        this._renderOverlayPreview(result);
+        this._hideLoading();
+        this.toast(`🔍 Preview: ${result.length} sprites detected`);
+      }, 50);
+    });
+  },
+
+  refreshPreview() {
+    this._renderOverlay();
+    this.detectPreview();
+  },
+
+  // ===== CORE DETECTION =====
+  _runDetection(previewMode) {
+    if (!this.imgData) return [];
     const threshold = parseInt(document.getElementById('threshold').value);
     const minW = parseInt(document.getElementById('minW').value);
     const minH = parseInt(document.getElementById('minH').value);
+    const maxW = parseInt(document.getElementById('maxW').value);
+    const maxH = parseInt(document.getElementById('maxH').value);
+    const minArea = parseInt(document.getElementById('minArea').value);
+    const padding = parseInt(document.getElementById('padding').value);
+    const gridSnap = parseInt(document.getElementById('gridSnap').value);
+    const mergeOverlap = document.getElementById('mergeOverlapping').checked;
     const bgMode = document.getElementById('bgMode').value;
 
     const visited = new Set();
@@ -414,24 +831,59 @@ const SM = {
       for (let x = 0; x < this.width; x += 1) {
         const idx = (y * this.width + x) * 4;
         if (data[idx + 3] > threshold && !visited.has(`${x},${y}`)) {
-          const rect = this._floodFill(x, y, data, visited, threshold, bgMode);
-          if (rect.w >= minW && rect.h >= minH && rect.w < this.width && rect.h < this.height) {
+          const rect = this._floodFillDetection(x, y, data, visited, threshold, bgMode);
+          if (rect.w >= minW && rect.h >= minH &&
+              rect.w <= maxW && rect.h <= maxH &&
+              (rect.w * rect.h) >= minArea &&
+              rect.w < this.width && rect.h < this.height) {
             sprites.push(rect);
           }
         }
       }
     }
 
-    // Sort by size desc, limit to 200
-    sprites.sort((a, b) => (b.w * b.h) - (a.w * a.h));
-    this.sprites = sprites.slice(0, 200);
+    // Grid snap
+    if (gridSnap > 0) {
+      sprites.forEach(s => {
+        s.x = Math.round(s.x / gridSnap) * gridSnap;
+        s.y = Math.round(s.y / gridSnap) * gridSnap;
+        s.w = Math.ceil(s.w / gridSnap) * gridSnap;
+        s.h = Math.ceil(s.h / gridSnap) * gridSnap;
+        // Clamp
+        if (s.x + s.w > this.width) s.w = this.width - s.x;
+        if (s.y + s.h > this.height) s.h = this.height - s.y;
+      });
+    }
 
-    // Render thumbnails
-    this._renderSprites();
-    this.toast(`🔍 Found ${this.sprites.length} sprites!`);
+    // Merge overlapping
+    if (mergeOverlap) {
+      for (let i = 0; i < sprites.length; i++) {
+        for (let j = i + 1; j < sprites.length; j++) {
+          if (this._rectsOverlap(sprites[i], sprites[j])) {
+            sprites[i] = this._mergeRects(sprites[i], sprites[j]);
+            sprites.splice(j, 1);
+            j--;
+          }
+        }
+      }
+    }
+
+    // Sort by size desc
+    sprites.sort((a, b) => (b.w * b.h) - (a.w * b.h));
+
+    // Calculate confidence for each
+    sprites.forEach(s => {
+      s.confidence = this._calcConfidence(s, data, threshold);
+      // Extract dominant colors
+      s.colors = this._extractColors(s, data);
+      s.transparency = this._calcTransparency(s, data);
+    });
+
+    // Limit for preview
+    return previewMode ? sprites.slice(0, 100) : sprites;
   },
 
-  _floodFill(sx, sy, data, visited, threshold, bgMode) {
+  _floodFillDetection(sx, sy, data, visited, threshold, bgMode) {
     let minX = sx, maxX = sx, minY = sy, maxY = sy;
     const stack = [[sx, sy]];
     visited.add(`${sx},${sy}`);
@@ -443,7 +895,46 @@ const SM = {
         const key = `${nx},${ny}`;
         if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height && !visited.has(key)) {
           const idx = (ny * this.width + nx) * 4;
-          if (data[idx + 3] > threshold) {
+          let isForeground = false;
+
+          switch(bgMode) {
+            case 'alpha':
+              isForeground = data[idx + 3] > threshold;
+              break;
+            case 'top-left':
+              const cornerIdx = 0;
+              const cr = data[cornerIdx], cg = data[cornerIdx+1], cb = data[cornerIdx+2];
+              isForeground = Math.abs(data[idx]-cr) > threshold || Math.abs(data[idx+1]-cg) > threshold || Math.abs(data[idx+2]-cb) > threshold;
+              break;
+            case 'flood': {
+              const fi = 0;
+              const fr = data[fi], fg = data[fi+1], fb = data[fi+2], fa = data[fi+3];
+              isForeground = (data[idx+3] > threshold && (Math.abs(data[idx]-fr) > threshold || Math.abs(data[idx+1]-fg) > threshold || Math.abs(data[idx+2]-fb) > threshold));
+              break;
+            }
+            case 'edge': {
+              if (nx > 0 && nx < this.width-1 && ny > 0 && ny < this.height-1) {
+                const left = ((ny * this.width + (nx-1)) * 4);
+                const right = ((ny * this.width + (nx+1)) * 4);
+                const top = (((ny-1) * this.width + nx) * 4);
+                const bottom = (((ny+1) * this.width + nx) * 4);
+                const gx = Math.abs(data[left]-data[right]) + Math.abs(data[left+1]-data[right+1]) + Math.abs(data[left+2]-data[right+2]);
+                const gy = Math.abs(data[top]-data[bottom]) + Math.abs(data[top+1]-data[bottom+1]) + Math.abs(data[top+2]-data[bottom+2]);
+                isForeground = (Math.sqrt(gx*gy + gy*gy) > threshold && data[idx+3] > 50);
+              } else {
+                isForeground = data[idx+3] > threshold;
+              }
+              break;
+            }
+            case 'contrast': {
+              const brightness = (data[idx]*299 + data[idx+1]*587 + data[idx+2]*114) / 1000;
+              const alpha = data[idx+3];
+              isForeground = (alpha > threshold && brightness > 30 && brightness < 225);
+              break;
+            }
+          }
+
+          if (isForeground) {
             visited.add(key);
             stack.push([nx, ny]);
             minX = Math.min(minX, nx); maxX = Math.max(maxX, nx);
@@ -453,45 +944,167 @@ const SM = {
       }
     }
     return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
-  }
-
-  slice() {
-    if (!this.originalImage) { this.toast('⚠️ Upload image first!'); return; }
-
-    const cols = parseInt(document.getElementById('cols').value);
-    const rows = parseInt(document.getElementById('rows').value);
-    const spacing = parseInt(document.getElementById('spacing').value);
-
-    const cellW = this.width / cols;
-    const cellH = this.height / rows;
-
-    this.sprites = [];
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        this.sprites.push({
-          x: Math.floor(c * cellW + spacing / 2),
-          y: Math.floor(r * cellH + spacing / 2),
-          w: Math.floor(cellW - spacing),
-          h: Math.floor(cellH - spacing)
-        });
-      }
-    }
-
-    this._renderSprites();
-    this.toast(`✂️ Sliced into ${this.sprites.length} cells!`);
   },
 
+  _rectsOverlap(a, b) {
+    const margin = 4;
+    return !(a.x + a.w + margin < b.x || b.x + b.w + margin < a.x ||
+             a.y + a.h + margin < b.y || b.y + b.h + margin < a.y);
+  },
+
+  _mergeRects(a, b) {
+    return {
+      x: Math.min(a.x, b.x) - 2,
+      y: Math.min(a.y, b.y) - 2,
+      w: Math.max(a.x + a.w, b.x + b.w) - Math.min(a.x, b.x) + 4,
+      h: Math.max(a.y + a.h, b.y + b.h) - Math.min(a.y, b.y) + 4
+    };
+  },
+
+  _calcConfidence(rect, data, threshold) {
+    let total = 0, filled = 0, edgePixels = 0;
+    for (let y = rect.y; y < rect.y + rect.h; y++) {
+      for (let x = rect.x; x < rect.x + rect.w; x++) {
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) continue;
+        const i = (y * this.width + x) * 4;
+        total++;
+        if (data[i + 3] > threshold) {
+          filled++;
+          // Edge detection
+          if (x > 0 && x < this.width-1) {
+            const left = ((y * this.width + (x-1)) * 4);
+            const right = ((y * this.width + (x+1)) * 4);
+            if (Math.abs(data[i]-data[left]) > 40 || Math.abs(data[i]-data[right]) > 40) edgePixels++;
+          }
+        }
+      }
+    }
+    const density = total > 0 ? filled / total : 0;
+    const edgeRatio = filled > 0 ? edgePixels / filled : 0;
+    // Score: density 70% + edge definition 30%
+    return Math.min(1, density * 0.7 + Math.min(1, edgeRatio * 2) * 0.3);
+  },
+
+  _extractColors(rect, data) {
+    const colorMap = new Map();
+    for (let y = rect.y; y < rect.y + rect.h; y++) {
+      for (let x = rect.x; x < rect.x + rect.w; x++) {
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) continue;
+        const i = (y * this.width + x) * 4;
+        if (data[i+3] > 0) {
+          const r = Math.round(data[i]/32)*32;
+          const g = Math.round(data[i+1]/32)*32;
+          const b = Math.round(data[i+2]/32)*32;
+          const key = `${r},${g},${b}`;
+          colorMap.set(key, (colorMap.get(key)||0) + 1);
+        }
+      }
+    }
+    return Array.from(colorMap.entries())
+      .sort((a,b) => b[1]-a[1])
+      .slice(0, 5)
+      .map(([k]) => {
+        const [r,g,b] = k.split(',').map(Number);
+        return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+      });
+  },
+
+  _calcTransparency(rect, data) {
+    let transparent = 0, total = 0;
+    for (let y = rect.y; y < rect.y + rect.h; y++) {
+      for (let x = rect.x; x < rect.x + rect.w; x++) {
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) continue;
+        total++;
+        if (data[(y * this.width + x) * 4 + 3] < 128) transparent++;
+      }
+    }
+    return total > 0 ? ((transparent / total) * 100).toFixed(1) : 0;
+  },
+
+  // ===== DETECT =====
+  detect() {
+    if (!this.imgData) { this.toast('⚠️ Upload an image first!'); return; }
+    this._showLoading('Detecting sprites…');
+    setTimeout(() => {
+      this.sprites = this._runDetection(false);
+      this._renderSprites();
+      this._renderOverlay();
+      this._hideLoading();
+      this.toast(`🎯 Found ${this.sprites.length} sprites!`);
+      document.getElementById('detectCount').textContent = `(${this.sprites.length})`;
+      this.selectedSprites.clear();
+      this._updateBulkBar();
+      // Update left panel export availability
+      document.getElementById('exportPanel').style.opacity = '1';
+      document.getElementById('exportPanel').style.pointerEvents = 'auto';
+    }, 200);
+  },
+
+  // ===== OVERLAY PREVIEW =====
+  _renderOverlayPreview(sprites) {
+    const s = this.canvas.getBoundingClientRect();
+    this.overlay.width = s.width;
+    this.overlay.height = s.height;
+    this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+    const scale = s.width / this.width;
+
+    sprites.forEach((spr, i) => {
+      const confidence = spr.confidence || 0.5;
+      let color;
+      if (confidence > 0.8) color = 'rgba(0,229,255,0.5)';
+      else if (confidence > 0.5) color = 'rgba(245,158,11,0.5)';
+      else color = 'rgba(239,68,68,0.5)';
+
+      this.octx.strokeStyle = color;
+      this.octx.lineWidth = 2;
+      this.octx.strokeRect(spr.x * scale, spr.y * scale, spr.w * scale, spr.h * scale);
+
+      if (document.getElementById('showConfidence').checked) {
+        this.octx.fillStyle = color.replace('0.5','0.8');
+        this.octx.font = `${Math.max(10, 12 * scale)}px monospace`;
+        this.octx.fillText(`${(confidence*100).toFixed(0)}%`, spr.x * scale + 3, spr.y * scale + 14 * Math.max(1, scale));
+      }
+    });
+
+    document.getElementById('detectionLegend').style.display = sprites.length ? 'flex' : 'none';
+  },
+
+  _renderOverlay() {
+    const s = this.canvas.getBoundingClientRect();
+    this.overlay.width = s.width;
+    this.overlay.height = s.height;
+    this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+    const scale = s.width / this.width;
+
+    this.sprites.forEach((spr, i) => {
+      const isSelected = this.selectedSprites.has(i);
+      this.octx.strokeStyle = isSelected ? 'var(--accent)' : 'var(--primary)';
+      this.octx.lineWidth = isSelected ? 3 : 1.5;
+      this.octx.setLineDash(isSelected ? [] : [4, 4]);
+      this.octx.strokeRect(spr.x * scale, spr.y * scale, spr.w * scale, spr.h * scale);
+      this.octx.setLineDash([]);
+
+      if (document.getElementById('showConfidence') && spr.confidence) {
+        const c = spr.confidence > 0.8 ? '#00e5ff' : spr.confidence > 0.5 ? '#f59e0b' : '#ef4444';
+        this.octx.fillStyle = c;
+        this.octx.font = `${Math.max(10, 11 * Math.min(scale, 1.5))}px monospace`;
+        this.octx.fillText(`#${i} ${(spr.confidence*100).toFixed(0)}%`, spr.x * scale + 3, spr.y * scale + 13);
+      }
+    });
+
+    document.getElementById('detectionLegend').style.display = this.sprites.length ? 'flex' : 'none';
+  },
+
+  // ===== RENDER SPRITE THUMBNAILS =====
   _renderSprites() {
     const grid = document.getElementById('spriteGrid');
     grid.innerHTML = '';
-
-    const padding = parseInt(document.getElementById('padding').value) || 0;
+    const padding = parseInt(document.getElementById('padding').value) || 2;
 
     this.sprites.forEach((sprite, i) => {
       const cell = document.createElement('div');
-      cell.className = 'output-cell';
+      cell.className = 'output-cell' + (this.selectedSprites.has(i) ? ' selected' : '');
 
-      // Thumbnail canvas — cap preview at 128px for performance
       const maxPreview = 128;
       const scale = Math.min(maxPreview / (sprite.w + padding * 2), maxPreview / (sprite.h + padding * 2), 1);
       const pw = Math.round((sprite.w + padding * 2) * scale);
@@ -504,76 +1117,254 @@ const SM = {
       c.style.height = ph + 'px';
       const cc = c.getContext('2d');
       cc.imageSmoothingEnabled = false;
-
-      // Transparent background
       cc.clearRect(0, 0, c.width, c.height);
       cc.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, padding, padding, sprite.w, sprite.h);
 
-      const name = `sprite_${String(i).padStart(3, '0')}`;
+      const conf = sprite.confidence ? `<span class="badge ${sprite.confidence>.8?'badge-green':sprite.confidence>.5?'badge-orange':'badge-red'}">${(sprite.confidence*100).toFixed(0)}%</span>` : '';
+      const colPreviews = (sprite.colors || []).slice(0,3).map(c => `<span class="color-swatch" style="background:${c}" title="${c}"></span>`).join('');
+
       cell.innerHTML = `
-        <div class="cell-actions">
-          <button onclick="event.stopPropagation();SM.copySprite(${i})" title="Copy to clipboard">📋</button>
-          <button onclick="event.stopPropagation();SM.downloadSprite(${i})" title="Download PNG">💾</button>
-          <button onclick="event.stopPropagation();SM.previewSprite(${i})" title="Preview full size">🔍</button>
+        <div class="cell-actions" style="display:none">
+          <button onclick="event.stopPropagation();SM.copySprite(${i})" title="Copy">📋</button>
+          <button onclick="event.stopPropagation();SM.downloadSprite(${i})" title="Download">💾</button>
+          <button onclick="event.stopPropagation();SM.previewSprite(${i})" title="Preview">🔍</button>
+          <button onclick="event.stopPropagation();SM.toggleSelect(${i})" title="Select">${this.selectedSprites.has(i)?'✓':'◇'}</button>
         </div>
-        <div class="sprite-name">${name} (${sprite.w}×${sprite.h})</div>
+        <div class="sprite-meta">${sprite.w}×${sprite.h} ${conf}</div>
+        ${colPreviews ? '<div style="margin:2px 0">' + colPreviews + '</div>' : ''}
       `;
       cell.insertBefore(c, cell.firstChild);
-      cell.onclick = () => this._selectSprite(cell, i);
+      cell.querySelector('.sprite-meta').style.position = 'relative';
+
+      cell.onclick = (e) => {
+        if (e.target.closest('.cell-actions')) return;
+        this.toggleSelect(i);
+      };
+      cell.onmouseenter = () => { cell.querySelector('.cell-actions').style.display = 'flex'; };
+      cell.onmouseleave = () => { cell.querySelector('.cell-actions').style.display = 'none'; };
       grid.appendChild(cell);
     });
 
-    document.getElementById('spriteCount').textContent = this.sprites.length;
+    document.getElementById('detectCount').textContent = `(${this.sprites.length})`;
   },
 
-  _selectSprite(cell, idx) {
-    document.querySelectorAll('.output-cell').forEach(c => c.style.borderColor = '');
-    cell.style.borderColor = 'var(--primary)';
-
-    // Draw selection on canvas
-    const overlay = document.getElementById('selectionOverlay');
-    const wrap = document.getElementById('canvasWrap');
-    const s = this.sprites[idx];
-    const scale = wrap.clientWidth / this.width;
-    overlay.style.left = (s.x * scale) + 'px';
-    overlay.style.top = (s.y * scale) + 'px';
-    overlay.style.width = (s.w * scale) + 'px';
-    overlay.style.height = (s.h * scale) + 'px';
-    overlay.classList.add('active');
+  toggleSelect(idx) {
+    if (this.selectedSprites.has(idx)) this.selectedSprites.delete(idx);
+    else this.selectedSprites.add(idx);
+    this._renderSprites();
+    this._updateBulkBar();
+    this._renderOverlay();
   },
 
-  previewSprite(idx) {
-    const sprite = this.sprites[idx];
-    const c = document.createElement('canvas');
-    c.width = sprite.w; c.height = sprite.h;
-    c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0, sprite.w, sprite.h);
+  selectAll() {
+    this.sprites.forEach((_, i) => this.selectedSprites.add(i));
+    this._renderSprites();
+    this._updateBulkBar();
+    this._renderOverlay();
+  },
 
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:99999;cursor:pointer';
-    overlay.onclick = () => document.body.removeChild(overlay);
+  deselectAll() {
+    this.selectedSprites.clear();
+    this._renderSprites();
+    this._updateBulkBar();
+    this._renderOverlay();
+  },
 
-    const img = document.createElement('img');
-    img.src = c.toDataURL('image/png');
-    img.style.cssText = 'max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.5);image-rendering:pixelated';
+  _updateBulkBar() {
+    const bar = document.getElementById('bulkBar');
+    const count = this.selectedSprites.size;
+    bar.style.display = count > 0 ? 'flex' : 'none';
+    if (count > 0) document.getElementById('selectedCount').textContent = count;
+  },
 
-    const close = document.createElement('div');
-    close.textContent = '✕ Close (click anywhere)';
-    close.style.cssText = 'position:absolute;top:16px;right:20px;color:#fff;font-size:1rem;font-family:inherit;cursor:pointer';
-    overlay.appendChild(close);
-    overlay.appendChild(img);
-    document.body.appendChild(overlay);
+  // ===== DEEP AUDIT =====
+  renderAudit() {
+    const empty = document.getElementById('auditEmpty');
+    const container = document.getElementById('auditContainer');
+
+    if (!this.sprites.length) {
+      empty.style.display = 'block';
+      container.style.display = 'none';
+      document.getElementById('auditInfo').style.display = 'none';
+      return;
+    }
+
+    empty.style.display = 'none';
+    container.style.display = 'block';
+    document.getElementById('auditInfo').style.display = 'flex';
+
+    // Aggregate stats
+    const totalPixels = this.sprites.reduce((a, s) => a + s.w * s.h, 0);
+    const avgW = (this.sprites.reduce((a, s) => a + s.w, 0) / this.sprites.length).toFixed(1);
+    const avgH = (this.sprites.reduce((a, s) => a + s.h, 0) / this.sprites.length).toFixed(1);
+    const allColors = new Set();
+    this.sprites.forEach(s => (s.colors || []).forEach(c => allColors.add(c)));
+
+    document.getElementById('auditTotal').textContent = this.sprites.length;
+    document.getElementById('auditAvg').textContent = `${avgW}×${avgH}px`;
+    document.getElementById('auditColors').textContent = allColors.size;
+
+    // Sort sprites
+    const sortKey = this._auditSortKey || 'area';
+    const sortAsc = this._auditSortAsc || false;
+    let sorted = [...this.sprites.map((s, i) => ({ ...s, _idx: i }))];
+
+    sorted.sort((a, b) => {
+      let va, vb;
+      switch(sortKey) {
+        case 'name': va = a._idx; vb = b._idx; break;
+        case 'area': va = a.w * a.h; vb = b.w * b.h; break;
+        case 'w': va = a.w; vb = b.w; break;
+        case 'h': va = a.h; vb = b.h; break;
+        case 'x': va = a.x; vb = b.x; break;
+        case 'y': va = a.y; vb = b.y; break;
+        case 'confidence': va = a.confidence || 0; vb = b.confidence || 0; break;
+        case 'transparency': va = parseFloat(a.transparency) || 0; vb = parseFloat(b.transparency) || 0; break;
+        default: va = a._idx; vb = b._idx;
+      }
+      return sortAsc ? va - vb : vb - va;
+    });
+
+    const searchTerm = (document.getElementById('auditSearch')?.value || '').toLowerCase();
+
+    if (searchTerm) {
+      sorted = sorted.filter(s =>
+        String(s._idx).includes(searchTerm) ||
+        `${s.w}×${s.h}`.includes(searchTerm) ||
+        String(s.x).includes(searchTerm) ||
+        String(s.y).includes(searchTerm) ||
+        (s.colors || []).join(' ').toLowerCase().includes(searchTerm) ||
+        String(s.confidence).includes(searchTerm)
+      );
+    }
+
+    // Render table
+    const padding = parseInt(document.getElementById('padding')?.value) || 2;
+
+    let html = `<table class="audit-table">
+    <thead><tr>
+      <th onclick="SM.sortAudit('name')"># <span style="font-size:.6rem">▼</span></th>
+      <th onclick="SM.sortAudit('w')">W <span style="font-size:.6rem">▼</span></th>
+      <th onclick="SM.sortAudit('h')">H <span style="font-size:.6rem">▼</span></th>
+      <th onclick="SM.sortAudit('area')">Area <span style="font-size:.6rem">▼</span></th>
+      <th onclick="SM.sortAudit('x')">X <span style="font-size:.6rem">▼</span></th>
+      <th onclick="SM.sortAudit('y')">Y <span style="font-size:.6rem">▼</span></th>
+      <th onclick="SM.sortAudit('confidence')">Conf. <span style="font-size:.6rem">▼</span></th>
+      <th onclick="SM.sortAudit('transparency')">Alpha% <span style="font-size:.6rem">▼</span></th>
+      <th>Colors</th>
+      <th>Preview</th>
+    </tr></thead><tbody>`;
+
+    sorted.forEach(s => {
+      const area = s.w * s.h;
+      const confPct = s.confidence ? (s.confidence * 100).toFixed(0) : '—';
+      const confBadge = s.confidence > 0.8 ? 'badge-green' : s.confidence > 0.5 ? 'badge-orange' : 'badge-red';
+      const colorDots = (s.colors || []).slice(0, 4).map(c => `<span class="color-swatch" style="background:${c}" title="${c}"></span>`).join('');
+
+      // Mini thumbnail
+      const tc = document.createElement('canvas');
+      tc.width = s.w; tc.height = s.h;
+      tc.getContext('2d').drawImage(this.canvas, s.x, s.y, s.w, s.h, 0, 0, s.w, s.h);
+      const thumbSrc = tc.toDataURL();
+
+      html += `<tr>
+        <td><span class="badge badge-purple">${s._idx}</span></td>
+        <td class="num">${s.w}</td>
+        <td class="num">${s.h}</td>
+        <td class="num">${area.toLocaleString()}</td>
+        <td class="num">${s.x}</td>
+        <td class="num">${s.y}</td>
+        <td><span class="badge ${confBadge}">${confPct}%</span></td>
+        <td class="num">${s.transparency || '—'}%</td>
+        <td><div style="display:flex;gap:2px;flex-wrap:wrap">${colorDots}</div></td>
+        <td><img src="${thumbSrc}" style="width:36px;height:36px;border-radius:4px;border:1px solid var(--border);image-rendering:pixelated" title="${s.w}×${s.h}"></td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    this._auditData = sorted;
+  },
+
+  sortAudit(key) {
+    if (this._auditSortKey === key) this._auditSortAsc = !this._auditSortAsc;
+    else { this._auditSortKey = key; this._auditSortAsc = true; }
+    this.renderAudit();
+  },
+
+  filterAudit() {
+    this.renderAudit();
+  },
+
+  exportAuditCSV() {
+    if (!this._auditData.length) { this.toast('⚠️ No audit data'); return; }
+    let csv = 'Index,Width,Height,Area,X,Y,Confidence,Transparency,Colors\n';
+    this._auditData.forEach(s => {
+      csv += `${s._idx},${s.w},${s.h},${s.w*s.h},${s.x},${s.y},${(s.confidence*100).toFixed(1)}%,${s.transparency}%,${(s.colors||[]).join('|')}\n`;
+    });
+    this._downloadText(csv, 'sprite-audit.csv');
+    this.toast('📄 Audit CSV exported!');
+  },
+
+  exportAuditJSON() {
+    if (!this._auditData.length) { this.toast('⚠️ No audit data'); return; }
+    const data = {
+      meta: { tool: 'shadow-studio/sprite-mapper', version: '5.2.0', generated: new Date().toISOString() },
+      source: { width: this.width, height: this.height },
+      sprites: this._auditData.map(s => ({
+        index: s._idx, x: s.x, y: s.y, width: s.w, height: s.h,
+        area: s.w * s.h, confidence: s.confidence,
+        transparency: parseFloat(s.transparency),
+        colors: s.colors,
+        data_url: this._extractDataURL(s)
+      }))
+    };
+    this._copyAndToast(JSON.stringify(data, null, 2), '📋 Audit JSON copied!');
+  },
+
+  exportAuditHTML() {
+    if (!this._auditData.length) { this.toast('⚠️ No audit data'); return; }
+    let html = `<!DOCTYPE html><html><head><title>Sprite Audit Report</title>
+<style>body{font-family:system-ui;padding:20px;background:#0a0b14;color:#f1f3f7}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #2a2d4a;padding:8px;text-align:center}
+th{background:#15172a;color:#00e5ff}img{border-radius:4px;image-rendering:pixelated}
+.badge-green{background:rgba(34,197,94,.2);color:#22c55e;padding:2px 8px;border-radius:10px;font-size:.7rem}
+.badge-orange{background:rgba(245,158,11,.2);color:#f59e0b;padding:2px 8px;border-radius:10px;font-size:.7rem}
+.badge-red{background:rgba(239,68,68,.2);color:#ef4444;padding:2px 8px;border-radius:10px;font-size:.7rem}
+</style></head><body><h1>🗺️ Sprite Audit Report</h1>
+<p>Source: ${this.width}×${this.height}px | Sprites: ${this._auditData.length} | Generated: ${new Date().toISOString()}</p>
+<table><tr><th>#</th><th>Preview</th><th>Size</th><th>Position</th><th>Confidence</th><th>Transparency</th><th>Colors</th></tr>`;
+
+    this._auditData.forEach(s => {
+      const tc = document.createElement('canvas');
+      tc.width = s.w; tc.height = s.h;
+      tc.getContext('2d').drawImage(this.canvas, s.x, s.y, s.w, s.h, 0, 0);
+      const thumb = tc.toDataURL();
+      const confBadge = s.confidence > 0.8 ? 'badge-green' : s.confidence > 0.5 ? 'badge-orange' : 'badge-red';
+      const colorDots = (s.colors || []).slice(0, 4).map(c => `<span style="display:inline-block;width:12px;height:12px;background:${c};border-radius:50%;border:1px solid rgba(255,255,255,.1)"></span>`).join('');
+      html += `<tr>
+        <td>${s._idx}</td>
+        <td><img src="${thumb}" width="36" height="36"></td>
+        <td>${s.w}×${s.h} (${s.w*s.h}px)</td>
+        <td>(${s.x}, ${s.y})</td>
+        <td><span class="badge ${confBadge}">${(s.confidence*100).toFixed(0)}%</span></td>
+        <td>${s.transparency}%</td>
+        <td>${colorDots}</td>
+      </tr>`;
+    });
+
+    html += '</table></body></html>';
+    this._downloadText(html, 'sprite-audit-report.html');
+    this.toast('📄 Audit report downloaded!');
   },
 
   // ===== EXPORT FUNCTIONS =====
-
   exportSheet() {
-    if (!this.sprites.length) { this.toast('⚠️ No sprites detected!'); return; }
-
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
     const cols = parseInt(document.getElementById('sheetCols').value);
     const maxSize = parseInt(document.getElementById('sheetMaxSize').value);
-    const padding = parseInt(document.getElementById('padding').value) || 0;
+    const padding = parseInt(document.getElementById('sheetPad').value) || 0;
 
-    // Calculate cell size
     let maxW = 0, maxH = 0;
     this.sprites.forEach(s => { maxW = Math.max(maxW, s.w); maxH = Math.max(maxH, s.h); });
     const cellW = maxW + padding * 2;
@@ -588,7 +1379,15 @@ const SM = {
     sheet.width = colsFit * cellW;
     sheet.height = Math.ceil(this.sprites.length / colsFit) * cellH;
     const sctx = sheet.getContext('2d');
-    sctx.clearRect(0, 0, sheet.width, sheet.height);
+
+    // Optional bg
+    const bgColor = document.getElementById('sheetBg').value;
+    if (bgColor && bgColor !== '#00000000') {
+      sctx.fillStyle = bgColor;
+      sctx.fillRect(0, 0, sheet.width, sheet.height);
+    } else {
+      sctx.clearRect(0, 0, sheet.width, sheet.height);
+    }
 
     this.sprites.forEach((sprite, i) => {
       const col = i % colsFit;
@@ -597,14 +1396,13 @@ const SM = {
         col * cellW + padding, row * cellH + padding, sprite.w, sprite.h);
     });
 
-    this._downloadCanvas(sheet, 'sprite-sheet.png');
-    this.toast(`📦 Sprite sheet exported! (${colsFit}×${Math.ceil(this.sprites.length/colsFit)})`);
-  }
+    this._downloadCanvas(sheet, `sprite-sheet-${colsFit}x${Math.ceil(this.sprites.length/colsFit)}.png`);
+    this.toast(`📦 Sprite sheet: ${colsFit}×${Math.ceil(this.sprites.length/colsFit)} grid`);
+  },
 
   exportStrip() {
     if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
-
-    const padding = parseInt(document.getElementById('padding').value) || 0;
+    const padding = parseInt(document.getElementById('padding').value) || 2;
     let totalW = 0, maxH = 0;
     this.sprites.forEach(s => { totalW += s.w + padding * 2; maxH = Math.max(maxH, s.h + padding * 2); });
 
@@ -612,29 +1410,27 @@ const SM = {
     strip.width = totalW;
     strip.height = maxH;
     const ctx = strip.getContext('2d');
+    ctx.clearRect(0, 0, strip.width, strip.height);
 
     let x = 0;
     this.sprites.forEach(sprite => {
-      ctx.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h,
-        x + padding, padding, sprite.w, sprite.h);
+      ctx.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, x + padding, padding, sprite.w, sprite.h);
       x += sprite.w + padding * 2;
     });
 
     this._downloadCanvas(strip, 'sprite-strip.png');
     this.toast('📊 Sprite strip exported!');
-  }
+  },
 
   async exportIndividual() {
     if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
-
     const zipAvailable = typeof JSZip !== 'undefined';
     if (zipAvailable) {
       const zip = new JSZip();
       this.sprites.forEach((sprite, i) => {
         const c = document.createElement('canvas');
         c.width = sprite.w; c.height = sprite.h;
-        const cc = c.getContext('2d');
-        cc.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0, sprite.w, sprite.h);
+        c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
         const dataUrl = c.toDataURL('image/png');
         const data = this._dataURLToBase64(dataUrl);
         zip.file(`sprite_${String(i).padStart(4,'0')}.png`, data, { base64: true });
@@ -643,45 +1439,56 @@ const SM = {
       this._downloadBlob(blob, 'sprites.zip');
       this.toast(`💾 ${this.sprites.length} sprites as ZIP!`);
     } else {
-      // Download first sprite as demo
       const c = document.createElement('canvas');
       c.width = this.sprites[0].w; c.height = this.sprites[0].h;
       c.getContext('2d').drawImage(this.canvas, this.sprites[0].x, this.sprites[0].y, this.sprites[0].w, this.sprites[0].h, 0, 0);
       this._downloadCanvas(c, 'sprite_0000.png');
       this.toast('💾 First sprite downloaded (add JSZip for batch)');
     }
-  }
+  },
 
   exportAllIndividual() {
     if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
-
     this.sprites.forEach((sprite, i) => {
       const c = document.createElement('canvas');
       c.width = sprite.w; c.height = sprite.h;
-      c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+      c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0, sprite.w, sprite.h);
       const link = document.createElement('a');
       link.download = `sprite_${String(i).padStart(4,'0')}.png`;
       link.href = c.toDataURL('image/png');
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
     });
     this.toast(`💾 ${this.sprites.length} sprites downloaded individually!`);
-  }
+  },
+
+  exportSelectedOnly() {
+    if (!this.selectedSprites.size) { this.toast('⚠️ No sprites selected!'); return; }
+    let i = 0;
+    this.selectedSprites.forEach(idx => {
+      const sprite = this.sprites[idx];
+      const c = document.createElement('canvas');
+      c.width = sprite.w; c.height = sprite.h;
+      c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+      const link = document.createElement('a');
+      link.download = `sprite_selected_${String(i++).padStart(4,'0')}.png`;
+      link.href = c.toDataURL('image/png');
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    });
+    this.toast(`💾 ${this.selectedSprites.size} selected sprites downloaded!`);
+  },
 
   copySprite(idx) {
     const sprite = this.sprites[idx];
     const c = document.createElement('canvas');
     c.width = sprite.w; c.height = sprite.h;
     c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
-
     c.toBlob(blob => {
       if (navigator.clipboard && navigator.clipboard.write) {
         navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
         this.toast('📋 Sprite copied to clipboard!');
-      } else {
-        this._downloadCanvas(c, `sprite_${idx}.png`);
-      }
+      } else { this._downloadCanvas(c, `sprite_${idx}.png`); }
     }, 'image/png');
-  }
+  },
 
   downloadSprite(idx) {
     const sprite = this.sprites[idx];
@@ -690,17 +1497,48 @@ const SM = {
     c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
     this._downloadCanvas(c, `sprite_${String(idx).padStart(4,'0')}.png`);
     this.toast('💾 Sprite downloaded!');
-  }
+  },
 
-  copySheetToClipboard() {
-    this.packAndExport(true);
-  }
+  previewSprite(idx) {
+    const sprite = this.sprites[idx];
+    const c = document.createElement('canvas');
+    c.width = sprite.w; c.height = sprite.h;
+    c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:99999;cursor:pointer;flex-direction:column';
+    overlay.onclick = () => document.body.removeChild(overlay);
+
+    const img = document.createElement('img');
+    img.src = c.toDataURL('image/png');
+    img.style.cssText = 'max-width:85vw;max-height:80vh;border-radius:12px;box-shadow:0 16px 60px rgba(0,0,0,.6);image-rendering:pixelated;border:2px solid var(--border)';
+
+    const info = document.createElement('div');
+    info.style.cssText = 'color:#fff;font-family:inherit;margin-top:16px;font-size:.85rem;text-align:center';
+    info.innerHTML = `Sprite #${idx} &nbsp;|&nbsp; ${sprite.w}×${sprite.h}px &nbsp;|&nbsp; Confidence: ${sprite.confidence ? (sprite.confidence*100).toFixed(0)+'%' : '—'}`;
+
+    const colors = (sprite.colors || []).slice(0,8).map(c => `<span style="display:inline-block;width:16px;height:16px;background:${c};border-radius:3px;margin:0 2px;border:1px solid rgba(255,255,255,.2)"></span>`).join('');
+    const colorLine = document.createElement('div');
+    colorLine.style.cssText = 'margin-top:8px';
+    colorLine.innerHTML = colors;
+
+    const close = document.createElement('div');
+    close.textContent = '✕ Click anywhere to close';
+    close.style.cssText = 'position:absolute;top:16px;right:20px;color:#fff;font-size:.85rem;font-family:inherit;cursor:pointer;background:rgba(0,0,0,.5);padding:6px 12px;border-radius:8px';
+
+    overlay.appendChild(close);
+    overlay.appendChild(img);
+    overlay.appendChild(info);
+    overlay.appendChild(colorLine);
+    document.body.appendChild(overlay);
+  },
+
+  copySheetToClipboard() { this.packAndExport(true); },
 
   packAndExport(copyOnly = false) {
     if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
-
     const cols = parseInt(document.getElementById('sheetCols').value);
-    const padding = parseInt(document.getElementById('padding').value) || 0;
+    const padding = parseInt(document.getElementById('sheetPad').value) || 0;
 
     let maxW = 0, maxH = 0;
     this.sprites.forEach(s => { maxW = Math.max(maxW, s.w); maxH = Math.max(maxH, s.h); });
@@ -712,7 +1550,14 @@ const SM = {
     sheet.width = cellW * cols;
     sheet.height = cellH * rows;
     const sctx = sheet.getContext('2d');
-    sctx.clearRect(0, 0, sheet.width, sheet.height);
+
+    const bgColor = document.getElementById('sheetBg').value;
+    if (bgColor && bgColor !== '#00000000') {
+      sctx.fillStyle = bgColor;
+      sctx.fillRect(0, 0, sheet.width, sheet.height);
+    } else {
+      sctx.clearRect(0, 0, sheet.width, sheet.height);
+    }
 
     this.sprites.forEach((sprite, i) => {
       const col = i % cols;
@@ -723,84 +1568,43 @@ const SM = {
 
     if (copyOnly) {
       sheet.toBlob(blob => {
-        navigator.clipboard?.write([new ClipboardItem({ 'image/png': blob })]);
-        this.toast('📋 Sheet copied to clipboard!');
+        if (navigator.clipboard && navigator.clipboard.write) {
+          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          this.toast('📋 Sheet copied to clipboard!');
+        } else this._downloadCanvas(sheet, 'sprite-sheet.png');
       }, 'image/png');
     } else {
       this._downloadCanvas(sheet, `sprite-sheet-${cols}x${rows}.png`);
       this.toast(`📦 Sheet exported: ${cols}×${rows} grid`);
     }
 
-    // Preview
     const preview = document.getElementById('sheetPreview');
     preview.classList.add('show');
+    preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     const pc = document.getElementById('sheetCanvas');
-    pc.width = Math.min(sheet.width, 800);
-    pc.height = Math.floor(sheet.height * (Math.min(sheet.width, 800) / sheet.width));
+    pc.width = Math.min(sheet.width, 600);
+    pc.height = Math.floor(sheet.height * (Math.min(sheet.width, 600) / sheet.width));
     pc.getContext('2d').imageSmoothingEnabled = false;
     pc.getContext('2d').drawImage(sheet, 0, 0, pc.width, pc.height);
-  }
-
-  exportJSON() {
-    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
-
-    const data = {
-      meta: {
-        sourceWidth: this.width,
-        sourceHeight: this.height,
-        count: this.sprites.length,
-        generated: new Date().toISOString(),
-        tool: 'shadow-studio/sprite-mapper',
-        version: '5.0.0'
-      },
-      sprites: this.sprites.map((s, i) => ({
-        name: `sprite_${String(i).padStart(4, '0')}`,
-        x: s.x, y: s.y,
-        width: s.w, height: s.h,
-        cx: s.x + s.w / 2,
-        cy: s.y + s.h / 2
-      }))
-    };
-
-    navigator.clipboard?.writeText(JSON.stringify(data, null, 2)) || this._fallbackCopy(JSON.stringify(data, null, 2));
-    this.toast('📋 JSON sprite data copied!');
-  }
-
-  async copyDataURIs() {
-    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
-
-    const uris = [];
-    this.sprites.forEach((sprite, i) => {
-      const c = document.createElement('canvas');
-      c.width = sprite.w; c.height = sprite.h;
-      c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
-      uris.push({ name: `sprite_${i}`, dataUrl: c.toDataURL('image/png') });
-    });
-
-    const blob = new Blob([JSON.stringify(uris, null, 2)], { type: 'application/json' });
-    navigator.clipboard?.writeText(JSON.stringify(uris)) || this._fallbackCopy(JSON.stringify(uris));
-    this.toast(`📋 ${uris.length} Data URIs copied!`);
-  }
+  },
 
   copyCSS() {
     if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
-
-    let css = `/* Sprite Sheet CSS — Generated by Shadow Studio */\n.sprite-sheet {\n  background-image: url('sprite-sheet.png');\n  background-repeat: no-repeat;\n}\n\n`;
-
     const cols = parseInt(document.getElementById('sheetCols').value);
-    const padding = parseInt(document.getElementById('padding').value) || 0;
+    const padding = parseInt(document.getElementById('sheetPad').value) || 0;
+
     let maxW = 0, maxH = 0;
     this.sprites.forEach(s => { maxW = Math.max(maxW, s.w); maxH = Math.max(maxH, s.h); });
 
+    let css = `/* Sprite Sheet CSS — Generated by Shadow Studio v5.2 */\n.sprite-sheet {\n  background-image: url('sprite-sheet.png');\n  background-repeat: no-repeat;\n}\n\n`;
     this.sprites.forEach((sprite, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
-      css += `.sprite-${String(i).padStart(4, '0')} {\n  width: ${sprite.w}px;\n  height: ${sprite.h}px;\n  background-position: -${col * (maxW + padding * 2) + padding}px -${row * (maxH + padding * 2) + padding}px;\n}\n\n`;
+      css += `.sprite-${String(i).padStart(4,'0')} {\n  width: ${sprite.w}px;\n  height: ${sprite.h}px;\n  background-position: -${col * (maxW + padding * 2) + padding}px -${row * (maxH + padding * 2) + padding}px;\n}\n\n`;
     });
 
-    navigator.clipboard?.writeText(css) || this._fallbackCopy(css);
-    this.toast('📋 CSS sprites copied!');
-  }
+    this._copyAndToast(css, '📋 CSS sprites copied!');
+  },
 
   copyForAI() {
     if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
@@ -808,78 +1612,203 @@ const SM = {
     const data = {
       type: 'sprite_extraction_result',
       tool: 'shadow-studio/sprite-mapper',
-      version: '5.0.0',
+      version: '5.2.0',
       source_dimensions: { width: this.width, height: this.height },
+      sprite_count: this.sprites.length,
+      extraction_settings: {
+        threshold: parseInt(document.getElementById('threshold').value),
+        min_width: parseInt(document.getElementById('minW').value),
+        min_height: parseInt(document.getElementById('minH').value),
+        background_mode: document.getElementById('bgMode').value,
+        grid_snap: parseInt(document.getElementById('gridSnap').value)
+      },
       sprites: this.sprites.map((s, i) => ({
         id: `sprite_${String(i).padStart(4, '0')}`,
         x: s.x, y: s.y, width: s.w, height: s.h,
-        data_url: this._extractDataURL(s),
-        center: { x: Math.round(s.x + s.w / 2), y: Math.round(s.y + s.h / 2) }
+        area: s.w * s.h,
+        center: { x: Math.round(s.x + s.w / 2), y: Math.round(s.y + s.h / 2) },
+        confidence: s.confidence ? parseFloat((s.confidence).toFixed(3)) : null,
+        transparency: parseFloat(s.transparency),
+        colors: s.colors,
+        data_url: this._extractDataURL(s)
       })),
       generated_at: new Date().toISOString()
     };
 
-    navigator.clipboard?.writeText(JSON.stringify(data, null, 2)) || this._fallbackCopy(JSON.stringify(data));
-    this.toast('🤖 AI-ready data copied!');
-  }
+    this._copyAndToast(JSON.stringify(data, null, 2), '🤖 AI-ready data copied!');
+  },
 
-  copyDataURLSheet() {
-    const cols = parseInt(document.getElementById('sheetCols').value);
-    const padding = parseInt(document.getElementById('padding').value) || 0;
-    let maxW = 0, maxH = 0;
-    this.sprites.forEach(s => { maxW = Math.max(maxW, s.w); maxH = Math.max(maxH, s.h); });
-
-    const sheet = document.createElement('canvas');
-    sheet.width = (maxW + padding * 2) * cols;
-    sheet.height = (maxH + padding * 2) * Math.ceil(this.sprites.length / cols);
-    const ctx = sheet.getContext('2d');
-
-    this.sprites.forEach((sprite, i) => {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      ctx.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h,
-        col * (maxW + padding * 2) + padding, row * (maxH + padding * 2) + padding, sprite.w, sprite.h);
-    });
-
-    navigator.clipboard?.writeText(sheet.toDataURL()) || this._fallbackCopy(sheet.toDataURL());
-    this.toast('🖼️ Data URL copied!');
-  }
+  copyDataURIs() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+    const uris = this.sprites.map((sprite, i) => ({
+      id: `sprite_${String(i).padStart(4,'0')}`,
+      data_url: this._extractDataURL(sprite)
+    }));
+    this._copyAndToast(JSON.stringify(uris, null, 2), `📋 ${uris.length} Data URIs copied!`);
+  },
 
   clearAll() {
     this.sprites = [];
+    this.selectedSprites.clear();
     this.originalImage = null;
     this.imgData = null;
     this.canvas.width = 0;
     this.canvas.height = 0;
+    this.overlay.width = 0;
+    this.overlay.height = 0;
     document.getElementById('spriteGrid').innerHTML = '';
-    document.getElementById('uploadZone').style.display = 'block';
-    document.getElementById('actionBar').style.display = 'none';
     document.getElementById('canvasInfo').textContent = 'No image loaded';
-    document.getElementById('canvasSize').textContent = '—';
-    document.getElementById('spriteCount').textContent = '0';
-    document.getElementById('selectionOverlay').classList.remove('active');
-    document.getElementById('sheetPreview').classList.remove('show');
-    this.toast('🗑️ Cleared!');
-  }
+    document.getElementById('canvasStats').style.display = 'none';
+    this._clearOverlay();
+    document.getElementById('uploadZone').style.display = '';
+    document.getElementById('detectCount').textContent = '(0)';
+    document.getElementById('auditEmpty').style.display = 'block';
+    document.getElementById('auditContainer').style.display = 'none';
+    document.getElementById('auditInfo').style.display = 'none';
+    document.getElementById('exportPanel').style.opacity = '.6';
+    document.getElementById('exportPanel').style.pointerEvents = 'none';
+    this.toast('🗑️ All cleared!');
+  },
 
-  // Utilitas
+  // ===== ZIP EXPORT =====
+  async exportZIP() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+    const hasJSZip = typeof JSZip !== 'undefined';
+    if (!hasJSZip) { this.toast('⚠️ JSZip not loaded for ZIP. Downloading individual PNGs instead.'); this.exportAllIndividual(); return; }
+
+    const zip = new JSZip();
+    const folder = zip.folder('sprites');
+
+    // Individual sprites
+    this.sprites.forEach((sprite, i) => {
+      const c = document.createElement('canvas');
+      c.width = sprite.w; c.height = sprite.h;
+      c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+      const data = this._dataURLToBase64(c.toDataURL('image/png'));
+      folder.file(`sprite_${String(i).padStart(4,'0')}.png`, data, { base64: true });
+    });
+
+    // Sprite sheet
+    const sheetCols = parseInt(document.getElementById('sheetCols').value);
+    const padding = parseInt(document.getElementById('sheetPad').value) || 0;
+    let maxW = 0, maxH = 0;
+    this.sprites.forEach(s => { maxW = Math.max(maxW, s.w); maxH = Math.max(maxH, s.h); });
+    const cellW = maxW + padding * 2, cellH = maxH + padding * 2;
+    const rows = Math.ceil(this.sprites.length / sheetCols);
+    const sheet = document.createElement('canvas');
+    sheet.width = cellW * sheetCols;
+    sheet.height = cellH * rows;
+    const sctx = sheet.getContext('2d');
+    sctx.clearRect(0, 0, sheet.width, sheet.height);
+    this.sprites.forEach((sprite, i) => {
+      const col = i % sheetCols, row = Math.floor(i / sheetCols);
+      sctx.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h,
+        col * cellW + padding, row * cellH + padding, sprite.w, sprite.h);
+    });
+    const sheetData = this._dataURLToBase64(sheet.toDataURL('image/png'));
+    folder.file('sprite-sheet.png', sheetData, { base64: true });
+
+    // Audit data
+    const auditData = this.sprites.map((s, i) => ({
+      index: i, x: s.x, y: s.y, width: s.w, height: s.h,
+      area: s.w * s.h, confidence: s.confidence, transparency: s.transparency, colors: s.colors
+    }));
+    folder.file('audit-report.json', JSON.stringify(auditData, null, 2));
+
+    // CSS
+    let css = `/* Sprite Sheet CSS — Shadow Studio v5.2 */\n.sprite-sheet { background-image: url('sprite-sheet.png'); background-repeat: no-repeat; }\n\n`;
+    this.sprites.forEach((sprite, i) => {
+      const col = i % sheetCols;
+      const row = Math.floor(i / sheetCols);
+      css += `.sprite-${String(i).padStart(4,'0')} { width: ${sprite.w}px; height: ${sprite.h}px; background-position: -${col * cellW + padding}px -${row * cellH + padding}px; }\n`;
+    });
+    folder.file('sprites.css', css);
+
+    // AI-ready data
+    const aiData = { type: 'sprite_extraction_result', tool: 'shadow-studio/sprite-mapper', version: '5.2.0', sprites: this.sprites.map((s, i) => ({
+      id: `sprite_${String(i).padStart(4,'0')}`, x: s.x, y: s.y, width: s.w, height: s.h,
+      confidence: s.confidence, colors: s.colors, data_url: this._extractDataURL(s)
+    })) };
+    folder.file('ai-ready-data.json', JSON.stringify(aiData, null, 2));
+
+    const blob = await zip.generateAsync({ type: 'blob' });
+    this._downloadBlob(blob, 'sprite-mapper-bundle.zip');
+    this.toast(`🗜️ ZIP exported! (${this.sprites.length} sprites + assets)`);
+  },
+
+  // ===== SELECTED EXPORT =====
+  exportSelectedFrame() {
+    if (!this.selectedSprites.size) { this.toast('⚠️ No sprites selected!'); return; }
+    let count = 0;
+    this.selectedSprites.forEach(idx => {
+      const sprite = this.sprites[idx];
+      const c = document.createElement('canvas');
+      c.width = sprite.w; c.height = sprite.h;
+      c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+      const link = document.createElement('a');
+      link.download = `sprite_${String(count++).padStart(4,'0')}.png`;
+      link.href = c.toDataURL('image/png');
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    });
+    this.toast(`💾 ${count} selected sprites downloaded!`);
+  },
+
+  // ===== BULK ACTIONS =====
+  bulkCopyPNG() {
+    // Copy selected sprites as composite image
+    if (!this.selectedSprites.size) { this.toast('⚠️ No sprites selected!'); return; }
+    const arr = Array.from(this.selectedSprites);
+    const cols = Math.ceil(Math.sqrt(arr.length));
+    const maxW = Math.max(...arr.map(i => this.sprites[i].w));
+    const maxH = Math.max(...arr.map(i => this.sprites[i].h));
+    const sheet = document.createElement('canvas');
+    sheet.width = maxW * cols; sheet.height = maxH * Math.ceil(arr.length / cols);
+    const sctx = sheet.getContext('2d');
+    arr.forEach((idx, i) => {
+      const s = this.sprites[idx];
+      sctx.drawImage(this.canvas, s.x, s.y, s.w, s.h, (i%cols)*maxW, Math.floor(i/cols)*maxH, s.w, s.h);
+    });
+    sheet.toBlob(blob => {
+      if (navigator.clipboard && navigator.clipboard.write) {
+        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        this.toast('📋 Selected sprites copied!');
+      }
+    }, 'image/png');
+  },
+
+  bulkDownloadPNG() {
+    if (!this.selectedSprites.size) { this.toast('⚠️ No sprites selected!'); return; }
+    this.selectedSprites.forEach(idx => {
+      const s = this.sprites[idx];
+      const c = document.createElement('canvas');
+      c.width = s.w; c.height = s.h;
+      c.getContext('2d').drawImage(this.canvas, s.x, s.y, s.w, s.h, 0, 0);
+      const a = document.createElement('a');
+      a.download = `sprite_${String(idx).padStart(4,'0')}.png`;
+      a.href = c.toDataURL('image/png');
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    });
+    this.toast(`💾 ${this.selectedSprites.size} sprites downloaded!`);
+  },
+
+  bulkClear() { this.deselectAll(); },
+
+  // ===== UTILITIES =====
   _extractDataURL(sprite) {
     const c = document.createElement('canvas');
     c.width = sprite.w; c.height = sprite.h;
     c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
     return c.toDataURL('image/png');
-  }
+  },
 
-  _dataURLToBase64(dataUrl) {
-    return dataUrl.split(',')[1];
-  }
+  _dataURLToBase64(dataUrl) { return dataUrl.split(',')[1]; },
 
   _downloadCanvas(c, name) {
     const a = document.createElement('a');
     a.href = c.toDataURL('image/png');
     a.download = name;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  }
+  },
 
   _downloadBlob(blob, name) {
     const url = URL.createObjectURL(blob);
@@ -887,21 +1816,55 @@ const SM = {
     a.href = url; a.download = name;
     document.body.appendChild(a); a.click();
     setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-  }
+  },
 
-  _fallbackCopy(text) {
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-    document.body.removeChild(ta);
-  }
+  _copyAndToast(text, msg) {
+    navigator.clipboard?.writeText(text).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+    }).then(() => this.toast(msg));
+  },
+
+  _downloadText(text, name) {
+    const blob = new Blob([text], { type: 'text/plain' });
+    this._downloadBlob(blob, name);
+  },
+
+  _clearOverlay() {
+    this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+    document.getElementById('detectionLegend').style.display = 'none';
+  },
+
+  // ===== LOADING INDICATOR =====
+  _showLoading(msg) {
+    const bar = document.getElementById('loadingBar');
+    bar.style.display = 'block';
+    document.getElementById('progressText').textContent = msg;
+    document.getElementById('progressFill').style.width = '0%';
+    // Animate
+    let pct = 0;
+    const iv = setInterval(() => {
+      pct += Math.random() * 15;
+      if (pct > 90) pct = 90;
+      document.getElementById('progressFill').style.width = pct + '%';
+    }, 100);
+    this._loadIv = iv;
+  },
+
+  _hideLoading() {
+    clearInterval(this._loadIv);
+    document.getElementById('loadingBar').style.display = 'none';
+    document.getElementById('progressFill').style.width = '0%';
+  },
 
   toast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(this._timer);
-    this._timer = setTimeout(() => el.classList.remove('show'), 2500);
+    this._timer = setTimeout(() => el.classList.remove('show'), 2800);
   }
 };
 
