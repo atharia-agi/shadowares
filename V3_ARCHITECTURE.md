@@ -1,8 +1,8 @@
-# Shadow Studio v5.1
+# Shadow Studio v5.2
 
 ## Open Source Canva for Web Dev — System Architecture
 
-**Version:** 5.1.0
+**Version:** 5.2.0
 **Author:** Shadow Toolkit Team
 **License:** MIT
 **Website:** [shadowfactory.vercel.app](https://shadowfactory.vercel.app)
@@ -71,14 +71,14 @@ File: `visual_editor.html`
 
 File: `photo_editor.html`
 - Full-featured browser-based photo editing
-- **Drawing tools**: brush, eraser, fill bucket, eyedropper
+- **Drawing tools**: 6 brush presets (Round/Square/Diamond/Spray/Calligraphy/Chalk), live brush preview, eraser, fill bucket, eyedropper
 - **Shape tools**: rectangle, circle, ellipse, line, arrow, star, triangle, heart
 - **Text tool**: custom fonts, sizes, colors, background
 - **12 photo filters**: B&W, Sepia, Blur, Vivid, High Contrast, Bright, Hue Shift, Invert, Desaturate, Vintage, Vibrant
 - **Adjustment panel**: brightness, contrast, saturation, hue rotate, blur, sharpen
 - **Transform tools**: rotate, flip horizontal/vertical, crop
 - **Undo/Redo**: 30-level history stack
-- **Export**: PNG, JPEG, WebP, SVG with one-click copy/download
+- **Export**: PNG, JPEG, WebP, SVG, Original with one-click copy/download, full shadowStudio API fallback chain
 - Brush size, opacity, color picker
 
 ### 5. 2.5D Playground Engine
@@ -90,6 +90,7 @@ File: `2.5d_playground.html`
 - **Material system**: standard, metal, glass, wireframe, glow
 - **Animation presets**: spin, bounce, pulse, float
 - **6 scene presets**: Empty, Stack, Solar System, Tower, Maze, Ball Pit
+- **Expanded to 16 presets (v5.2)**: Dungeon, Space Station, Enchanted Forest, Ancient Temple, Medieval Castle, Platformer, Underwater, Circuit Board
 - **Camera controls**: angle X/Y rotation, zoom
 - **Background options**: solid color, gradient, grid, dark space
 - **Export**: CSS 3D code, full HTML, JSON scene data, JavaScript code
@@ -117,7 +118,7 @@ Built into Visual Editor and Dashboard:
 - Blog — article layout
 - App UI — mobile app interface mockup
 
-### 8. Dashboard v5.1
+### 8. Dashboard v5.2
 
 File: `index.html`, `v5-dashboard.html`
 - Sidebar navigation with sections: Workspace, Visual, Audio, Animation
@@ -132,17 +133,17 @@ File: `index.html`, `v5-dashboard.html`
 
 ---
 
-## Tool Catalog (14 Tools)
+## Tool Catalog (15 Tools)
 
 ### Visual Tools
 | Tool | Description | Export Formats |
 |------|-------------|---------------|
-| Cursor Studio | 8 cursor themes, size/hotspot/shadow controls | CSS, SVG |
+| Cursor Studio | 20 cursor shapes (12 new: heart, pointer, cross, zoomIn, zoomOut, grab, text, notAllowed, pencil, move, help, cell), 8 theme categories with 30+ variants (dark/neon/cyberpunk/glass/gaming/minimal/retro/nature), animation engine (pulse/glow/rotate/trail + speed), size presets (XS/S/M/L/XL), multi-state CSS (idle/text/hover/click/grab/disabled), interactive state demo | CSS, SVG, PNG, JSON, Data URI |
 | Mesh Gradient Generator | animated mesh gradients, 6 presets | CSS, PNG, Canvas |
 | CSS Effect Generator | 10 production CSS effects with live preview | CSS, HTML, PNG |
 | Color Palette Generator | 7 harmony methods | CSS, JSON, SVG, GIMP, Tailwind |
 | Visual Editor | WYSIWYG page builder, 14 components | HTML, CSS, JSON |
-| Photo Editor | filters, adjustments, drawing, shapes, text | PNG, JPEG, WebP, SVG |
+| Photo Editor | filters, adjustments, drawing, shapes, text, 6 brush presets (Round/Square/Diamond/Spray/Calligraphy/Chalk), live brush preview, per-asset downloads, shadowStudio API fallback chain | PNG, JPEG, WebP, SVG, Original |
 | Icon Designer | pixel editor, layer system | PNG, SVG, ICO, CSS |
 | Sprite Mapper | flood-fill extraction, grid slicing | PNG, JSON, CSS, sheet |
 | Animated Icon Exporter | 32-frame timeline animation | GIF, WebM, sprite sheet, CSS |
@@ -150,20 +151,21 @@ File: `index.html`, `v5-dashboard.html`
 ### Audio Tools
 | Tool | Description | Export Formats |
 |------|-------------|---------------|
-| Audio Synth Studio | 8 SFX + infinite BGM engine | WAV |
-| Text-to-Soundscape | mood-based procedural soundscapes | WAV, JSON params |
+| Audio Synth Studio | 8 SFX + infinite BGM engine, master/BGM volume sliders, keyboard shortcuts (QWE for SFX, Space for BGM), per-SFX WebM/WAV download, BPM presets, HiDPI visualizer | WAV, WebM |
+| Text-to-Soundscape | mood-based procedural soundscapes, duration-aware generation, auto-play on record, per-layer WAV export | WAV, JSON params |
 
 ### Productivity / Animation
 | Tool | Description | Export Formats |
 |------|-------------|---------------|
-| 2.5D Playground | interactive physics scene builder | CSS, HTML, JSON, JS |
+| 2.5D Playground | interactive physics scene builder, 16 scene presets | CSS, HTML, JSON, JS |
+| 2.5D Interactive Playground | MP4/WebM upload, 9 interactive effects (tilt/shadow/glow/magnet/particle/chroma/wobble/colorshift/ripple), per-sprite WebM export, ZIP bulk download, effect config copy for AI agents | WebM, ZIP, JSON |
 
 ---
 
 ## AI Agent Tool Discovery
 
 ### JSON Schema 2020-12
-All 14 tools defined with complete input/output schemas in `ai-tool-registry.js`.
+All 15 tools defined with complete input/output schemas in `ai-tool-registry.js`.
 
 ### Supported Formats
 - **MCP (Model Context Protocol)**: JSON-RPC `tools/list`, `tools/call`, `tools/discover`
@@ -252,3 +254,20 @@ node mcp-server.js --port 3000
 npm run build
 ```
 Produces CJS, ESM, and UMD bundles (40KB each) with source maps.
+
+---
+
+## Release Notes
+
+### v5.2.0 (Deep Audit Release)
+- 7000+ new lines across 6 tools, 2 new documentation files
+- **Cursor Studio**: 20 shapes, 8 theme categories, animation engine, multi-state CSS, AI config
+- **Audio Synth**: volume sliders, keyboard shortcuts, per-SFX WebM/WAV download, BPM presets
+- **Text-to-Soundscape**: duration-aware generation, auto-play, per-layer WAV export
+- **Photo Editor**: 6 brush presets, per-asset downloads, API fallback chain
+- **2.5D Interactive Playground** (new): 9 effects, per-sprite WebM/ZIP, AI config
+- **2.5D Playground**: 16 scene presets (10 new)
+- **Cursor Generator**: multi-state auto-detect CSS (idle/text/hover/click/grab/disabled)
+
+### v5.1.0
+Initial v5 release: 14 tools, MCP server, AI agent discovery, Vercel deployment, PWA support
