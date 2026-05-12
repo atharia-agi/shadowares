@@ -213,7 +213,7 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
         <span style="font-size:1.4rem">🤖</span>
         <div style="flex:1">
           <strong>NVIDIA AI Boost Enabled!</strong> 
-          <span style="font-size:.78rem;color:var(--text-muted)">Models: Step-3.5-Flash, Mistral-Large, Qwen3-Coder, Magpie-TTS, Phi-4-Vision, NV-EmbedCode</span>
+          <span style="font-size:.78rem;color:var(--text-muted)">Models: Minimax-M2.7, GLM-4.7, Step-3.5-Flash, Mistral-Large, Cosmos-Transfer, Magpie-TTS, Phi-4-Vision, Riva-Translate, GLiner-PII</span>
         </div>
         <button class="btn-outline" style="padding:6px 12px;font-size:.75rem" onclick="dash.showNVIDIA()">Config</button>
       </div>
@@ -223,7 +223,7 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 
     <div class="welcome-header">
       <h2>Welcome to Shadow Studio v5.1! 👋</h2>
-      <p>Your Universal Asset Generator — 15 production-ready tools, 100% offline, zero AI required. <br>Or optionally supercharge with <strong>NVIDIA NIM APIs</strong> (free tier: Step-3.5-Flash, Mistral-Large, Qwen3-Coder, Magpie-TTS, Phi-4-Vision & more).</p>
+      <p>Your Universal Asset Generator — 15 production-ready tools, 100% offline, zero AI required. <br>Or optionally supercharge with <strong>NVIDIA NIM APIs</strong> (free tier: Minimax-M2.7, GLM-4.7, Step-3.5-Flash, Mistral-Large, Cosmos, Magpie-TTS, Phi-4 & more).</p>
     </div>
 
     <div class="quick-actions">
@@ -752,7 +752,7 @@ const Dashboard = {
 
   showNVIDIA() {
     const status = shadowStudio.getNVIDIAStatus();
-    const models = shadowStudio._nvidia?.modelList?.filter(m => m.free) || [];
+    const models = shadowStudio._nvidia?.freeModelList || [];
     const modelList = models.map(m => `• <code>${m.id}</code> — ${m.desc}`).join('<br>');
     let msg = status.available
       ? `✅ NVIDIA API connected! Rate limit: ${status.rateLimit?.remaining || '?'} calls remaining.`

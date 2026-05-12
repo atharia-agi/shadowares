@@ -17,35 +17,39 @@ class NVIDIAAPIBridge {
   constructor() {
     this.baseURL = 'https://integrate.api.nvidia.com/v1';
     this.models = {
-      // Chat/Reasoning (Chat Completions API — OpenAI compatible)
+      // Chat/Reasoning (Chat Completions API — newest first)
       chat: {
-        'step-3.5-flash': { endpoint: '/chat/completions', model: 'stepfun-ai/step-3.5-flash', free: true, desc: '200B reasoning MoE, agentic AI' },
-        'mistral-large-3-675b': { endpoint: '/chat/completions', model: 'mistralai/mistral-large-3-675b-instruct-2512', free: true, desc: 'General purpose VLM' },
-        'qwen3-coder-480b': { endpoint: '/chat/completions', model: 'qwen/qwen3-coder-480b-a35b-instruct', free: true, desc: 'Agentic coding, 256K context' },
-        'llama-4-maverick-17b': { endpoint: '/chat/completions', model: 'meta/llama-4-maverick-17b-128e-instruct', free: true, desc: 'Multimodal MoE' },
-        'mistral-nemotron': { endpoint: '/chat/completions', model: 'mistralai/mistral-nemotron', free: true, desc: 'Agentic, coding, tool use' },
-        'gemma-3n-e2b-it': { endpoint: '/chat/completions', model: 'google/gemma-3n-e2b-it', free: true, desc: 'Edge AI, lightweight' },
-        'seed-oss-36b': { endpoint: '/chat/completions', model: 'bytedance/seed-oss-36b-instruct', free: true, desc: 'Reasoning, agentic' },
-        'nemotron-super-49b': { endpoint: '/chat/completions', model: 'nvidia/llama-3.3-nemotron-super-49b-v1', free: false, desc: 'Reasoning, tool calling' },
-        'nemotron-nano-8b': { endpoint: '/chat/completions', model: 'nvidia/llama-3.1-nemotron-nano-8b-v1', free: false, desc: 'Edge reasoning' },
+        'minimax-m2.7': { endpoint: '/chat/completions', model: 'minimaxai/minimax-m2.7', free: true, desc: '230B reasoning + coding, 1mo old' },
+        'glm-4.7': { endpoint: '/chat/completions', model: 'z-ai/glm-4.7', free: true, desc: 'Agentic coding + tool use, 3wk old' },
+        'step-3.5-flash': { endpoint: '/chat/completions', model: 'stepfun-ai/step-3.5-flash', free: true, desc: '200B reasoning MoE, 3mo old — your fav' },
+        'mistral-large-3-675b': { endpoint: '/chat/completions', model: 'mistralai/mistral-large-3-675b-instruct-2512', free: true, desc: 'General VLM, 5mo old' },
+        'seed-oss-36b': { endpoint: '/chat/completions', model: 'bytedance/seed-oss-36b-instruct', free: true, desc: 'Reasoning + agentic, 8mo old' },
+        'qwen3-coder-480b': { endpoint: '/chat/completions', model: 'qwen/qwen3-coder-480b-a35b-instruct', free: true, desc: 'Agentic coding 480B, 8mo old' },
+        'nemotron-3-super-120b': { endpoint: '/chat/completions', model: 'nvidia/nemotron-3-super-120b-a12b', free: false, desc: '1M context MoE, 2mo old' },
+        'mistral-small-4-119b': { endpoint: '/chat/completions', model: 'mistralai/mistral-small-4-119b-2603', free: false, desc: 'Hybrid MoE, 1mo old' },
       },
-      // TTS (specific NIM endpoint)
+      // TTS
       tts: {
         'magpie-tts': { endpoint: 'https://ai.api.nvidia.com/v1/nim/nvidia/magpie-tts-zeroshot/invoke', model: null, free: true, desc: 'Expressive TTS from short sample' },
-        'magpie-multilingual': { endpoint: 'https://ai.api.nvidia.com/v1/nim/nvidia/magpie-tts-multilingual/invoke', model: null, free: false, desc: 'Multilingual TTS' },
       },
-      // Multimodal Vision (for image understanding)
+      // Multimodal Vision
       vision: {
         'phi-4-multimodal': { endpoint: '/chat/completions', model: 'microsoft/phi-4-multimodal-instruct', free: true, desc: 'Image + audio understanding' },
-        'gemma-3-27b-it': { endpoint: '/chat/completions', model: 'google/gemma-3-27b-it', free: true, desc: 'Vision assistant', deprecated: true },
+        'synthetic-video-detector': { endpoint: 'https://ai.api.nvidia.com/v1/nim/nvidia/synthetic-video-detector/invoke', model: null, free: true, desc: 'Detect AI-generated video, 3wk old' },
+        'cosmos-transfer2.5-2b': { endpoint: 'https://ai.api.nvidia.com/v1/nim/nvidia/cosmos-transfer2.5-2b/invoke', model: null, free: true, desc: 'Text-to-video world states, 2mo old' },
       },
-      // Embeddings / Code Retrieval
+      // Embeddings
       embed: {
         'nv-embedcode-7b': { endpoint: 'https://ai.api.nvidia.com/v1/retrieval/nvidia/nv-embedcode-7b-v1/invoke', model: null, free: true, desc: 'Code embedding/retrieval' },
       },
-      // Safety / Moderation
+      // Translation
+      translate: {
+        'riva-translate-4b': { endpoint: '/chat/completions', model: 'nvidia/riva-translate-4b-instruct-v1_1', free: true, desc: '12-language translation, 5mo old' },
+      },
+      // Safety / PII
       safety: {
-        'content-safety': { endpoint: '/chat/completions', model: 'nvidia/llama-3.1-nemotron-safety-guard-8b-v3', free: true, desc: 'Content safety moderation' },
+        'content-safety': { endpoint: '/chat/completions', model: 'nvidia/llama-3.1-nemotron-safety-guard-8b-v3', free: true, desc: 'Content safety' },
+        'gliner-pii': { endpoint: 'https://ai.api.nvidia.com/v1/nim/nvidia/gliner-pii/invoke', model: null, free: true, desc: 'PII detection, 2mo old' },
       },
     };
     this.apiKey = null;
@@ -64,6 +68,7 @@ class NVIDIAAPIBridge {
     });
     return list;
   }
+  get freeModelList() { return this.modelList.filter(m => m.free); }
 
   setModel(id) {
     for (const cat of Object.values(this.models)) {
