@@ -1,7 +1,7 @@
 {
   "name": "@shadow-toolkit/core",
-  "version": "2.0.0",
-  "description": "Zero-dependency browser-native toolkit for sprite isolation, 2.5D physics, procedural audio, custom cursors, color palettes, and scroll animations.",
+  "version": "5.1.0",
+  "description": "Open source Canva for web dev. Zero-dependency creative tool platform — 14+ tools, MCP server, PWA, offline-first.",
   "main": "dist/shadow-toolkit.cjs.js",
   "module": "dist/shadow-toolkit.esm.js",
   "browser": "dist/shadow-toolkit.umd.js",

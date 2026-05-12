@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "shadow-studio": {
+      "url": "https://shadowares.vercel.app/mcp",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "shadow-studio-local": {
+      "command": "node",
+      "args": [
+        "K:/Eksperimen/mcp-server.js",
+        "--port",
+        "3000"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}

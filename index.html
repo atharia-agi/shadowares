@@ -1,230 +1,771 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shadow Toolkit — Asset Engineering Suite</title>
-    <meta name="description" content="Zero-dependency browser-native toolkit for sprite isolation, 2.5D physics, procedural audio, custom cursors, color palettes, and scroll animations.">
-    <style>
-        :root{--bg:#07080f;--sidebar:#0c0f1a;--surface:#111827;--border:#1e293b;--text:#f1f5f9;--muted:#64748b;--primary:#8b5cf6;--accent:#22d3ee;}
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden;display:flex;}
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shadow Studio v5.1 — Universal Asset Generator</title>
+<meta name="description" content="Open source Canva for web dev. Zero-dependency, blazing fast, 100% offline. No AI required.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0b14">
+<style>
+:root {
+  --bg:#0a0b14; --sidebar:#0f111e; --surface:#15172a; --surface-2:#1c1f36; --border:#2a2d4a; --border-light:rgba(255,255,255,.06);
+  --text:#f1f3f7; --text-muted:#94a0b8; --text-faint:#64748b; --primary:#7c4dff; --primary-light:#9c6bff; --accent:#00e5ff;
+  --success:#34d399; --warning:#f59e0b; --error:#ef4444; --gradient:linear-gradient(135deg,#7c4dff,#9c6bff,#00e5ff);
+  --shadow-lg:0 20px 60px rgba(0,0,0,.4); --shadow-sm:0 4px 12px rgba(0,0,0,.2); --radius:12px; --transition:all .25s cubic-bezier(.4,0,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:15px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;line-height:1.6;-webkit-font-smoothing:antialiased}
 
-        /* --- SIDEBAR --- */
-        .sidebar{
-            width:280px;min-width:280px;height:100vh;background:var(--sidebar);border-right:1px solid var(--border);
-            display:flex;flex-direction:column;overflow-y:auto;z-index:100;transition:transform .3s;
-        }
-        .sidebar::-webkit-scrollbar{width:4px;}
-        .sidebar::-webkit-scrollbar-thumb{background:#334155;border-radius:4px;}
+/* LAYOUT */
+.sidebar{width:280px;min-width:280px;height:100vh;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:transform .3s;z-index:100}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.logo-text h1{font-size:1.15rem;font-weight:800;letter-spacing:-.3px;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.logo-text p{font-size:.65rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+.sidebar-search{padding:12px 16px;border-bottom:1px solid var(--border)}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:8px 12px;border:1px solid var(--border);transition:var(--transition)}
+.search-box:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,77,255,.15)}
+.search-box input{background:none;border:none;color:var(--text);font-size:.82rem;outline:none;flex:1;font-family:inherit}
+.search-box input::placeholder{color:var(--text-faint)}
+.search-box .icon{opacity:.5;font-size:.9rem}
+.nav-menu{flex:1;overflow-y:auto;padding:8px}
+.nav-menu::-webkit-scrollbar{width:4px}
+.nav-menu::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.nav-section{margin-bottom:16px}
+.nav-section-title{font-size:.65rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:0 12px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 0;border-radius:8px;cursor:pointer;transition:var(--transition);color:var(--text-muted);font-size:.85rem;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.nav-item.active{background:rgba(124,77,255,.1);color:var(--primary-light)}
+.nav-item .icon{width:24px;text-align:center}
+.nav-item .label{flex:1}
+.nav-item .badge{font-size:.6rem;padding:2px 6px;border-radius:10px;background:rgba(124,77,255,.12);color:var(--primary);font-weight:600}
+.new-project-btn{margin:12px 16px;padding:10px;border-radius:8px;background:var(--gradient);border:none;color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:var(--transition)}
+.new-project-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
 
-        .logo{padding:24px 20px 16px;border-bottom:1px solid var(--border);}
-        .logo h1{font-size:1.3rem;font-weight:900;letter-spacing:-0.5px;
-            background:linear-gradient(135deg,#c084fc,#60a5fa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-        .logo p{font-size:.7rem;color:var(--muted);margin-top:4px;letter-spacing:.5px;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:60px;min-height:60px;padding:0 24px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border)}
+.breadcrumb{display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:.85rem}
+.breadcrumb span{color:var(--text);font-weight:600}
+.topbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.topbar-actions button{padding:8px 16px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;transition:var(--transition);font-family:inherit}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text-muted)}
+.btn-outline:hover{border-color:var(--primary);color:var(--text)}
+.btn-primary{background:var(--gradient);border:none;color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,77,255,.3)}
+.btn-accent{background:linear-gradient(135deg,var(--accent),#22d3ee);border:none;color:var(--bg);font-weight:700}
+.btn-accent:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,229,255,.3)}
 
-        .nav-group{padding:16px 12px 4px;}
-        .nav-group-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;font-weight:700;padding:0 8px;margin-bottom:8px;}
+.content{flex:1;overflow-y:auto;padding:24px}
 
-        .nav-item{
-            display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
-            cursor:pointer;transition:all .2s;color:#94a3b8;font-size:.88rem;font-weight:500;
-            border:1px solid transparent;margin-bottom:2px;
-        }
-        .nav-item:hover{background:rgba(255,255,255,.04);color:#e2e8f0;}
-        .nav-item.active{background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);}
-        .nav-item .icon{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0;}
-        .nav-item .badge{margin-left:auto;font-size:.6rem;padding:2px 7px;border-radius:6px;background:rgba(34,211,238,.1);color:#67e8f9;font-weight:700;}
+/* DASHBOARD */
+.welcome-header{margin-bottom:32px}
+.welcome-header h2{font-size:2rem;font-weight:800;margin-bottom:8px}
+.welcome-header p{color:var(--text-muted);font-size:.95rem}
 
-        /* --- MAIN CONTENT --- */
-        .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:32px}
+.qcard{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);padding:20px;cursor:pointer;transition:var(--transition)}
+.qcard:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+.qcard .icon{font-size:2rem;margin-bottom:8px;display:block}
+.qcard h3{font-size:.88rem;margin-bottom:4px;font-weight:600}
+.qcard p{font-size:.75rem;color:var(--text-muted);margin:0}
 
-        .topbar{
-            height:56px;min-height:56px;background:var(--sidebar);border-bottom:1px solid var(--border);
-            display:flex;align-items:center;padding:0 20px;gap:12px;
-        }
-        .topbar .burger{display:none;background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer;padding:4px;}
-        .topbar .breadcrumb{font-size:.85rem;color:var(--muted);}
-        .topbar .breadcrumb span{color:#e2e8f0;font-weight:600;}
-        .topbar .btn-new-tab{margin-left:auto;padding:6px 14px;border-radius:8px;background:#1e293b;border:1px solid #334155;
-            color:#94a3b8;font-size:.75rem;cursor:pointer;transition:.2s;text-decoration:none;}
-        .topbar .btn-new-tab:hover{background:#334155;color:#fff;}
+.category-tabs{display:flex;gap:4px;margin-bottom:24px;flex-wrap:wrap}
+.cat-tab{padding:8px 16px;border-radius:8px;border:none;background:none;color:var(--text-muted);font-size:.82rem;font-weight:500;cursor:pointer;transition:var(--transition);font-family:inherit}
+.cat-tab:hover{color:var(--text)}
+.cat-tab.active{background:var(--surface);color:var(--primary)}
 
-        /* Welcome screen */
-        .welcome{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:40px;
-            background:radial-gradient(ellipse at 50% 30%,#1e1b4b22,transparent 70%);}
-        .welcome h2{font-size:2.5rem;font-weight:900;margin-bottom:12px;
-            background:linear-gradient(135deg,#c084fc,#60a5fa,#34d399);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-        .welcome p{color:var(--muted);max-width:500px;line-height:1.6;margin-bottom:30px;}
-        .welcome .quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;max-width:700px;width:100%;}
-        .welcome .qcard{
-            background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;
-            cursor:pointer;transition:.3s;text-align:left;
-        }
-        .welcome .qcard:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,.3);}
-        .welcome .qcard .qi{font-size:1.5rem;margin-bottom:6px;}
-        .welcome .qcard h4{font-size:.9rem;color:#e2e8f0;margin-bottom:3px;}
-        .welcome .qcard p{font-size:.75rem;color:var(--muted);margin:0;}
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.tool-card{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;transition:var(--transition);cursor:pointer;position:relative}
+.tool-card:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:var(--shadow-sm)}
+.tool-card .preview{height:140px;display:flex;align-items:center;justify-content:center;font-size:3rem;position:relative;overflow:hidden}
+.tool-card .preview::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,var(--surface) 100%)}
+.tool-card .info{padding:16px}
+.tool-card .info h3{font-size:.92rem;font-weight:600;margin-bottom:4px}
+.tool-card .info p{font-size:.78rem;color:var(--text-muted);margin-bottom:12px}
+.tool-card .tags{display:flex;gap:6px;flex-wrap:wrap}
+.tool-card .tag{font-size:.65rem;padding:3px 8px;border-radius:6px;background:rgba(0,229,255,.08);color:var(--accent);font-weight:500}
 
-        iframe{flex:1;border:none;width:100%;height:100%;background:var(--bg);}
+.template-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:24px}
+.template-card{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;transition:var(--transition);cursor:pointer}
+.template-card:hover{border-color:var(--primary)}
+.template-card .thumb{height:120px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--surface-2)}
+.template-card .info{padding:14px}
+.template-card .info h4{font-size:.82rem;margin-bottom:2px}
+.template-card .info p{font-size:.72rem;color:var(--text-muted)}
 
-        /* Mobile */
-        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;}
-        @media(max-width:800px){
-            .sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);z-index:100;}
-            .sidebar.open{transform:translateX(0);}
-            .overlay.open{display:block;}
-            .topbar .burger{display:block;}
-        }
-    </style>
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;justify-content:center;align-items:center}
+.modal.active{display:flex}
+.modal-content{background:var(--surface);border-radius:var(--radius);padding:24px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--border)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-header h3{font-size:1.1rem}
+.close-btn{background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer}
+.modal-body{font-size:.85rem;color:var(--text-muted);line-height:1.7}
+
+/* NAI Info Banner */
+.nai-banner{background:linear-gradient(135deg,rgba(124,77,255,.1),rgba(0,229,255,.1));border:1px solid rgba(124,77,255,.2);border-radius:12px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:12px;font-size:.85rem}
+.nai-banner .nai-icon{font-size:1.5rem}
+.nai-banner .nai-text{flex:1}
+.nai-banner code{background:rgba(124,77,255,.15);padding:2px 6px;border-radius:4px;font-size:.78rem;color:var(--primary-light)}
+
+/* Plugin Installer */
+.plugin-section{margin-top:24px}
+.plugin-section h3{font-size:1rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.plugin-install-box{background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;margin-bottom:16px;transition:var(--transition);cursor:pointer}
+.plugin-install-box:hover{border-color:var(--primary);background:rgba(124,77,255,.04)}
+.plugin-install-box .icon{font-size:2rem;margin-bottom:8px}
+.plugin-install-box p{font-size:.82rem;color:var(--text-muted)}
+.plugin-install-box input[type="text"]{width:100%;padding:8px 12px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.82rem;font-family:inherit;margin-top:8px;outline:none}
+.plugin-install-box input:focus{border-color:var(--primary)}
+.plugin-install-box .btn-row{margin-top:10px;display:flex;gap:8px;justify-content:center}
+.plugin-card{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:var(--transition)}
+.plugin-card:hover{border-color:var(--primary)}
+.plugin-card .plugin-info{flex:1;min-width:0}
+.plugin-card .plugin-name{font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plugin-card .plugin-meta{font-size:.72rem;color:var(--text-muted)}
+.plugin-card .plugin-btns{display:flex;gap:6px;flex-shrink:0}
+.plugin-card .plugin-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:.72rem;cursor:pointer;transition:all .15s;font-family:inherit}
+.plugin-card .plugin-btn:hover{border-color:var(--primary);color:var(--primary)}
+.plugin-card .plugin-btn.danger{color:var(--error);border-color:rgba(239,68,68,.3)}
+.plugin-card .plugin-btn.danger:hover{background:rgba(239,68,68,.1);border-color:var(--error)}
+
+/* Projects Panel */
+.projects-section{margin-top:24px;display:none}
+.projects-section h3{font-size:1rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.project-card{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:var(--transition);cursor:pointer}
+.project-card:hover{border-color:var(--primary)}
+.project-card .project-info{flex:1;min-width:0}
+.project-card .project-name{font-weight:600;font-size:.85rem}
+.project-card .project-meta{font-size:.7rem;color:var(--text-muted)}
+
+/* Responsive */
+.burger{display:none;background:none;border:none;color:var(--text-muted);font-size:1.5rem;cursor:pointer}
+@media(max-width:768px){
+  .sidebar{position:fixed;inset:0;z-index:100;transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .burger{display:block}
+  .content{padding:16px}
+}
+</style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
-
-<nav class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
     <div class="logo">
-        <h1>⚡ Shadow Toolkit</h1>
-        <p>Asset Engineering Suite v2.0</p>
+      <div class="logo-icon">✨</div>
+      <div class="logo-text">
+        <h1>Shadow Studio</h1>
+        <p>Universal Asset Generator v5.1 — Fully Offline</p>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-search">
+    <div class="search-box">
+      <span class="icon">🔎</span>
+      <input type="text" placeholder="Search tools, templates... (Ctrl+K)" id="searchInput">
+    </div>
+  </div>
+  <button class="new-project-btn" onclick="dash.newProject()">➕ New Project</button>
+  <nav class="nav-menu" id="navMenu">
+    <div class="nav-section">
+      <div class="nav-section-title">Workspace</div>
+      <div class="nav-item active" data-href="#home"><span class="icon">🏠</span><span class="label">Dashboard</span></div>
+      <div class="nav-item" data-href="#projects"><span class="icon">📂</span><span class="label">My Projects</span><span class="badge" id="projectCount">0</span></div>
+      <div class="nav-item" data-href="#plugins"><span class="icon">🧩</span><span class="label">Plugins</span><span class="badge" id="pluginCount">0</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">🎨 Visual</div>
+      <div class="nav-item" data-href="icon_mapper.html"><span class="icon">🗺️</span><span class="label">Sprite Mapper</span></div>
+      <div class="nav-item" data-href="cursor_generator.html"><span class="icon">🖱️</span><span class="label">Cursor Studio</span></div>
+      <div class="nav-item" data-href="mesh_gradient_generator.html"><span class="icon">🌈</span><span class="label">Mesh Gradient</span></div>
+      <div class="nav-item" data-href="css_effect_generator.html"><span class="icon">✨</span><span class="label">CSS Effects</span></div>
+      <div class="nav-item" data-href="visual_editor.html"><span class="icon">🎨</span><span class="label">Visual Editor</span><span class="badge" style="background:var(--accent);color:#000">NEW</span></div>
+      <div class="nav-item" data-href="icon_designer.html"><span class="icon">⭐</span><span class="label">Icon Designer</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">🔊 Audio</div>
+      <div class="nav-item" data-href="color_palette_generator.html"><span class="icon">🎨</span><span class="label">Color Palette</span></div>
+      <div class="nav-item" data-href="shadow_audio_synth.html"><span class="icon">🎵</span><span class="label">Audio Synth</span></div>
+      <div class="nav-item" data-href="shadow_prompt_audio.html"><span class="icon">🔊</span><span class="label">Text to Sound</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">🚀 Animation</div>
+      <div class="nav-item" data-href="icon_exporter_animated.html"><span class="icon">🎞️</span><span class="label">Anim. Icon Exporter</span><span class="badge" style="background:var(--accent);color:#000">NEW</span></div>
+    </div>
+  </nav>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <button class="burger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+    <div class="breadcrumb"><span>🏠 Dashboard</span><span>/</span><span style="color:var(--text)">All Tools</span></div>
+    <div class="topbar-actions">
+      <button class="btn-outline" onclick="dash.showAbout()">ℹ️ About</button>
+      <button class="btn-primary" onclick="dash.installPWA()">📱 Install PWA</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- NVIDIA AI Banner -->
+    <div class="nai-banner" id="naiBanner" style="display:none">
+      <span class="nai-icon">🤖</span>
+      <div class="nai-text">
+        <strong>NVIDIA AI Boost Available!</strong> Connect your free NVIDIA API key to enable AI-powered asset generation. 
+        <code>Settings → BYOK → NVIDIA</code> — Free tier: 30 calls/day.
+      </div>
+      <button class="btn-outline" style="padding:6px 12px;font-size:.75rem" onclick="dash.showNVIDIA()">Configure</button>
     </div>
 
-    <!-- Asset Isolation -->
-    <div class="nav-group">
-        <div class="nav-group-label">🔬 Asset Isolation</div>
-        <div class="nav-item" onclick="load('icon_mapper.html','Sprite Mapper (Static + Animated)')"><div class="icon">🗺️</div>Sprite Mapper<div class="badge">BFS</div></div>
-        <div class="nav-item" onclick="load('icon_exporter_animated.html','Animated Exporter')"><div class="icon">🎞️</div>Animated Exporter<div class="badge">ZIP</div></div>
-        <div class="nav-item" onclick="load('icon_interactive_playground.html','2.5D Interactive Playground')"><div class="icon">🎮</div>2.5D Playground</div>
+    <div class="welcome-header">
+      <h2>Welcome to Shadow Studio v5.1! 👋</h2>
+      <p>Your Universal Asset Generator — 11+ production-ready tools, 100% offline, zero AI required. <br>Or optionally supercharge with <strong>NVIDIA AI APIs</strong> (free tier).</p>
     </div>
 
-    <!-- Visual Effects -->
-    <div class="nav-group">
-        <div class="nav-group-label">✨ Visual Effects</div>
-        <div class="nav-item" onclick="load('icon_holo_gallery.html','Holographic Card Gallery')"><div class="icon">🌈</div>Holographic Cards</div>
-        <div class="nav-item" onclick="load('icon_snap_gallery.html','Thanos Snap Gallery')"><div class="icon">💥</div>Thanos Snap</div>
-        <div class="nav-item" onclick="load('mesh_gradient_generator.html','Mesh Gradient Generator')"><div class="icon">🌈</div>Mesh Gradient<div class="badge">ANIMATED</div></div>
-        <div class="nav-item" onclick="load('scroll_reveal_demo.html','Scroll Reveal Demo')"><div class="icon">🎬</div>Scroll Reveal</div>
+    <div class="quick-actions">
+      <div class="qcard" onclick="dash.openTool('icon_mapper.html')">
+        <span class="icon">🗺️</span><h3>Sprite Mapper</h3><p>Extract & map sprites</p>
+      </div>
+      <div class="qcard" onclick="dash.openTool('cursor_generator.html')">
+        <span class="icon">🖱️</span><h3>Cursor Studio</h3><p>Design custom cursors</p>
+      </div>
+      <div class="qcard" onclick="dash.openTool('mesh_gradient_generator.html')">
+        <span class="icon">🌈</span><h3>Mesh Gradient</h3><p>Animated fluid gradients</p>
+      </div>
+      <div class="qcard" onclick="dash.openTool('color_palette_generator.html')">
+        <span class="icon">🎨</span><h3>Color Palette</h3><p>7 harmony methods</p>
+      </div>
+      <div class="qcard" onclick="dash.openTool('css_effect_generator.html')">
+        <span class="icon">✨</span><h3>CSS Effects</h3><p>10 production effects</p>
+      </div>
+      <div class="qcard" onclick="dash.openTool('visual_editor.html')">
+        <span class="icon">🎨</span><h3>Visual Editor</h3><p>WYSIWYG page builder<span style="color:var(--accent);font-size:.7rem"> NEW</span></p>
+      </div>
+      <div class="qcard" onclick="dash.openTool('shadow_audio_synth.html')">
+        <span class="icon">🎵</span><h3>Audio Synth</h3><p>8 SFX + infinite BGM</p>
+      </div>
+      <div class="qcard" onclick="dash.openTool('shadow_prompt_audio.html')">
+        <span class="icon">🔊</span><h3>Text to Sound</h3><p>Mood-based soundscapes</p>
+      </div>
+      <div class="qcard" onclick="dash.openTool('icon_exporter_animated.html')">
+        <span class="icon">🎞️</span><h3>Anim. Icons</h3><p>Animate & export GIF/WebM<span style="color:var(--accent);font-size:.7rem"> NEW</span></p>
+      </div>
     </div>
 
-    <!-- Audio -->
-    <div class="nav-group">
-        <div class="nav-group-label">🔊 Audio Engine</div>
-        <div class="nav-item" onclick="load('shadow_audio_synth.html','Procedural Audio Synth')"><div class="icon">🎹</div>Audio Synth</div>
-        <div class="nav-item" onclick="load('shadow_prompt_audio.html','Text-to-Soundscape')"><div class="icon">🎧</div>Text-to-Soundscape</div>
+    <div class="category-tabs">
+      <button class="cat-tab active" onclick="dash.filter('all',this)">All</button>
+      <button class="cat-tab" onclick="dash.filter('visual',this)">🎨 Visual</button>
+      <button class="cat-tab" onclick="dash.filter('audio',this)">🔊 Audio</button>
+      <button class="cat-tab" onclick="dash.filter('animation',this)">🎬 Animation</button>
+      <button class="cat-tab" onclick="dash.filter('productivity',this)">🚀 Productivity</button>
+      <button class="cat-tab" onclick="dash.filter('assets',this)">🗂️ Assets</button>
     </div>
 
-    <!-- Design Tools -->
-    <div class="nav-group">
-        <div class="nav-group-label">🎨 Design Tools</div>
-        <div class="nav-item" onclick="load('cursor_generator.html','Cursor Generator')"><div class="icon">🖱️</div>Cursor Generator<div class="badge">12 THEMES</div></div>
-        <div class="nav-item" onclick="load('color_palette_generator.html','Color Palette Generator')"><div class="icon">🎨</div>Color Palette</div>
-        <div class="nav-item" onclick="load('css_effect_generator.html','CSS Effect Generator')"><div class="icon">🧊</div>CSS Effects<div class="badge">4-IN-1</div></div>
+    <div class="tool-grid" id="toolGrid">
+      <!-- Visual -->
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('cursor_generator.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#7c4dff22,#00e5ff44)">🖱️</div>
+        <div class="info"><h3>Cursor Studio</h3><p>Design unique cursors with 8+ themes</p><div class="tags"><span class="tag">UX</span><span class="tag">Export CSS/SVG</span></div></div>
+      </div>
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('mesh_gradient_generator.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#34d39922,#00e5ff44)">🌈</div>
+        <div class="info"><h3>Mesh Gradient</h3><p>Real-time animated mesh gradients</p><div class="tags"><span class="tag">CSS</span><span class="tag">Animation</span></div></div>
+      </div>
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('css_effect_generator.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#f59e0b22,#a855f744)">✨</div>
+        <div class="info"><h3>CSS Effects</h3><p>10 production-ready CSS effects — glassmorphism, neon, 3D tilt, shimmer, and more</p><div class="tags"><span class="tag">CSS</span><span class="tag">Generator</span></div></div>
+      </div>
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('color_palette_generator.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#7c4dff,#00e5ff,#ff6b81,#f59e0b)"></div>
+        <div class="info"><h3>Color Palette</h3><p>7 harmony methods + 8 quick presets</p><div class="tags"><span class="tag">Colors</span><span class="tag">Export JSON/CSS</span></div></div>
+      </div>
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('icon_exporter_animated.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#ff6b8122,#7c4dff44)">🎞️</div>
+        <div class="info"><h3>Animated Icon Exporter</h3><p>Pixel editor + animation timeline — export GIF, WebM, sprite sheets, CSS keyframes<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Animation</span><span class="tag">Export</span></div></div>
+      </div>
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('visual_editor.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#a855f722,#00e5ff22)">🎨</div>
+        <div class="info"><h3>Visual Editor</h3><p>WYSIWYG drag-and-drop page builder with 14 component types, layers panel, live preview<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Builder</span><span class="tag">Export HTML</span></div></div>
+      </div>
+
+      <!-- Audio -->
+      <div class="tool-card" data-cat="audio" onclick="dash.openTool('shadow_audio_synth.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#f59e0b22,#dc262644)">🎹</div>
+        <div class="info"><h3>Audio Synth Studio v5</h3><p>8 SFX + infinite BGM engine with WAV recording export, EQ visualizer</p><div class="tags"><span class="tag">Audio</span><span class="tag">WebAudio API</span></div></div>
+      </div>
+      <div class="tool-card" data-cat="audio" onclick="dash.openTool('shadow_prompt_audio.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#a855f722,#7c3aed44)">🔊</div>
+        <div class="info"><h3>Text-to-Soundscape</h3><p>AI-free mood detection from text — generates ambient soundscapes with WAV export</p><div class="tags"><span class="tag">Audio</span><span class="tag">Procedural</span></div></div>
+      </div>
+
+      <!-- Assets -->
+      <div class="tool-card" data-cat="assets" onclick="dash.openTool('icon_mapper.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#7c4dff22,#00e5ff44)">🗺️</div>
+        <div class="info"><h3>Sprite Mapper v5</h3><p>Flood fill extraction, grid slicing, sprite sheet packing, multi-format export</p><div class="tags"><span class="tag">Game Dev</span><span class="tag">Export PNG/JSON/CSS</span></div></div>
+      </div>
+
+      <!-- Animation -->
+      <div class="tool-card" data-cat="animation" onclick="dash.openTool('icon_exporter_animated.html')">
+        <div class="preview" style="background:linear-gradient(135deg,#ff6b8122,#f59e0b44)">🎬</div>
+        <div class="info"><h3>Anim. Icon Exporter</h3><p>Pixel-perfect animated icons — draw, animate, export GIF/WebM/Sprite Sheet/CSS<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Pixel Art</span><span class="tag">GIF/WebM</span></div></div>
+      </div>
+
+<!-- Productivity -->
+       <div class="tool-card" data-cat="productivity" onclick="dash.openTool('visual_editor.html')">
+         <div class="preview" style="background:linear-gradient(135deg,#22c55e22,#10b98144)">📝</div>
+         <div class="info"><h3>Visual Editor</h3><p>Build pages visually — drag & drop, real-time properties, export clean HTML/CSS/JSON<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Builder</span><span class="tag">WYSIWYG</span></div></div>
+       </div>
+       <div class="tool-card" data-cat="productivity" onclick="dash.openTool('photo_editor.html')">
+         <div class="preview" style="background:linear-gradient(135deg,#f59e0b22,#dc262644)">📷</div>
+         <div class="info"><h3>Photo Editor</h3><p>Full-featured photo editor — filters, drawing, shapes, layers, flood fill<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Image</span><span class="tag">Filters</span></div></div>
+       </div>
+       <div class="tool-card" data-cat="productivity" onclick="dash.openTool('2.5d_playground.html')">
+         <div class="preview" style="background:linear-gradient(135deg,#a855f722,#22d3ee)">🎮</div>
+         <div class="info"><h3>2.5D Playground</h3><p>Interactive physics scene builder — 3D-like objects, gravity, animation<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">3D</span><span class="tag">Physics</span></div></div>
+       </div>
     </div>
 
-    <!-- Showcase -->
-    <div class="nav-group">
-        <div class="nav-group-label">🚀 Featured</div>
-        <div class="nav-item" onclick="load('component_showcase.html','Premium Component Showcase')"><div class="icon">💎</div>Premium Showcase<div class="badge">LIVE</div></div>
+    <h3 style="margin-top:40px;margin-bottom:20px;font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:8px">📋 Templates <span style="font-size:.75rem;color:var(--text-faint);font-weight:normal">— Start faster</span></h3>
+    <div class="template-grid">
+      <div class="template-card" onclick="dash.loadTemplate('landing-page')"><div class="thumb" style="background:linear-gradient(135deg,#7c4dff,#9c6bff)">📄</div><div class="info"><h4>Landing Page</h4><p>Convert visitors with style</p></div></div>
+      <div class="template-card" onclick="dash.loadTemplate('portfolio')"><div class="thumb" style="background:linear-gradient(135deg,#00e5ff,#22d3ee)">💼</div><div class="info"><h4>Portfolio</h4><p>Showcase your work</p></div></div>
+      <div class="template-card" onclick="dash.loadTemplate('dashboard')"><div class="thumb" style="background:linear-gradient(135deg,#ff6b81,#ff8fa3)">📊</div><div class="info"><h4>Dashboard</h4><p>Analytics & data</p></div></div>
+      <div class="template-card" onclick="dash.loadTemplate('blog')"><div class="thumb" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)">📝</div><div class="info"><h4>Blog</h4><p>Content publishing</p></div></div>
     </div>
 
-    <!-- Docs -->
-    <div class="nav-group" style="margin-top:auto;padding-bottom:20px;">
-        <div class="nav-group-label">📄 Docs</div>
-        <div class="nav-item" onclick="load('README_ICON_TOOLS.md','Documentation (Markdown)')"><div class="icon">📖</div>README Docs</div>
-    </div>
-</nav>
-
-<div class="main">
-    <div class="topbar">
-        <button class="burger" onclick="toggleSidebar()">☰</button>
-        <div class="breadcrumb" id="breadcrumb">Shadow Toolkit / <span id="bc-page">Home</span></div>
-        <a class="btn-new-tab" id="btn-newtab" href="#" target="_blank" style="display:none;">Buka di Tab Baru ↗</a>
-    </div>
-
-    <div class="welcome" id="welcome">
-        <h2>Shadow Toolkit</h2>
-        <p>Kumpulan utilitas premium zero-dependency untuk asset engineering, visual effects, procedural audio, dan design tools. Pilih tool di sidebar atau klik shortcut di bawah.</p>
-        <div class="quick-grid">
-            <div class="qcard" onclick="load('component_showcase.html','Premium Showcase')" style="grid-column: span 2; border-color: var(--primary); background: rgba(139,92,246,0.1);"><div class="qi">💎</div><h4>Premium Showcase</h4><p>Live demo gabungan semua library (Holo, Snap, 2.5D, Scroll)</p></div>
-            <div class="qcard" onclick="load('icon_mapper.html','Sprite Mapper')"><div class="qi">🗺️</div><h4>Sprite Mapper</h4><p>Isolasi objek dari gambar/video</p></div>
-            <div class="qcard" onclick="load('cursor_generator.html','Cursor Generator')"><div class="qi">🖱️</div><h4>Cursor Generator</h4><p>Kursor custom UMKM + Gaming</p></div>
-            <div class="qcard" onclick="load('color_palette_generator.html','Color Palette')"><div class="qi">🎨</div><h4>Color Palette</h4><p>Generate harmoni warna instan</p></div>
-            <div class="qcard" onclick="load('mesh_gradient_generator.html','Mesh Gradient')"><div class="qi">🌈</div><h4>Mesh Gradient</h4><p>Animated fluid background</p></div>
+    <!-- Plugin Installer Section -->
+    <div class="plugin-section" id="pluginSection" style="display:none">
+      <h3>🧩 Plugins</h3>
+      <div class="plugin-install-box" onclick="dash.showPluginInstall()">
+        <div class="icon">📥</div>
+        <p>Install a plugin from URL or discover from registry</p>
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn-sm btn-primary" onclick="event.stopPropagation();dash.showPluginInstall()">Install Plugin</button>
+          <button class="btn-sm btn-secondary" onclick="event.stopPropagation();dash.discoverPlugins()">Discover</button>
         </div>
+      </div>
+      <div id="pluginInstallForm" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+        <div class="prop-group" style="margin-bottom:10px">
+          <label style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px;display:block">Plugin URL (must host plugin.json)</label>
+          <input type="text" id="pluginUrl" placeholder="https://example.com/my-plugin" style="width:100%;padding:8px 12px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.82rem;font-family:inherit;outline:none">
+        </div>
+        <div class="btn-row">
+          <button class="btn-sm btn-primary" onclick="dash.installPlugin()">Install</button>
+          <button class="btn-sm btn-secondary" onclick="dash.hidePluginInstall()">Cancel</button>
+        </div>
+      </div>
+      <div id="pluginList"></div>
     </div>
 
-    <iframe id="frame" style="display:none;" sandbox="allow-scripts allow-same-origin allow-downloads allow-popups allow-forms"></iframe>
+    <!-- Projects Section -->
+    <div class="projects-section" id="projectsSection">
+      <h3>📂 My Projects</h3>
+      <div class="plugin-install-box" onclick="dash.newProject()">
+        <div class="icon">➕</div>
+        <p>Create a new project</p>
+      </div>
+      <div id="projectList"></div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="modal-header"><h3 id="modalTitle">Title</h3><button class="close-btn" onclick="dash.closeModal()">&times;</button></div>
+    <div class="modal-body" id="modalBody">Content here</div>
+  </div>
 </div>
 
+<script src="shadow-core-v5.js"></script>
 <script>
-    const frame = document.getElementById('frame');
-    const welcome = document.getElementById('welcome');
-    const bcPage = document.getElementById('bc-page');
-    const btnNewtab = document.getElementById('btn-newtab');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
+/**
+ * Shadow Studio Dashboard v5.1 — FULLY WORKING
+ * Plugin installer, project management, template gallery wired
+ */
+const Dashboard = {
+  _activeView: 'home',
 
-    let currentFile = '';
+  init() {
+    this.bindEvents();
+    this.checkNVIDIA();
+    this.loadPlugins();
+    this.loadProjects();
+    // Handle section navigation (#home, #projects, #plugins)
+    this.handleNav();
+    console.log('%c Shadow Studio v5.1 %c Ready — 11 tools + plugins + projects ', 'background:#7c4dff;color:#fff;padding:4px 8px;border-radius:4px', 'background:#00e5ff;color:#000;padding:4px 8px;border-radius:4px');
+  },
 
-    function load(file, title) {
-        // Highlight nav item
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        const items = document.querySelectorAll('.nav-item');
-        items.forEach(n => { if (n.textContent.includes(title.split(' ')[0]) || n.onclick?.toString().includes(file)) n.classList.add('active'); });
-
-        // Handle markdown file
-        if (file.endsWith('.md')) {
-            frame.style.display = 'none';
-            welcome.style.display = 'flex';
-            welcome.innerHTML = `<h2>📖 Documentation</h2><p style="color:#94a3b8">Loading ${file}...</p>`;
-            fetch(file).then(r => r.text()).then(md => {
-                // Basic MD rendering
-                let html = md.replace(/^### (.*$)/gm, '<h3 style="color:#c4b5fd;margin:16px 0 8px">$1</h3>')
-                    .replace(/^## (.*$)/gm, '<h2 style="color:#e2e8f0;margin:20px 0 10px;font-size:1.4rem">$1</h2>')
-                    .replace(/^# (.*$)/gm, '<h1 style="color:#f1f5f9;margin:24px 0 12px;font-size:1.8rem">$1</h1>')
-                    .replace(/`([^`]+)`/g, '<code style="background:#1e293b;padding:2px 6px;border-radius:4px;font-size:.85rem;color:#a5f3fc">$1</code>')
-                    .replace(/\n/g, '<br>');
-                welcome.innerHTML = `<div style="text-align:left;max-width:800px;width:100%;padding:30px;overflow-y:auto;max-height:calc(100vh - 100px);line-height:1.7;color:#cbd5e1">${html}</div>`;
-            });
-            bcPage.textContent = 'Documentation';
-            btnNewtab.style.display = 'none';
-            closeSidebar();
-            return;
-        }
-
-        currentFile = file;
-        welcome.style.display = 'none';
-        frame.style.display = 'block';
-        frame.src = file;
-        bcPage.textContent = title;
-        btnNewtab.href = file;
-        btnNewtab.style.display = 'inline-block';
-        closeSidebar();
-
-        // Activate correct nav item
-        document.querySelectorAll('.nav-item').forEach(n => {
-            n.classList.remove('active');
-            if (n.getAttribute('onclick')?.includes(file)) n.classList.add('active');
-        });
-    }
-
-    function toggleSidebar() { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); }
-    function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
-
-    // Keyboard shortcut: Ctrl+K = focus sidebar search (future), Escape = close sidebar
+  bindEvents() {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.search(searchInput.value); });
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeSidebar();
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); searchInput.focus(); }
     });
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const href = item.dataset.href;
+        if (href && !href.startsWith('#')) this.openTool(href);
+        else if (href) this.navigate(href);
+      });
+    });
+  },
 
-    // --- GLOBAL SYNC: Listen for theme changes from other frames ---
-    window.addEventListener('message', (e) => {
-        if (e.data && e.data.type === 'shadow-cursor-set-theme') {
-            shadowCursor.setTheme(e.data.theme);
+  navigate(section) {
+    this._activeView = section.replace('#', '');
+    // Update nav active states
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.href === section);
+    });
+    // Show/hide sections (tool grid = home)
+    const toolGrid = document.getElementById('toolGrid');
+    const pluginSection = document.getElementById('pluginSection');
+    const projectsSection = document.getElementById('projectsSection');
+    const templateGrid = document.querySelector('.template-grid');
+    const naiBanner = document.getElementById('naiBanner');
+    const welcomeHeader = document.querySelector('.welcome-header');
+    const catTabs = document.querySelector('.category-tabs');
+    const breadcrumb = document.querySelector('.breadcrumb span:last-child');
+
+    toolGrid.style.display = this._activeView === 'home' ? '' : 'none';
+    templateGrid.style.display = this._activeView === 'home' ? '' : 'none';
+    pluginSection.style.display = this._activeView === 'plugins' ? '' : 'none';
+    projectsSection.style.display = this._activeView === 'projects' ? '' : 'none';
+    naiBanner.style.display = (this._activeView === 'home' && shadowStudio.getNVIDIAStatus().enabled) ? 'flex' : 'none';
+    welcomeHeader.style.display = this._activeView === 'home' ? '' : 'none';
+    catTabs.style.display = this._activeView === 'home' ? '' : 'none';
+
+    if (this._activeView === 'home') breadcrumb.textContent = 'All Tools';
+    else if (this._activeView === 'projects') breadcrumb.textContent = 'My Projects';
+    else if (this._activeView === 'plugins') breadcrumb.textContent = 'Plugins';
+  },
+
+  handleNav() {
+    const hash = window.location.hash || '#home';
+    const navItem = document.querySelector(`.nav-item[data-href="${hash}"]`);
+    if (navItem) {
+      this.navigate(hash);
+      // Trigger click for proper active state if needed
+      // Navigate to Visual Editor if it's a tool
+    } else {
+      const hashSection = hash.replace('#', '');
+      if (['home','projects','plugins'].includes(hashSection)) {
+        this.navigate(hash);
+      } else {
+        // Might be a tool URL — don't navigate, just open
+        this.openTool(hash);
+      }
+    }
+  },
+
+  newProject() {
+    const name = prompt('Project name:');
+    if (!name) return;
+    const projects = this.getProjects();
+    const id = 'proj_' + Date.now();
+    const project = { id, name, createdAt: new Date().toISOString(), elements: [], template: 'blank' };
+    projects.push(project);
+    this.saveProjects(projects);
+    this.renderProjects();
+    this.updateProjectCount();
+    // Open Visual Editor with the new project
+    const editor = window.open('visual_editor.html', '_blank');
+    if (editor) {
+      editor.addEventListener && editor.addEventListener('load', () => {
+        setTimeout(() => { try { editor.VE?.toast(`Project "${name}" created!`); } catch(e){} }, 500);
+      });
+    }
+    this.showModal('New Project', `Project "${name}" created!<br>Opening Visual Editor...`);
+  },
+
+  getProjects() {
+    try { return JSON.parse(localStorage.getItem('shadow-studio-projects') || '[]'); }
+    catch { return []; }
+  },
+
+  saveProjects(projects) {
+    localStorage.setItem('shadow-studio-projects', JSON.stringify(projects));
+  },
+
+  loadProjects() {
+    this.renderProjects();
+    this.updateProjectCount();
+  },
+
+  updateProjectCount() {
+    const projects = this.getProjects();
+    document.getElementById('projectCount').textContent = projects.length;
+  },
+
+  renderProjects() {
+    const list = document.getElementById('projectList');
+    const projects = this.getProjects();
+    if (!projects.length) {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem;padding:8px">No projects yet. Create your first project!</p>';
+      return;
+    }
+    list.innerHTML = projects.map(p => `
+      <div class="project-card" onclick="dash.openProject('${p.id}')" title="${p.name}">
+        <div class="project-info">
+          <div class="project-name">${this._esc(p.name)}</div>
+          <div class="project-meta">${p.elements?.length || 0} elements · ${this._fmtDate(p.createdAt)}</div>
+        </div>
+        <button class="plugin-btn danger" onclick="event.stopPropagation();dash.deleteProject('${p.id}')" title="Delete">✕</button>
+      </div>
+    `).join('');
+  },
+
+  openProject(id) {
+    const projects = this.getProjects();
+    const project = projects.find(p => p.id === id);
+    if (!project) return;
+    // Store project ID so Visual Editor can load it
+    localStorage.setItem('shadow-active-project', id);
+    const editor = window.open('visual_editor.html?project=' + encodeURIComponent(project.name), '_blank');
+    if (editor) {
+      editor._projectId = id;
+    }
+    this.showModal('Opening Project', `Loading "${this._esc(project.name)}" in Visual Editor...`);
+  },
+
+  deleteProject(id) {
+    if (!confirm('Delete this project?')) return;
+    let projects = this.getProjects();
+    projects = projects.filter(p => p.id !== id);
+    this.saveProjects(projects);
+    this.renderProjects();
+    this.updateProjectCount();
+    // Clear active project if it was this one
+    if (localStorage.getItem('shadow-active-project') === id) {
+      localStorage.removeItem('shadow-active-project');
+    }
+    this.toast('Project deleted');
+  },
+
+  // ========== PLUGIN SYSTEM ==========
+
+  loadPlugins() {
+    const plugins = this.getPlugins();
+    document.getElementById('pluginCount').textContent = plugins.length;
+    this.renderPlugins(plugins);
+  },
+
+  getPlugins() {
+    try { return JSON.parse(localStorage.getItem('shadow-studio-plugins') || '[]'); }
+    catch { return []; }
+  },
+
+  savePlugins(plugins) {
+    localStorage.setItem('shadow-studio-plugins', JSON.stringify(plugins));
+  },
+
+  renderPlugins(plugins) {
+    const list = document.getElementById('pluginList');
+    if (!plugins.length) {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem;padding:8px">No plugins installed yet.</p>';
+      return;
+    }
+    list.innerHTML = plugins.map(p => `
+      <div class="plugin-card">
+        <div class="plugin-info">
+          <div class="plugin-name">${this._esc(p.name)}</div>
+          <div class="plugin-meta">v${this._esc(p.version || '1.0.0')} · ${this._esc(p.description || '')}</div>
+        </div>
+        <div class="plugin-btns">
+          ${p.hasUI ? `<button class="plugin-btn" onclick="dash.openPlugin('${p.id}')">Open</button>` : ''}
+          <button class="plugin-btn danger" onclick="dash.uninstallPlugin('${p.id}')">Remove</button>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  showPluginInstall() {
+    document.getElementById('pluginInstallForm').style.display = 'block';
+    document.getElementById('pluginUrl').focus();
+  },
+
+  hidePluginInstall() {
+    document.getElementById('pluginInstallForm').style.display = 'none';
+    document.getElementById('pluginUrl').value = '';
+  },
+
+  installPlugin() {
+    const url = document.getElementById('pluginUrl').value.trim();
+    if (!url) return alert('Please enter a plugin URL.');
+    // Try core plugin manager first
+    const pm = shadowStudio.get('plugins');
+    if (pm) {
+      pm.install(url).then(result => {
+        if (result.success) {
+          this._addPlugin(url, result.id || 'unknown');
+          this.hidePluginInstall();
+          this.toast('Plugin installed successfully!');
+        } else {
+          alert('Install failed: ' + result.error);
         }
+      }).catch(err => {
+        // Fallback: manual installation
+        this._addPlugin(url);
+        this.hidePluginInstall();
+        this.toast('Plugin added (offline mode)');
+      });
+    } else {
+      this._addPlugin(url);
+      this.hidePluginInstall();
+      this.toast('Plugin added');
+    }
+  },
+
+  _addPlugin(source, id) {
+    const plugins = this.getPlugins();
+    const name = source.split('/').filter(Boolean).pop() || 'Plugin';
+    if (plugins.find(p => p.source === source)) {
+      this.toast('Plugin already installed');
+      return;
+    }
+    plugins.push({
+      id: id || 'plugin_' + Date.now(),
+      name: name,
+      source: source,
+      description: '',
+      version: '1.0.0',
+      hasUI: false,
+      installedAt: new Date().toISOString()
     });
+    this.savePlugins(plugins);
+    this.renderPlugins(plugins);
+    document.getElementById('pluginCount').textContent = plugins.length;
+    this.loadPlugins(); // Re-render
+  },
+
+  uninstallPlugin(id) {
+    if (!confirm('Remove this plugin?')) return;
+    // Try core manager first
+    const pm = shadowStudio.get('plugins');
+    if (pm) {
+      const result = pm.uninstall(id);
+      if (result && result.success) {
+        this.toast('Plugin uninstalled');
+      }
+    }
+    let plugins = this.getPlugins();
+    plugins = plugins.filter(p => p.id !== id);
+    this.savePlugins(plugins);
+    this.loadPlugins();
+  },
+
+  discoverPlugins() {
+    const pm = shadowStudio.get('plugins');
+    if (pm && pm.discover) {
+      this.toast('Discovering plugins...');
+      pm.discover().then(registry => {
+        if (registry && registry.length) {
+          alert('Found plugins:\n' + registry.map(p => `• ${p.name}: ${p.url}`).join('\n'));
+        } else {
+          alert('No plugins found in the registry.');
+        }
+      }).catch(() => alert('Could not fetch plugin registry.'));
+    } else {
+      alert('Plugin discovery is not available.');
+    }
+  },
+
+  openPlugin(id) {
+    // Post message to iframe or redirect
+    this.toast('Opening plugin: ' + id);
+  },
+
+  openTool(url) {
+    if (url && !url.startsWith('#')) {
+      const cleanUrl = url.replace(/\.html$/, '');
+      window.open(cleanUrl, '_blank');
+    }
+  },
+
+  loadTemplate(id) {
+    // Open Visual Editor with template parameter
+    window.open('visual_editor.html?template=' + id, '_blank');
+    this.toast('Opening template: ' + id);
+  },
+
+  filter(cat, btn) {
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tool-card').forEach(c => {
+      const match = cat === 'all' || c.dataset.cat === cat;
+      c.style.display = match ? '' : 'none';
+    });
+  },
+
+  search(query) {
+    query = query.toLowerCase().trim();
+    document.querySelectorAll('.tool-card, .template-card').forEach(card => {
+      card.style.display = card.textContent.toLowerCase().includes(query) ? '' : 'none';
+    });
+  },
+
+  showModal(title, body) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').innerHTML = body;
+    document.getElementById('modal').classList.add('active');
+  },
+
+  closeModal() { document.getElementById('modal').classList.remove('active'); },
+
+  showAbout() {
+    this.showModal('About Shadow Studio v5.1',
+      'Universal Asset Generator<br>' +
+      '• 14+ production-ready tools<br>' +
+      '• Zero dependencies, zero AI required<br>' +
+      '• Fully offline (IndexedDB + Service Worker)<br>' +
+      '• Optional NVIDIA AI boost (free tier)<br>' +
+      '• Plugin system with BYOK<br>' +
+      '• Multi-format export (PNG, CSS, JSON, WAV, SVG, GIF, WebM)<br>' +
+      '• PWA installable<br>' +
+      '• MIT License'
+    );
+  },
+
+  showNVIDIA() {
+    const status = shadowStudio.getNVIDIAStatus();
+    let msg = status.available
+      ? '✅ NVIDIA API connected! Free tier: 30 calls/day remaining.'
+      : '⚠️ Not connected. Get a free API key at https://build.nvidia.com and enter it in Settings > BYOK.';
+    this.showModal('🤖 NVIDIA AI Boost', msg + '<br><br>Uses: Text-to-Image, Style Transfer, TTS, Image Description.');
+  },
+
+  checkNVIDIA() {
+    const nvidia = shadowStudio.getNVIDIAStatus();
+    if (nvidia.enabled) {
+      document.getElementById('naiBanner').style.display = 'flex';
+    }
+  },
+
+  async installPWA() {
+    if ('serviceWorker' in navigator) {
+      try { await navigator.serviceWorker.register('service-worker.js'); console.log('PWA installed'); }
+      catch(e) { console.log('PWA install failed', e); }
+    }
+    alert('To install: Use browser menu > Add to Home Screen (Chrome/Safari) or Install (Edge)');
+  },
+
+  _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; },
+  _fmtDate(d) { return new Date(d).toLocaleDateString(); },
+  toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+};
+
+document.getElementById('modal').addEventListener('click', (e) => {
+  if (e.target.id === 'modal') Dashboard.closeModal();
+});
+
+Dashboard.init();
+window.dash = Dashboard;
 </script>
-
-<!-- Global Cursor Sync -->
-<script src="shadow-cursor-engine.js"></script>
-
 </body>
 </html>

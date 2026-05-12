@@ -1,22 +1,22 @@
 /**
  * SHADOW STUDIO v5.1 — MCP (Model Context Protocol) Server
  * Enables AI agents (Claude, GPT, Anthropic) to discover and execute Shadow Studio tools
- * Supports: tools/list, tools/call, tools/discover
+ * Supports: tools/list, tools/call, tools/discover, initialize, ping
  * 
- * Can run as:
- * 1. Standalone Node server: node mcp-server.js --port 3000
- * 2. In-browser via postMessage (when loaded in browser context)
- * 3. SSE endpoint for streaming
+ * Run: node mcp-server.js --port 3000
  * 
  * @version 5.1.0
  */
 
-// ===== Constants =====
 const MCP_VERSION = '2024-11-05';
 const TOOLS_BATCH_SIZE = 50;
-const STREAM_INTERVAL = 500; // ms between stream chunks
+const SSE_CLIENTS = new Set();
 
-// ===== MCP JSON-RPC Methods =====
+// Load execute module
+let executeModule;
+try { executeModule = require('./api/execute.js'); } catch(e) { executeModule = { executeTool: async () => ({ error: 'Module not available' }) }; }
+
+// ===== MCP Methods =====
 const MCP_METHODS = {
   'initialize': handleInitialize,
   'tools/list': handleToolsList,
@@ -27,6 +27,7 @@ const MCP_METHODS = {
 
 // ===== Session Store =====
 const sessions = new Map();
+const TOOL_TIMEOUT = 60000; // 60 second timeout per tool
 
 function createSession(id) {
   const session = {
@@ -34,17 +35,27 @@ function createSession(id) {
     createdAt: Date.now(),
     tools: new Map(),
     state: new Map(),
-    lastActivity: Date.now()
+    lastActivity: Date.now(),
+    messageCount: 0
   };
   sessions.set(id, session);
+  setTimeout(() => sessions.delete(id), 30 * 60 * 1000); // 30 min TTL
   return session;
 }
 
-// ===== MCP Handlers =====
+function cleanupSessions() {
+  const now = Date.now();
+  for (const [id, session] of sessions) {
+    if (now - session.lastActivity > 30 * 60 * 1000) sessions.delete(id);
+  }
+}
+setInterval(cleanupSessions, 5 * 60 * 1000);
 
+// ===== MCP Handlers =====
 async function handleInitialize(params) {
   const sessionId = params.sessionId || crypto.randomUUID();
   const session = createSession(sessionId);
+  const tools = getAllTools();
   
   return {
     jsonrpc: '2.0',
@@ -55,30 +66,32 @@ async function handleInitialize(params) {
         tools: {
           listChanged: true,
           call: true,
-          discover: true
+          discover: true,
+          inputSchema: true
         },
-        resources: false,
-        prompts: false
+        resources: true,
+        prompts: false,
+        sse: true
       },
       sessionId,
       metadata: {
         name: 'Shadow Studio v5.1 MCP Server',
         version: '5.1.0',
-        description: 'Universal Asset Generator — 14+ creative tools',
-        tools: getToolCount()
+        description: 'Open Source Canva for Web Dev — 14+ creative tools',
+        tools: tools.length,
+        categories: [...new Set(tools.map(t => t.category))],
+        transports: ['http', 'websocket', 'sse', 'postMessage'],
+        formats: ['json', 'svg', 'png', 'webp', 'webm', 'css', 'html', 'zip', 'wav']
       }
     }
   };
 }
 
 async function handleToolsList(params) {
-  // Cursor-based pagination
   const cursor = params.cursor || 0;
-  const allTools = getRegisteredTools();
+  const allTools = getAllTools();
   const batch = allTools.slice(cursor, cursor + TOOLS_BATCH_SIZE);
-  const nextCursor = cursor + batch.length < allTools.length 
-    ? cursor + batch.length 
-    : null;
+  const nextCursor = cursor + batch.length < allTools.length ? cursor + batch.length : null;
 
   return {
     jsonrpc: '2.0',
@@ -87,32 +100,43 @@ async function handleToolsList(params) {
       tools: batch.map(tool => ({
         name: tool.id,
         description: tool.description,
+        version: tool.version,
+        category: tool.category,
+        level: tool.level,
+        icon: tool.icon,
+        url: tool.url,
         inputSchema: tool.inputSchema,
         outputSchema: tool.outputSchema,
-        meta: tool.meta
+        examples: tool.examples,
+        meta: tool.meta,
+        handlers: tool.handlers
       })),
       nextCursor,
-      totalCount: allTools.length
+      totalCount: allTools.length,
+      hasMore: nextCursor !== null
     }
   };
 }
 
 async function handleToolsCall(params) {
   const { toolName, arguments: args } = params;
+  const tool = findTool(toolName);
   
-  const tool = getRegisteredTools().find(t => t.id === toolName);
   if (!tool) {
     return {
       jsonrpc: '2.0',
       id: params.id,
       error: {
         code: -32602,
-        message: `Tool "${toolName}" not found. Available: ${getToolNames().join(', ')}`
+        message: `Tool "${toolName}" not found. Available tools: ${getAllTools().map(t => t.id).join(', ')}`,
+        suggestions: getAllTools()
+          .filter(t => t.id.includes(toolName?.toLowerCase() || '') || toolName?.includes(t.id.toLowerCase()))
+          .map(t => t.id)
       }
     };
   }
 
-  // Validate input against schema
+  // Validate input
   const errors = validateInput(tool.inputSchema, args);
   if (errors.length > 0) {
     return {
@@ -120,32 +144,43 @@ async function handleToolsCall(params) {
       id: params.id,
       error: {
         code: -32602,
-        message: `Invalid input for "${toolName}": ${errors.join('; ')}`
+        message: `Invalid input for "${toolName}"`,
+        details: errors,
+        schema: tool.inputSchema
       }
     };
   }
 
   try {
-    // Execute tool — in Node.js, this dispatches to execute.js
-    // In browser, this posts a message to the tool's iframe
-    const result = await executeToolByName(toolName, args);
+    // Send progress start via SSE
+    broadcastSSE({ type: 'tool:start', tool: toolName, id: params.id });
     
+    const startTime = Date.now();
+    const result = await executeToolByName(toolName, args);
+    const duration = Date.now() - startTime;
+
+    broadcastSSE({ type: 'tool:complete', tool: toolName, id: params.id, duration });
+
     return {
       jsonrpc: '2.0',
       id: params.id,
       result: {
         success: true,
-        toolName,
-        output: result
+        tool: toolName,
+        version: tool.version,
+        output: result,
+        durationMs: duration
       }
     };
   } catch (err) {
+    broadcastSSE({ type: 'tool:error', tool: toolName, id: params.id, error: err.message });
     return {
       jsonrpc: '2.0',
       id: params.id,
       error: {
         code: -32603,
-        message: `Tool execution failed: ${err.message}`
+        message: `Tool "${toolName}" execution failed: ${err.message}`,
+        suggestion: 'Try again or check the tool\'s input schema'
       }
     };
   }
@@ -153,12 +188,29 @@ async function handleToolsCall(params) {
 
 async function handleToolsDiscover(params) {
   const filter = params.filter || {};
-  let tools = getRegisteredTools();
-  
+  let tools = getAllTools();
+
   if (filter.category) tools = tools.filter(t => t.category === filter.category);
   if (filter.level) tools = tools.filter(t => t.level === filter.level);
   if (filter.offlineOnly) tools = tools.filter(t => t.meta?.offline);
-  
+  if (filter.format) tools = tools.filter(t => t.handlers?.[filter.format] !== undefined);
+  if (filter.search) {
+    const q = filter.search.toLowerCase();
+    tools = tools.filter(t => 
+      t.name.toLowerCase().includes(q) || 
+      t.description.toLowerCase().includes(q) ||
+      t.tags.some(tag => tag.includes(q))
+    );
+  }
+
+  const sortBy = filter.sortBy || 'name';
+  tools.sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'category') return a.category.localeCompare(b.category);
+    if (sortBy === 'level') return a.level.localeCompare(b.level);
+    return 0;
+  });
+
   return {
     jsonrpc: '2.0',
     id: params.id,
@@ -169,11 +221,21 @@ async function handleToolsDiscover(params) {
         category: t.category,
         level: t.level,
         icon: t.icon,
-        meta: t.meta
+        version: t.version,
+        url: t.url,
+        meta: t.meta,
+        handlers: t.handlers,
+        inputSchema: filter.includeSchema !== false ? t.inputSchema : undefined,
       })),
       totalCount: tools.length,
-      categories: [...new Set(tools.map(t => t.category))],
-      levels: [...new Set(tools.map(t => t.level))]
+      categories: [...new Set(getAllTools().map(t => t.category))],
+      levels: [...new Set(getAllTools().map(t => t.level))],
+      formats: getAllTools().reduce((fmts, t) => {
+        if (t.handlers) Object.keys(t.handlers).forEach(h => {
+          if (!fmts.includes(h) && !['http', 'postMessage'].includes(h)) fmts.push(h);
+        });
+        return fmts;
+      }, [])
     }
   };
 }
@@ -182,69 +244,71 @@ async function handlePing(params) {
   return {
     jsonrpc: '2.0',
     id: params.id,
-    result: { alive: true, timestamp: Date.now() }
+    result: {
+      alive: true,
+      timestamp: Date.now(),
+      version: '5.1.0',
+      tools: getAllTools().length,
+      uptime: process.uptime()
+    }
   };
 }
 
+// ===== SSE Handler =====
+async function handleSSE(req, res) {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+  res.write('event: connected\ndata: {"status":"connected","version":"5.1.0","tools":' + getAllTools().length + '}\n\n');
+
+  const clientId = crypto.randomUUID();
+  SSE_CLIENTS.add({ write: (data) => res.write(data), id: clientId });
+  req.on('close', () => {
+    SSE_CLIENTS.forEach(c => c.id === clientId && SSE_CLIENTS.delete(c));
+  });
+}
+
+function broadcastSSE(data) {
+  const payload = 'event: ' + (data.type || 'message') + '\ndata: ' + JSON.stringify(data) + '\n\n';
+  SSE_CLIENTS.forEach(client => {
+    try { client.write(payload); } catch(e) { /* client disconnected */ }
+  });
+}
+
 // ===== Tool Discovery =====
-
-function getRegisteredTools() {
-  // Try to load from ShadowAIRegistry (browser/bundled context)
-  if (typeof ShadowAIRegistry !== 'undefined') {
-    return ShadowAIRegistry.tools || [];
-  }
-  // Try require (Node.js context)
-  try {
-    const reg = require('./ai-tool-registry.js');
-    return reg.ShadowAIRegistry?.tools || [];
-  } catch { return []; }
+function getAllTools() {
+  if (typeof ShadowAIRegistry !== 'undefined') return ShadowAIRegistry.tools || [];
+  try { return require('./ai-tool-registry.js').ShadowAIRegistry?.tools || []; } 
+  catch { return []; }
 }
 
-function getToolNames() {
-  return getRegisteredTools().map(t => t.id);
-}
-
-function getToolCount() {
-  return getRegisteredTools().length;
-}
-
-function findTool(name) {
-  return getRegisteredTools().find(t => t.id === name);
-}
+function findTool(name) { return getAllTools().find(t => t.id === name); }
+function getToolNames() { return getAllTools().map(t => t.id); }
+function getToolCount() { return getAllTools().length; }
 
 // ===== Tool Execution =====
-
 async function executeToolByName(toolName, args) {
-  // In browser context: postMessage to tool iframe
-  if (typeof window !== 'undefined') {
-    return await executeInBrowser(toolName, args);
-  }
-  // In Node.js context: use execute.js
-  return await executeInNode(toolName, args);
+  if (typeof window !== 'undefined') return executeInBrowser(toolName, args);
+  return executeInNode(toolName, args);
 }
 
 async function executeInBrowser(toolName, args) {
   return new Promise((resolve, reject) => {
     const tool = findTool(toolName);
-    if (!tool || !tool.url) {
-      reject(new Error(`Tool ${toolName} has no URL configured`));
-      return;
-    }
+    if (!tool || !tool.url) { reject(new Error(`Tool ${toolName} has no URL`)); return; }
     
+    const timeout = setTimeout(() => reject(new Error('Tool execution timeout')), TOOL_TIMEOUT);
     const win = window.open(tool.url, '_blank');
+    
     if (!win) {
-      // Fallback: dispatch via custom event
-      window.dispatchEvent(new CustomEvent('shadow:tool:execute', {
-        detail: { toolName, args }
-      }));
+      window.dispatchEvent(new CustomEvent('shadow:tool:execute', { detail: { toolName, args } }));
       resolve({ dispatched: true });
       return;
     }
-    
-    const timeout = setTimeout(() => {
-      reject(new Error('Tool execution timeout'));
-    }, 30000);
-    
+
     const handler = (e) => {
       if (e.data?.type === 'shadow-tool-output' && e.data.toolName === toolName) {
         clearTimeout(timeout);
@@ -252,111 +316,73 @@ async function executeInBrowser(toolName, args) {
         resolve(e.data.output);
       }
     };
-    
     window.addEventListener('message', handler);
-    win.addEventListener('load', () => {
-      win.postMessage({ type: 'shadow-tool-input', toolName, input: args }, '*');
-    });
+    win.addEventListener('load', () => win.postMessage({ type: 'shadow-tool-input', toolName, input: args }, '*'));
   });
 }
 
 async function executeInNode(toolName, args) {
-  // Requires a browser environment or Electron — return instructions
-  return {
-    note: 'This tool requires a browser context to execute.',
-    tool: toolName,
-    args,
-    url: findTool(toolName)?.url,
-    instruction: `Open ${findTool(toolName)?.url} in a browser to execute this tool.`
-  };
+  try {
+    const result = await executeModule.executeTool({ toolId: toolName, params: args });
+    return result;
+  } catch(e) {
+    return { note: `Tool ${toolName} requires browser context`, tool: toolName, args, url: findTool(toolName)?.url };
+  }
 }
 
 // ===== Input Validation =====
-
 function validateInput(schema, input) {
   const errors = [];
   if (!schema || !schema.properties) return errors;
-  
   const required = schema.required || [];
   for (const key of required) {
-    if (input[key] === undefined || input[key] === null) {
-      errors.push(`Missing required field: "${key}"`);
-    }
+    if (input[key] === undefined || input[key] === null) errors.push(`Missing required field: "${key}"`);
   }
-  
   for (const [key, value] of Object.entries(input || {})) {
     const prop = schema.properties[key];
     if (!prop) continue;
-    
-    if (prop.type === 'string' && typeof value !== 'string') {
-      errors.push(`Field "${key}" must be a string`);
-    }
-    if (prop.type === 'number' && typeof value !== 'number') {
-      errors.push(`Field "${key}" must be a number`);
-    }
-    if (prop.type === 'boolean' && typeof value !== 'boolean') {
-      errors.push(`Field "${key}" must be a boolean`);
-    }
-    if (prop.enum && !prop.enum.includes(value)) {
-      errors.push(`Field "${key}" must be one of: ${prop.enum.join(', ')}`);
-    }
-    if (prop.minimum !== undefined && value < prop.minimum) {
-      errors.push(`Field "${key}" must be >= ${prop.minimum}`);
-    }
-    if (prop.maximum !== undefined && value > prop.maximum) {
-      errors.push(`Field "${key}" must be <= ${prop.maximum}`);
-    }
+    if (prop.type === 'string' && typeof value !== 'string') errors.push(`Field "${key}" must be a string`);
+    if (prop.type === 'number' && typeof value !== 'number') errors.push(`Field "${key}" must be a number`);
+    if (prop.type === 'boolean' && typeof value !== 'boolean') errors.push(`Field "${key}" must be a boolean`);
+    if (prop.enum && !prop.enum.includes(value)) errors.push(`Field "${key}" must be one of: ${prop.enum.join(', ')}`);
+    if (prop.minimum !== undefined && value < prop.minimum) errors.push(`Field "${key}" must be >= ${prop.minimum}`);
+    if (prop.maximum !== undefined && value > prop.maximum) errors.push(`Field "${key}" must be <= ${prop.maximum}`);
+    if (prop.type === 'array' && !Array.isArray(value)) errors.push(`Field "${key}" must be an array`);
   }
-  
   return errors;
 }
 
-// ===== Streaming Support =====
-
-async function streamToolCall(toolName, args, onChunk) {
-  const tool = findTool(toolName);
-  if (!tool) throw new Error(`Tool "${toolName}" not found`);
-  
-  onChunk({ type: 'start', tool: toolName });
-  onChunk({ type: 'status', message: `Initializing ${tool.name}...` });
-  
-  try {
-    // Simulate progressive output
-    onChunk({ type: 'progress', progress: 0.1, message: 'Processing...' });
-    await sleep(200);
-    onChunk({ type: 'progress', progress: 0.5, message: 'Generating...' });
-    await sleep(200);
-    onChunk({ type: 'progress', progress: 0.9, message: 'Finalizing...' });
-    await sleep(100);
-    
-    const result = await executeToolByName(toolName, args);
-    onChunk({ type: 'complete', result });
-  } catch (err) {
-    onChunk({ type: 'error', message: err.message });
-  }
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// ===== HTTP Server (Node.js) =====
-
+// ===== HTTP Server =====
 function createHttpServer(port = 3000) {
   const http = require('http');
-  
+
   const server = http.createServer(async (req, res) => {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
     // SSE endpoint
-    if (req.url === '/events') {
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      });
-      res.write('data: {"status":"connected","tools":' + getToolCount() + '}\n\n');
+    if (req.url === '/events' || req.url === '/sse') return handleSSE(req, res);
+
+    // Discovery endpoint
+    if (req.url === '/ai/discover.json' || req.url === '/discover') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        version: '5.1.0',
+        tools: getAllTools().map(t => ({
+          id: t.id, name: t.name, description: t.description,
+          category: t.category, level: t.level, icon: t.icon,
+          url: t.url, inputSchema: t.inputSchema, meta: t.meta
+        }))
+      }));
       return;
     }
-    
-    // MCP JSON-RPC endpoint
-    if (req.url === '/mcp' || req.url === '/') {
+
+    // MCP endpoint for AI assistants
+    if (req.url === '/mcp' || req.url === '/' || req.url === '/openapi.json') {
       if (req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
@@ -364,70 +390,68 @@ function createHttpServer(port = 3000) {
           try {
             const request = JSON.parse(body);
             const handler = MCP_METHODS[request.method];
-            if (handler) {
-              const response = await handler(request.params || {});
-              response.id = request.id;
-              res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify(response));
-            } else {
-              res.writeHead(404);
-              res.end(JSON.stringify({ error: 'Method not found' }));
-            }
+            const response = handler ? await handler(request.params || {}) : { jsonrpc: '2.0', error: { code: -32601, message: 'Method not found' }, id: request.id };
+            response.id = request.id;
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(response));
           } catch (err) {
             res.writeHead(400);
-            res.end(JSON.stringify({ error: err.message }));
+            res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32603, message: err.message } }));
           }
         });
       } else {
-        // GET: serve MCP discovery page
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(getMCPDashboard());
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          openapi: '3.0.3',
+          info: { title: 'Shadow Studio MCP', version: '5.1.0' },
+          servers: [{ url: `http://localhost:${port}` }],
+          paths: {
+            '/mcp': { post: { summary: 'MCP JSON-RPC endpoint', requestBody: { content: { 'application/json': { schema: { type: 'object' } } } } } },
+            '/events': { get: { summary: 'SSE event stream' } },
+            '/ai/discover.json': { get: { summary: 'Tool discovery' } },
+            '/openapi.json': { get: { summary: 'OpenAPI spec' } }
+          }
+        }));
       }
     } else {
       res.writeHead(404);
-      res.end('Not Found');
+      res.end(JSON.stringify({ error: 'Not found' }));
     }
   });
-  
+
   server.listen(port, () => {
-    console.log(`\n🤖 Shadow Studio MCP Server running at http://localhost:${port}/mcp`);
-    console.log(`   Tools available: ${getToolCount()}`);
-    console.log(`   SSE events: http://localhost:${port}/events`);
-    console.log(`   Try: curl -X POST http://localhost:${port}/mcp -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"tools/list","params":{"cursor":0},"id":1}'\n`);
+    console.log(`\n🤖 Shadow Studio MCP v5.1.0`);
+    console.log(`   📍 http://localhost:${port}/mcp (JSON-RPC 2.0)`);
+    console.log(`   📍 http://localhost:${port}/events (SSE)`);
+    console.log(`   📍 http://localhost:${port}/ai/discover.json`);
+    console.log(`   📍 http://localhost:${port}/openapi.json`);
+    console.log(`   🔧 Tools: ${getToolCount()}`);
+    console.log(`   📡 Try: curl http://localhost:${port}/mcp -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"tools/list","params":{"cursor":0},"id":1}'\n`);
   });
-  
+
   return server;
 }
 
-function getMCPDashboard() {
-  const tools = getRegisteredTools();
-  return `<!DOCTYPE html><html><head><title>Shadow Studio MCP</title>
-<style>body{font-family:system-ui;background:#0a0b14;color:#f1f3f7;padding:2em}h1{color:#7c4dff}code{background:#15172a;padding:2px 6px;border-radius:4px}pre{background:#15172a;padding:1em;overflow-x:auto}</style></head>
-<body>
-<h1>🤖 Shadow Studio MCP Server</h1>
-<p>Tools available: <strong>${tools.length}</strong></p>
-<h2>Test Command</h2>
-<pre><code>curl -X POST http://localhost:3000/mcp \\
-  -H 'Content-Type: application/json' \\
-  -d '{"jsonrpc":"2.0","method":"tools/list","params":{"cursor":0},"id":1}'</code></pre>
-<h2>Available Tools</h2>
-${tools.map(t => `<div style="margin:8px 0;padding:12px;background:#15172a;border-radius:8px;border:1px solid #2a2d4a"><strong style="color:#00e5ff">${t.id}</strong> — ${t.description}<br><code style="font-size:.75rem">${t.category} / ${t.level}</code></div>`).join('')}
-</body></html>`;
-}
-
-// ===== WebSocket Server (Optional) =====
-
+// ===== WebSocket Server =====
 function createWebSocketServer(server) {
   try {
     const WebSocket = require('ws');
     const wss = new WebSocket.Server({ server });
-    
+
     wss.on('connection', (ws) => {
-      ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'connected', params: { tools: getToolCount() } }));
-      
+      ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'connected', params: { tools: getToolCount(), version: '5.1.0' } }));
+
       ws.on('message', async (data) => {
         try {
           const request = JSON.parse(data);
+          if (request.method === 'subscribe') {
+            const interval = setInterval(() => {
+              ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'notification', params: { type: 'heartbeat', timestamp: Date.now() } }));
+            }, 30000);
+            ws.on('close', () => clearInterval(interval));
+            ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'subscribed', params: { events: ['heartbeat', 'tool:start', 'tool:complete', 'tool:error'] } }));
+            return;
+          }
           const handler = MCP_METHODS[request.method];
           if (handler) {
             const response = await handler(request.params || {});
@@ -435,21 +459,22 @@ function createWebSocketServer(server) {
             ws.send(JSON.stringify(response));
           }
         } catch (err) {
-          ws.send(JSON.stringify({ error: err.message }));
+          ws.send(JSON.stringify({ jsonrpc: '2.0', error: { code: -32603, message: err.message } }));
         }
       });
     });
-    
-    console.log(`   WebSocket: ws://localhost:${server.address().port}/ws`);
-  } catch { console.log('   WebSocket: ws module not available (optional)'); }
+
+    console.log(`   🔗 WebSocket: ws://localhost:${server.address().port}/ws`);
+  } catch(e) {
+    console.log('   🔗 WebSocket: ws module not available (optional)');
+  }
 }
 
 // ===== CLI Entry =====
-
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const port = parseInt(args.find(a => a === '--port' && args[args.indexOf(a) + 1]) || args.find(a => a.startsWith('--port='))?.split('=')[1]) || 3000;
-  
+  const port = parseInt(args.find((a, i) => a === '--port' && args[i + 1]) || (args.find(a => a.startsWith('--port=')) || '').split('=')[1]) || 3000;
+
   console.log('🚀 Starting Shadow Studio MCP Server...\n');
   const server = createHttpServer(port);
   createWebSocketServer(server);
@@ -462,9 +487,14 @@ if (typeof window !== 'undefined') {
       const handler = MCP_METHODS[request.method];
       return handler ? handler(request.params || {}) : { error: 'Method not found' };
     },
-    getTools: getRegisteredTools,
+    getTools: getAllTools,
     execute: executeToolByName,
-    stream: streamToolCall
+    stream: (toolName, args, onChunk) => {
+      onChunk({ type: 'start', tool: toolName });
+      executeToolByName(toolName, args).then(result => {
+        onChunk({ type: 'complete', result });
+      }).catch(err => onChunk({ type: 'error', message: err.message }));
+    }
   };
 }
 
@@ -484,14 +514,16 @@ module.exports = {
       const handler = MCP_METHODS[request.method];
       const response = handler ? await handler(request.params || {}) : { jsonrpc: '2.0', error: { code: -32601, message: 'Method not found' }, id: request.id };
       response.id = request.id;
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       res.end(JSON.stringify(response));
     } catch (err) {
       res.writeHead(400);
       res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32603, message: err.message } }));
     }
   },
-  getToolCount,
-  getRegisteredTools,
-  MCP_METHODS
+  getAllTools,
+  findTool,
+  validateInput,
+  MCP_METHODS,
+  SSE_CLIENTS
 };

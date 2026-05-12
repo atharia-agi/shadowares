@@ -3,7 +3,7 @@
   "$id": "https://shadowares.vercel.app/agent/ai-tools.json",
   "title": "Shadow Studio AI Tool Registry",
   "description": "AI-discoverable tool registry for the Shadow Studio platform. All tools here can be discovered and executed by AI agents.",
-  "version": "3.1.0",
+"version": "5.1.0",
   "license": "MIT",
   "type": "object",
   "required": ["studio", "tools", "schemas"],
@@ -14,25 +14,51 @@
       "required": ["name", "version", "description", "api", "interfaces"],
       "properties": {
         "name": { "type": "string", "const": "Shadow Studio" },
-        "version": { "type": "string", "const": "3.1.0" },
+        "version": { "type": "string", "const": "5.1.0" },
         "description": { "type": "string", "const": "Open source Canva for web dev. AI-ready creative tool platform for assets, animations, and designs." },
-        "url": { "type": "string", "format": "uri", "const": "https://shadow-studio-xi.vercel.app" },
+        "url": { "type": "string", "format": "uri", "const": "https://shadowfactory.vercel.app" },
         "license": { "type": "string", "const": "MIT" },
         "author": { "type": "string", "const": "Shadow Toolkit Team" },
         "api": {
           "type": "object",
           "required": ["version", "endpoints", "transports"],
           "properties": {
-            "version": { "type": "string", "const": "v3.1" },
+            "version": { "type": "string", "const": "v5.1" },
             "endpoints": {
               "type": "object",
               "properties": {
                 "discover": { "type": "string", "const": "/ai/discover.json" },
                 "execute": { "type": "string", "const": "/api/execute" },
                 "stream": { "type": "string", "const": "/api/stream" },
-                "mcp": { "type": "string", "const": "/mcp" }
+                "mcp": { "type": "string", "const": "/mcp" },
+                "sse": { "type": "string", "const": "/events" }
               }
             },
+            "transports": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["http", "websocket", "postMessage", "broadcastChannel", "sse"]
+            },
+            "formats": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["json", "svg", "png", "webp", "webm", "css", "html", "zip", "wav", "gpl", "csv"]
+            }
+          }
+        },
+        "interfaces": {
+          "type": "object",
+          "properties": {
+            "mcp": { "type": "boolean", "const": true, "description": "Model Context Protocol (Anthropic standard)" },
+            "openai": { "type": "boolean", "const": true, "description": "OpenAI-compatible /v1/chat/completions" },
+            "anthropic": { "type": "boolean", "const": true, "description": "Anthropic Messages API" },
+            "openapi": { "type": "boolean", "const": true, "description": "OpenAPI 3.0 compatible" },
+            "sse": { "type": "boolean", "const": true, "description": "Server-Sent Events support" },
+            "websocket": { "type": "boolean", "const": true, "description": "WebSocket support" }
+          }
+        }
+      }
+    },
             "transports": {
               "type": "array",
               "items": { "type": "string" },

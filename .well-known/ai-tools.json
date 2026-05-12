@@ -1,0 +1,222 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Shadow Studio AI Tools API",
+    "description": "OpenAPI 3.0 specification for Shadow Studio — 14+ creative tools discoverable and executable by AI agents. Compatible with OpenAI GPTs, Anthropic Claude, and MCP clients.",
+    "version": "5.1.0",
+    "contact": {
+      "name": "Shadow Toolkit Team",
+      "url": "https://shadowares.vercel.app"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://shadowfactory.vercel.app",
+      "description": "Production Vercel deployment"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local MCP server"
+    }
+  ],
+  "tags": [
+    { "name": "visual", "description": "Visual design and editing tools" },
+    { "name": "audio", "description": "Audio synthesis and soundscape tools" },
+    { "name": "assets", "description": "Asset generation and manipulation" },
+    { "name": "animation", "description": "Animation and motion design" },
+    { "name": "utility", "description": "Utility and helper tools" },
+    { "name": "ai", "description": "AI-powered tools" }
+  ],
+  "paths": {
+    "/ai/discover.json": {
+      "get": {
+        "tags": ["utility"],
+        "summary": "Discover all available AI tools",
+        "operationId": "discoverTools",
+        "responses": {
+          "200": {
+            "description": "List of all discoverable tools with schemas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "studio": { "type": "object" },
+                    "tools": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Tool" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/execute": {
+      "post": {
+        "tags": ["utility"],
+        "summary": "Execute a tool via HTTP POST",
+        "operationId": "executeTool",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "toolId": { "type": "string", "description": "Tool identifier" },
+                  "params": { "type": "object", "description": "Tool parameters" },
+                  "requestId": { "type": "string" }
+                },
+                "required": ["toolId", "params"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tool execution result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "result": { "type": "object" },
+                    "requestId": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stream": {
+      "post": {
+        "tags": ["utility"],
+        "summary": "Stream tool execution progress",
+        "operationId": "streamTool",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "toolId": { "type": "string" },
+                  "params": { "type": "object" }
+                },
+                "required": ["toolId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE stream of execution progress"
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "tags": ["utility"],
+        "summary": "MCP JSON-RPC 2.0 endpoint",
+        "description": "Model Context Protocol endpoint supporting tools/list, tools/call, tools/discover, initialize, ping",
+        "operationId": "mcpEndpoint",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jsonrpc": { "type": "string", "const": "2.0" },
+                  "method": { "type": "string" },
+                  "params": { "type": "object" },
+                  "id": { "type": ["integer", "string", "null"] }
+                },
+                "required": ["jsonrpc", "method", "id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "MCP JSON-RPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "jsonrpc": { "type": "string" },
+                    "id": { "type": ["integer", "string", "null"] },
+                    "result": { "type": "object" },
+                    "error": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["utility"],
+        "summary": "MCP dashboard (human-readable)",
+        "operationId": "mcpDashboard",
+        "responses": {
+          "200": {
+            "description": "HTML dashboard showing all available tools"
+          }
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "tags": ["utility"],
+        "summary": "SSE event stream",
+        "operationId": "sseEvents",
+        "responses": {
+          "200": {
+            "description": "Server-Sent Events stream for real-time updates"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Tool": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "category": { "type": "string", "enum": ["visual", "assets", "audio", "animation", "export", "utility", "ai"] },
+          "level": { "type": "string", "enum": ["beginner", "intermediate", "pro", "all"] },
+          "icon": { "type": "string" },
+          "version": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "inputSchema": { "type": "object" },
+          "outputSchema": { "type": "object" },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "offline": { "type": "boolean" },
+              "progressive": { "type": "boolean" },
+              "streaming": { "type": "boolean" },
+              "retry": { "type": "boolean" },
+              "multiStep": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
