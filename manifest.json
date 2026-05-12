@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/web-manifest",
   "name": "Shadow Studio — Universal Asset Generator",
   "short_name": "Shadow Studio",
-  "description": "Open source Canva for web dev. AI-ready creative tool platform for assets, animations, and designs.",
-  "version": "5.1.0",
+  "description": "Open source Canva for web dev. 15 AI-ready creative tools — cursors, gradients, audio, animation, photo editor, 2.5D physics. Optional NVIDIA NIM AI boost (free tier).",
+  "version": "5.2.0",
   "dir": "ltr",
   "lang": "en",
   "orientation": "any",
@@ -41,11 +41,32 @@
       "icons": [{ "src": "/icons/photo.png", "sizes": "96x96" }]
     },
     {
+      "name": "Cursor Studio",
+      "short_name": "Cursors",
+      "description": "Design custom cursors",
+      "url": "/cursor_generator.html",
+      "icons": [{ "src": "/icons/cursor.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Audio Synth",
+      "short_name": "Audio",
+      "description": "SFX & BGM generator",
+      "url": "/shadow_audio_synth.html",
+      "icons": [{ "src": "/icons/audio.png", "sizes": "96x96" }]
+    },
+    {
       "name": "2.5D Playground",
       "short_name": "2.5D",
       "description": "Open 2.5D playground",
       "url": "/2.5d_playground.html",
       "icons": [{ "src": "/icons/playground.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "2.5D Interactive",
+      "short_name": "Interactive",
+      "description": "Video sprite slicer + effects",
+      "url": "/icon_interactive_playground.html",
+      "icons": [{ "src": "/icons/interactive.png", "sizes": "96x96" }]
     },
     {
       "name": "Asset Exporter",

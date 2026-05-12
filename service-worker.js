@@ -1,10 +1,10 @@
 /**
- * SHADOW STUDIO v5.1 — Service Worker
+ * SHADOW STUDIO v5.2 — Service Worker
  * Manages offline mode, sync, and AI tool caching
- * @version 5.1.0
+ * @version 5.2.0
  */
 
-const CACHE_NAME = 'shadow-studio-v5-1-0';
+const CACHE_NAME = 'shadow-studio-v5-2-0';
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const DYNAMIC_CACHE = `${CACHE_NAME}-dynamic`;
 const AI_CACHE = `${CACHE_NAME}-ai`;
