@@ -35,6 +35,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .control-row .control-group{flex:1}
 .control-group .val{text-align:right;font-size:.75rem;color:var(--accent);margin-top:2px}
 
+/* Animation toggle */
+.anim-toggle{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.anim-btn{padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-family:inherit;transition:all .15s}
+.anim-btn:hover{border-color:var(--primary)}
+.anim-btn.active{background:rgba(124,77,255,.15);border-color:var(--primary);color:var(--primary)}
+
+/* Size presets row */
+.size-presets{display:flex;gap:4px;margin-top:4px}
+.size-preset{padding:2px 8px;border-radius:4px;font-size:.65rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-family:inherit;transition:all .15s}
+.size-preset:hover{border-color:var(--primary);color:var(--primary)}
+.size-preset.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
 /* Preview Area */
 .preview-wrap{background:var(--surface);border-radius:12px;padding:32px;border:1px solid var(--border);min-height:420px;position:relative}
 .preview-label{font-size:.75rem;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:6px}
@@ -147,7 +159,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
       <!-- Size -->
       <div class="control-group">
-        <label>Size: <span class="val" id="sizeVal">32</span>px</label>
+        <label>Size:</label>
+        <div class="size-presets">
+          <span class="size-preset" data-size="16" onclick="studio.setSize(16)">XS</span>
+          <span class="size-preset" data-size="24" onclick="studio.setSize(24)">S</span>
+          <span class="size-preset active" data-size="32" onclick="studio.setSize(32)">M</span>
+          <span class="size-preset" data-size="48" onclick="studio.setSize(48)">L</span>
+          <span class="size-preset" data-size="64" onclick="studio.setSize(64)">XL</span>
+        </div>
+        <span class="val" id="sizeVal">32</span>px
         <input type="range" id="cursorSize" min="16" max="64" value="32">
       </div>
 
@@ -173,32 +193,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         <input type="range" id="borderWidth" min="0" max="6" value="2">
       </div>
 
-      <div class="section-title">📋 Quick Themes</div>
+      <div class="section-title">🎚️ Animation</div>
+      <div class="anim-toggle">
+        <button class="anim-btn" data-anim="none" onclick="studio.setAnimation('none',this)">◌ None</button>
+        <button class="anim-btn" data-anim="pulse" onclick="studio.setAnimation('pulse',this)">◐ Pulse</button>
+        <button class="anim-btn" data-anim="glow" onclick="studio.setAnimation('glow',this)">✦ Glow</button>
+        <button class="anim-btn" data-anim="rotate" onclick="studio.setAnimation('rotate',this)">⟳ Rotate</button>
+        <button class="anim-btn" data-anim="trail" onclick="studio.setAnimation('trail',this)">⋯ Trail</button>
+      </div>
+      <div class="control-group" id="animSpeedGroup" style="display:none">
+        <label>Anim Speed: <span class="val" id="animSpeedVal">1</span>x</label>
+        <input type="range" id="animSpeed" min="0.5" max="3" value="1" step="0.25">
+      </div>
+
+      <div class="section-title">📋 Shapes</div>
+      <div class="theme-grid" id="shapeGrid"></div>
+
+      <div class="section-title">🎨 Theme Categories</div>
       <div class="theme-grid">
-        <button class="theme-btn" data-cursor="circle" onclick="applyPreset('circle')">
-          <span style="color:var(--primary)">●</span> Circle
-        </button>
-        <button class="theme-btn" data-cursor="crosshair" onclick="applyPreset('crosshair')">
-          <span style="color:var(--accent)">╋</span> Crosshair
-        </button>
-        <button class="theme-btn" data-cursor="diamond" onclick="applyPreset('diamond')">
-          <span style="color:#ff6b81">◆</span> Diamond
-        </button>
-        <button class="theme-btn" data-cursor="square" onclick="applyPreset('square')">
-          <span style="color:var(--success)">■</span> Square
-        </button>
-        <button class="theme-btn" data-cursor="arrow" onclick="applyPreset('arrow')">
-          <span>➤</span> Arrow
-        </button>
-        <button class="theme-btn" data-cursor="dot" onclick="applyPreset('dot')">
-          <span style="color:var(--warning)">◉</span> Dot
-        </button>
-        <button class="theme-btn" data-cursor="ring" onclick="applyPreset('ring')">
-          <span>◎</span> Ring
-        </button>
-        <button class="theme-btn" data-cursor="star" onclick="applyPreset('star')">
-          <span style="color:#f59e0b">★</span> Star
-        </button>
+        <button class="theme-btn" data-theme="dark" onclick="studio.applyThemeCategory('dark')">🌙 Dark</button>
+        <button class="theme-btn" data-theme="neon" onclick="studio.applyThemeCategory('neon')">💡 Neon</button>
+        <button class="theme-btn" data-theme="cyberpunk" onclick="studio.applyThemeCategory('cyberpunk')">🔮 Cyberpunk</button>
+        <button class="theme-btn" data-theme="glass" onclick="studio.applyThemeCategory('glass')">🪟 Glass</button>
+        <button class="theme-btn" data-theme="gaming" onclick="studio.applyThemeCategory('gaming')">🎮 Gaming</button>
+        <button class="theme-btn" data-theme="minimal" onclick="studio.applyThemeCategory('minimal')">◻ Minimal</button>
+        <button class="theme-btn" data-theme="retro" onclick="studio.applyThemeCategory('retro')">🕹️ Retro</button>
+        <button class="theme-btn" data-theme="nature" onclick="studio.applyThemeCategory('nature')">🌿 Nature</button>
+      </div>
+
+      <div class="section-title">📦 Export</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="studio.exportCursorCSS()" style="padding:8px 14px;font-size:.75rem;flex:1">📋 CSS</button>
+        <button class="btn btn-secondary" onclick="studio.exportCursorDataURI()" style="padding:8px 14px;font-size:.75rem;flex:1">🔗 Data URI</button>
+        <button class="btn btn-outline" onclick="studio.downloadCursorSvg()" style="padding:8px 14px;font-size:.75rem">SVG</button>
+        <button class="btn btn-outline" onclick="studio.downloadCursorPNG()" style="padding:8px 14px;font-size:.75rem">PNG</button>
+        <button class="btn btn-outline" onclick="studio.copyAgentConfig()" style="padding:8px 14px;font-size:.75rem">🤖 Agent</button>
       </div>
     </div>
 
@@ -216,8 +245,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         <div class="btn-row">
           <button class="btn btn-primary" onclick="exportCursorCSS()">📋 Export CSS Code</button>
           <button class="btn btn-secondary" onclick="downloadCursorSvg()">💾 Download SVG Cursor</button>
-          <button class="btn btn-outline" onclick="testOnPage()">🧪 Apply to This Page</button>
-          <button class="btn btn-outline" onclick="resetCursor()">🔄 Reset Cursor</button>
+          <button class="btn btn-outline" onclick="studio.exportToPage()">🧪 Test on This Page</button>
+          <button class="btn btn-outline" onclick="studio.resetCursor()">🔄 Reset</button>
         </div>
       </div>
 
@@ -227,10 +256,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     </div>
   </div>
 
-  <!-- Demo Grid -->
+  <!-- Demo Grid — also shown as shapes in sidebar -->
   <div class="demo-area">
-    <h2>🎯 All Presets — Click to Apply</h2>
-    <div class="demo-grid" id="demoGrid"></div>
+    <h2>🔥 20 Shapes — Click to Apply</h2>
+    <div class="demo-grid" id="shapeDemoGrid"></div>
   </div>
 </div>
 
@@ -243,21 +272,81 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 
 <script>
-/* ============================================
-   CURSOR STUDIO v5.0 — Fully Working
-   Custom cursor design with real preview
-   ============================================ */
-
-// Preset configurations
 const PRESETS = {
-  circle:   { shape:'circle',  color:'#7c4dff', size:32, border:2, shadow:4, hx:16, hy:16 },
-  crosshair:{ shape:'crosshair',color:'#00e5ff',size:32, border:2, shadow:4, hx:16, hy:16 },
-  diamond:  { shape:'diamond', color:'#ff6b81', size:28, border:2, shadow:4, hx:14, hy:14 },
-  square:   { shape:'square',  color:'#34d399', size:28, border:2, shadow:4, hx:14, hy:14 },
-  arrow:    { shape:'arrow',   color:'#f1f3f7', size:32, border:2, shadow:6, hx:2,  hy:2  },
-  dot:      { shape:'dot',     color:'#f59e0b', size:20, border:3, shadow:6, hx:10, hy:10 },
-  ring:     { shape:'ring',    color:'#a78bfa', size:32, border:3, shadow:4, hx:16, hy:16 },
-  star:     { shape:'star',    color:'#f59e0b', size:36, border:2, shadow:6, hx:18, hy:18 }
+  circle:   { shape:'circle',   color:'#7c4dff', size:32, border:2, shadow:4,  hx:16, hy:16 },
+  crosshair:{ shape:'crosshair',color:'#00e5ff', size:32, border:2, shadow:4,  hx:16, hy:16 },
+  diamond:  { shape:'diamond',  color:'#ff6b81', size:28, border:2, shadow:4,  hx:14, hy:14 },
+  square:   { shape:'square',   color:'#34d399', size:28, border:2, shadow:4,  hx:14, hy:14 },
+  arrow:    { shape:'arrow',    color:'#f1f3f7', size:32, border:2, shadow:6,  hx:2,  hy:2  },
+  dot:      { shape:'dot',      color:'#f59e0b', size:20, border:3, shadow:6,  hx:10, hy:10 },
+  ring:     { shape:'ring',     color:'#a78bfa', size:32, border:3, shadow:4,  hx:16, hy:16 },
+  star:     { shape:'star',     color:'#f59e0b', size:36, border:2, shadow:6,  hx:18, hy:18 },
+  heart:    { shape:'heart',    color:'#ef4444', size:32, border:2, shadow:4,  hx:16, hy:16 },
+  pointer:  { shape:'pointer',  color:'#f1f3f7', size:32, border:2, shadow:6,  hx:2,  hy:2  },
+  cross:    { shape:'cross',    color:'#8b5cf6', size:32, border:2, shadow:4,  hx:16, hy:16 },
+  zoomIn:   { shape:'zoomIn',   color:'#22c55e', size:32, border:2, shadow:4,  hx:16, hy:16 },
+  zoomOut:  { shape:'zoomOut',  color:'#ef4444', size:32, border:2, shadow:4,  hx:16, hy:16 },
+  grab:     { shape:'grab',     color:'#f59e0b', size:28, border:2, shadow:4,  hx:14, hy:14 },
+  text:     { shape:'text',     color:'#a1a1aa', size:24, border:2, shadow:4,  hx:6,  hy:12 },
+  notAllowed:{shape:'notAllowed',color:'#ef4444', size:32, border:3, shadow:4, hx:16, hy:16 },
+  pencil:   { shape:'pencil',   color:'#fbbf24', size:28, border:1, shadow:3,  hx:2,  hy:26 },
+  move:     { shape:'move',     color:'#60a5fa', size:32, border:2, shadow:4,  hx:16, hy:16 },
+  help:     { shape:'help',     color:'#a78bfa', size:32, border:2, shadow:4,  hx:16, hy:16 },
+  cell:     { shape:'cell',     color:'#34d399', size:24, border:1, shadow:2,  hx:12, hy:12 }
+};
+
+// Theme categories - each has multiple shape+color combos
+const THEMES = {
+  dark: [
+    { name:'Dark Circle',   preset:{ shape:'circle',   color:'#1e1e2e', size:32, border:2, shadow:4, hx:16, hy:16 } },
+    { name:'Dark Ring',     preset:{ shape:'ring',     color:'#313244', size:32, border:3, shadow:4, hx:16, hy:16 } },
+    { name:'Dark Cross',    preset:{ shape:'cross',    color:'#45475a', size:32, border:2, shadow:4, hx:16, hy:16 } },
+    { name:'Dark Diamond',  preset:{ shape:'diamond',  color:'#585b70', size:28, border:2, shadow:4, hx:14, hy:14 } },
+    { name:'Dark Minimal',  preset:{ shape:'dot',      color:'#6c7086', size:16, border:2, shadow:3, hx:8,  hy:8  } },
+  ],
+  neon: [
+    { name:'Neon Cyan',    preset:{ shape:'ring',     color:'#00ffc8', size:32, border:3, shadow:8, hx:16, hy:16 } },
+    { name:'Neon Pink',    preset:{ shape:'circle',   color:'#ff0080', size:28, border:2, shadow:8, hx:14, hy:14 } },
+    { name:'Neon Purp',    preset:{ shape:'diamond',  color:'#ae00ff', size:28, border:2, shadow:8, hx:14, hy:14 } },
+    { name:'Neon Green',   preset:{ shape:'crosshair',color:'#39ff14', size:32, border:2, shadow:8, hx:16, hy:16 } },
+    { name:'Neon Tri',     preset:{ shape:'star',     color:'#ff6b35', size:36, border:2, shadow:8, hx:18, hy:18 } },
+  ],
+  cyberpunk: [
+    { name:'Cyber 1',   preset:{ shape:'diamond',  color:'#ff00aa', size:32, border:2, shadow:6, hx:16, hy:16 } },
+    { name:'Cyber 2',   preset:{ shape:'cross',    color:'#00ffff', size:28, border:2, shadow:6, hx:14, hy:14 } },
+    { name:'Cyber 3',   preset:{ shape:'arrow',    color:'#ff6600', size:32, border:2, shadow:6, hx:2,  hy:2  } },
+    { name:'Cyber 4',   preset:{ shape:'help',     color:'#cc00ff', size:28, border:2, shadow:6, hx:14, hy:14 } },
+  ],
+  glass: [
+    { name:'Glass Light',preset:{ shape:'ring',     color:'rgba(255,255,255,0.6)', size:32, border:2, shadow:2, hx:16, hy:16 } },
+    { name:'Glass Blue', preset:{ shape:'circle',   color:'rgba(59,130,246,0.5)',  size:28, border:2, shadow:2, hx:14, hy:14 } },
+    { name:'Glass Dark', preset:{ shape:'dot',      color:'rgba(0,0,0,0.4)',       size:24, border:2, shadow:3, hx:12, hy:12 } },
+  ],
+  gaming: [
+    { name:'FPS Cross',  preset:{ shape:'crosshair',color:'#00ff00', size:28, border:2, shadow:6, hx:14, hy:14 } },
+    { name:'RPG Point',  preset:{ shape:'pointer',  color:'#ffcc00', size:24, border:2, shadow:4, hx:2,  hy:2  } },
+    { name:'MOBA Move',  preset:{ shape:'cross',    color:'#ff4444', size:32, border:2, shadow:4, hx:16, hy:16 } },
+    { name:'Puzzle Dot', preset:{ shape:'heart',    color:'#ff69b4', size:28, border:2, shadow:4, hx:14, hy:14 } },
+    { name:'Retro Aim',  preset:{ shape:'star',     color:'#ffaa00', size:36, border:3, shadow:6, hx:18, hy:18 } },
+  ],
+  minimal: [
+    { name:'Min Dot',    preset:{ shape:'dot',    color:'#ffffff', size:12, border:2, shadow:3, hx:6, hy:6 } },
+    { name:'Min Ring',   preset:{ shape:'ring',   color:'#d4d4d8', size:28, border:2, shadow:2, hx:14, hy:14 } },
+    { name:'Min Circle', preset:{ shape:'circle', color:'#a1a1aa', size:24, border:1, shadow:2, hx:12, hy:12 } },
+    { name:'Min Square', preset:{ shape:'square', color:'#71717a', size:20, border:1, shadow:2, hx:10, hy:10 } },
+  ],
+  retro: [
+    { name:'Retro 1', preset:{ shape:'arrow',   color:'#ff4444', size:24, border:1, shadow:3, hx:2,  hy:2  } },
+    { name:'Retro 2', preset:{ shape:'pencil',  color:'#44aaff', size:24, border:1, shadow:3, hx:2,  hy:22 } },
+    { name:'Retro 3', preset:{ shape:'notAllowed',color:'#ff8800',size:32, border:2, shadow:4, hx:16, hy:16 } },
+    { name:'Retro 4', preset:{ shape:'help',    color:'#44dd44', size:28, border:2, shadow:4, hx:14, hy:14 } },
+  ],
+  nature: [
+    { name:'Forest',   preset:{ shape:'circle', color:'#166534', size:28, border:2, shadow:4, hx:14, hy:14 } },
+    { name:'Ocean',    preset:{ shape:'ring',   color:'#1d4ed8', size:32, border:3, shadow:4, hx:16, hy:16 } },
+    { name:'Sunset',   preset:{ shape:'heart',  color:'#dc2626', size:28, border:2, shadow:4, hx:14, hy:14 } },
+    { name:'Leaf',     preset:{ shape:'diamond',color:'#16a34a', size:28, border:2, shadow:4, hx:14, hy:14 } },
+  ]
 };
 
 class CursorStudio {
@@ -270,6 +359,13 @@ class CursorStudio {
     this.toastEl = document.getElementById('toast');
     this.currentPreset = 'circle';
     this.config = { ...PRESETS.circle };
+    this.animationType = 'none';
+    this.animSpeed = 1;
+    this.animId = null;
+    this.animTime = 0;
+    this.mouseX = -999; this.mouseY = -999;
+    this.trailPositions = [];
+    this.exportFormat = 'css';
 
     // DOM elements
     this.colorEl = document.getElementById('cursorColor');
@@ -281,7 +377,7 @@ class CursorStudio {
 
     this.bindControls();
     this.setupCanvasInteraction();
-    this.renderDemoGrid();
+    this.renderShapeGrid();
     this.update();
   }
 
@@ -293,97 +389,142 @@ class CursorStudio {
       this.config.hy = parseInt(this.hyEl.value);
       this.config.shadow = parseInt(this.shadowEl.value);
       this.config.border = parseInt(this.bwEl.value);
-
-      document.getElementById('sizeVal').textContent = this.config.size;
-      document.getElementById('hxVal').textContent = this.config.hx;
-      document.getElementById('hyVal').textContent = this.config.hy;
-      document.getElementById('shadowVal').textContent = this.config.shadow;
-      document.getElementById('bwVal').textContent = this.config.border;
-
+      this.updateLabels();
       this.updateHotspotMarker();
       this.drawCursor();
       this.updateCode();
     };
+    ['colorEl','sizeEl','hxEl','hyEl','shadowEl','bwEl'].forEach(k => {
+      this[k].addEventListener('input', update);
+    });
+    document.getElementById('animSpeed').addEventListener('input', (e) => {
+      this.animSpeed = parseFloat(e.target.value);
+      document.getElementById('animSpeedVal').textContent = this.animSpeed;
+    });
+  }
 
-    this.colorEl.addEventListener('input', update);
-    this.sizeEl.addEventListener('input', update);
-    this.hxEl.addEventListener('input', update);
-    this.hyEl.addEventListener('input', update);
-    this.shadowEl.addEventListener('input', update);
-    this.bwEl.addEventListener('input', update);
+  updateLabels() {
+    document.getElementById('sizeVal').textContent = this.config.size;
+    document.getElementById('hxVal').textContent = this.config.hx;
+    document.getElementById('hyVal').textContent = this.config.hy;
+    document.getElementById('shadowVal').textContent = this.config.shadow;
+    document.getElementById('bwVal').textContent = this.config.border;
+  }
+
+  setSize(px) {
+    this.config.size = px;
+    this.sizeEl.value = px;
+    document.querySelectorAll('.size-preset').forEach(b => b.classList.toggle('active', parseInt(b.dataset.size) === px));
+    this.updateLabels();
+    this.drawCursor();
+    this.updateCode();
+  }
+
+  setAnimation(type, el) {
+    this.animationType = type;
+    document.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.getElementById('animSpeedGroup').style.display = type === 'none' ? 'none' : 'block';
+    if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
+    this.animTime = 0;
+    this.trailPositions = [];
+    if (type !== 'none') this.startAnimation();
+    this.drawCursor();
+  }
+
+  startAnimation() {
+    const loop = (t) => {
+      this.animTime = t;
+      this.drawCursor();
+      this.animId = requestAnimationFrame(loop);
+    };
+    this.animId = requestAnimationFrame(loop);
   }
 
   applyPreset(name) {
     const preset = PRESETS[name];
     if (!preset) return;
-
     this.currentPreset = name;
     this.config = { ...preset };
-
     this.colorEl.value = preset.color;
     this.sizeEl.value = preset.size;
     this.hxEl.value = preset.hx;
     this.hyEl.value = preset.hy;
     this.shadowEl.value = preset.shadow;
     this.bwEl.value = preset.border;
-
-    // Update labels
-    document.getElementById('sizeVal').textContent = preset.size;
-    document.getElementById('hxVal').textContent = preset.hx;
-    document.getElementById('hyVal').textContent = preset.hy;
-    document.getElementById('shadowVal').textContent = preset.shadow;
-    document.getElementById('bwVal').textContent = preset.border;
-
+    document.querySelectorAll('.size-preset').forEach(b => b.classList.toggle('active', parseInt(b.dataset.size) === preset.size));
+    this.updateLabels();
     this.updateHotspotMarker();
     this.drawCursor();
     this.updateCode();
-    this.toast(`Applied: ${name} theme`);
+    this.toast(`Shape: ${name}`);
+    document.querySelectorAll('#shapeGrid .theme-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`#shapeGrid [data-cursor="${name}"]`);
+    if (btn) btn.classList.add('active');
+  }
 
-    // Highlight active button
-    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`[data-cursor="${name}"]`)?.classList.add('active');
+  applyThemeCategory(name) {
+    const cat = THEMES[name];
+    if (!cat) return;
+    // Pick random variant from category
+    const variant = cat[Math.floor(Math.random() * cat.length)];
+    this.config = { ...variant.preset };
+    this.currentPreset = variant.name;
+    this.colorEl.value = variant.preset.color;
+    this.sizeEl.value = variant.preset.size;
+    this.hxEl.value = variant.preset.hx;
+    this.hyEl.value = variant.preset.hy;
+    this.shadowEl.value = variant.preset.shadow;
+    this.bwEl.value = variant.preset.border;
+    document.querySelectorAll('.size-preset').forEach(b => b.classList.toggle('active', parseInt(b.dataset.size) === variant.preset.size));
+    document.querySelectorAll('#shapeGrid .theme-btn').forEach(b => b.classList.remove('active'));
+    this.updateLabels();
+    this.updateHotspotMarker();
+    this.drawCursor();
+    this.updateCode();
+    this.toast(`Theme: ${name} → ${variant.name}`);
   }
 
   setupCanvasInteraction() {
-    const frame = this.frame;
-    const canvas = this.canvas;
-
-    frame.addEventListener('mousemove', (e) => {
-      const rect = frame.getBoundingClientRect();
+    this.frame.addEventListener('mousemove', (e) => {
+      const rect = this.frame.getBoundingClientRect();
+      this.mouseX = e.clientX;
+      this.mouseY = e.clientY;
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-
-      // Update hotspot marker position
-      this.hotspotMarker.style.left = (x / rect.width * canvas.width) + 'px';
-      this.hotspotMarker.style.top = (y / rect.height * canvas.height) + 'px';
+      this.hotspotMarker.style.left = (x / rect.width * this.canvas.width) + 'px';
+      this.hotspotMarker.style.top = (y / rect.height * this.canvas.height) + 'px';
+      if (this.animationType === 'trail') {
+        this.trailPositions.push({ x: e.clientX, y: e.clientY });
+        if (this.trailPositions.length > 20) this.trailPositions.shift();
+      }
     });
   }
 
   updateHotspotMarker() {
-    const mx = (this.config.hx / 63) * 100;
-    const my = (this.config.hy / 63) * 100;
-    this.hotspotMarker.style.left = mx + '%';
-    this.hotspotMarker.style.top = my + '%';
+    this.hotspotMarker.style.left = (this.config.hx / 63 * 100) + '%';
+    this.hotspotMarker.style.top = (this.config.hy / 63 * 100) + '%';
   }
 
   drawCursor() {
     const c = this.config;
     const size = c.size;
-    this.canvas.width = size * 3;
-    this.canvas.height = size * 3;
+    const s = size * 3;
+    this.canvas.width = s;
+    this.canvas.height = s;
     const ctx = this.ctx;
-    const cx = size * 1.5;
-    const cy = size * 1.5;
+    const cx = s / 2;
+    const cy = s / 2;
+    const scale = s / (size * 2);
 
-    // Clear
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.clearRect(0, 0, s, s);
 
     // Background grid
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     ctx.lineWidth = 1;
-    for (let i = 0; i < this.canvas.width; i += 20) {
-      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, this.canvas.height); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(this.canvas.width, i); ctx.stroke();
+    for (let i = 0; i < s; i += 20) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(s, i); ctx.stroke();
     }
 
     // Hotspot crosshair
@@ -396,19 +537,60 @@ class CursorStudio {
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // Animation transforms
+    let pulseScale = 1;
+    let glowExtra = 0;
+    let rotAngle = 0;
+    if (this.animationType === 'pulse' && this.animTime) {
+      pulseScale = 1 + Math.sin(this.animTime / 300 * this.animSpeed) * 0.08;
+    }
+    if (this.animationType === 'glow' && this.animTime) {
+      glowExtra = (Math.sin(this.animTime / 400 * this.animSpeed) + 1) * 0.5 * 8;
+    }
+    if (this.animationType === 'rotate' && this.animTime) {
+      rotAngle = (this.animTime / 1000) * this.animSpeed * 2;
+    }
+
     // Shadow
-    if (c.shadow > 0) {
+    if (c.shadow + glowExtra > 0) {
       ctx.save();
-      ctx.shadowColor = 'rgba(0,0,0,0.4)';
-      ctx.shadowBlur = c.shadow;
+      ctx.shadowColor = `rgba(0,0,0,0.4)`;
+      ctx.shadowBlur = c.shadow + glowExtra;
       ctx.shadowOffsetX = 2;
       ctx.shadowOffsetY = 2;
-      this._drawShape(ctx, cx + 2, cy + 2, size, c);
+      ctx.translate(cx, cy);
+      ctx.rotate(rotAngle);
+      ctx.scale(pulseScale, pulseScale);
+      ctx.translate(-cx, -cy);
+      this._drawShape(ctx, cx, cy, size, c);
       ctx.restore();
+    }
+
+    // Trail effect
+    if (this.animationType === 'trail' && this.trailPositions.length > 1) {
+      const frameRect = this.frame.getBoundingClientRect();
+      this.trailPositions.forEach((pos, i) => {
+        const alpha = (i / this.trailPositions.length) * 0.3;
+        const trailSize = (i / this.trailPositions.length) * size * 0.5;
+        if (trailSize < 2) return;
+        ctx.save();
+        ctx.fillStyle = c.color;
+        ctx.globalAlpha = alpha;
+        const tx = cx + (pos.x - this.mouseX) * 0.5;
+        const ty = cy + (pos.y - this.mouseY) * 0.5;
+        ctx.beginPath();
+        ctx.arc(tx, ty, trailSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
     }
 
     // Main shape
     ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rotAngle);
+    ctx.scale(pulseScale, pulseScale);
+    ctx.translate(-cx, -cy);
     this._drawShape(ctx, cx, cy, size, c);
     ctx.restore();
 
@@ -416,18 +598,13 @@ class CursorStudio {
     ctx.save();
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
     switch (c.shape) {
-      case 'circle':
-        ctx.beginPath(); ctx.arc(cx, cy, size * 0.35, 0, Math.PI * 2); ctx.fill();
-        break;
+      case 'circle':    ctx.beginPath(); ctx.arc(cx, cy, size * 0.35, 0, Math.PI * 2); ctx.fill(); break;
       case 'diamond':
-        const d = size * 0.3;
-        ctx.beginPath(); ctx.moveTo(cx, cy - d); ctx.lineTo(cx + d, cy); ctx.lineTo(cx, cy + d); ctx.lineTo(cx - d, cy); ctx.fill();
+        const dd = size * 0.3;
+        ctx.beginPath(); ctx.moveTo(cx, cy-dd); ctx.lineTo(cx+dd,cy); ctx.lineTo(cx,cy+dd); ctx.lineTo(cx-dd,cy); ctx.fill();
         break;
-      case 'star':
-        this._drawStar(ctx, cx, cy, 5, size * 0.4, size * 0.2);
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.fill();
-        break;
+      case 'star':      this._drawStar(ctx, cx, cy, 5, size * 0.4, size * 0.2); ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fill(); break;
+      case 'ring':      ctx.beginPath(); ctx.arc(cx, cy, size * 0.15, 0, Math.PI * 2); ctx.fillStyle = c.color; ctx.fill(); break;
     }
     ctx.restore();
 
@@ -443,138 +620,148 @@ class CursorStudio {
   }
 
   _drawShape(ctx, cx, cy, size, c) {
-    const s = size - c.border;
+    const s = Math.max(size - c.border, 4);
     ctx.fillStyle = c.color;
     ctx.strokeStyle = 'rgba(255,255,255,0.5)';
     ctx.lineWidth = c.border;
 
     switch (c.shape) {
-      case 'circle':
-        ctx.beginPath(); ctx.arc(cx, cy, s / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); break;
+      case 'circle':    ctx.beginPath(); ctx.arc(cx, cy, s/2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); break;
       case 'crosshair':
-        const arm = s * 0.8;
-        const thick = s * 0.15;
-        ctx.fillRect(cx - thick, cy - arm, thick * 2, arm * 2);
-        ctx.fillRect(cx - arm, cy - thick, arm * 2, thick * 2);
-        ctx.strokeRect(cx - thick, cy - arm, thick * 2, arm * 2);
-        ctx.strokeRect(cx - arm, cy - thick, arm * 2, thick * 2);
+        const arm = s*0.8, thick = s*0.15;
+        ctx.fillRect(cx-thick, cy-arm, thick*2, arm*2); ctx.fillRect(cx-arm, cy-thick, arm*2, thick*2);
+        ctx.strokeRect(cx-thick, cy-arm, thick*2, arm*2); ctx.strokeRect(cx-arm, cy-thick, arm*2, thick*2);
         break;
       case 'diamond':
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - s / 2); ctx.lineTo(cx + s / 2, cy);
-        ctx.lineTo(cx, cy + s / 2); ctx.lineTo(cx - s / 2, cy); ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        break;
-      case 'square':
-        ctx.beginPath();
-        ctx.roundRect(cx - s / 2, cy - s / 2, s, s, 4);
-        ctx.fill(); ctx.stroke();
-        break;
+        ctx.beginPath(); ctx.moveTo(cx, cy-s/2); ctx.lineTo(cx+s/2, cy); ctx.lineTo(cx, cy+s/2); ctx.lineTo(cx-s/2, cy); ctx.closePath(); ctx.fill(); ctx.stroke(); break;
+      case 'square':    ctx.beginPath(); ctx.roundRect(cx-s/2, cy-s/2, s, s, 4); ctx.fill(); ctx.stroke(); break;
       case 'arrow':
-        // Draw an arrow cursor
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - s / 2);
-        ctx.lineTo(cx + s / 2, cy);
-        ctx.lineTo(cx + s * 0.3, cy);
-        ctx.lineTo(cx + s * 0.3, cy + s / 2);
-        ctx.lineTo(cx - s / 2, cy + s / 2);
-        ctx.lineTo(cx - s / 2, cy - s * 0.1);
-        ctx.lineTo(cx - s * 0.15, cy - s * 0.1);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy-s/2); ctx.lineTo(cx+s/2, cy); ctx.lineTo(cx+s*0.3, cy);
+        ctx.lineTo(cx+s*0.3, cy+s/2); ctx.lineTo(cx-s/2, cy+s/2); ctx.lineTo(cx-s/2, cy-s*0.1);
+        ctx.lineTo(cx-s*0.15, cy-s*0.1); ctx.closePath(); ctx.fill(); ctx.stroke(); break;
+      case 'dot':       ctx.beginPath(); ctx.arc(cx, cy, s/4, 0, Math.PI*2); ctx.fill(); ctx.stroke(); break;
+      case 'ring':      ctx.beginPath(); ctx.arc(cx, cy, s/2, 0, Math.PI*2); ctx.stroke();
+                        ctx.beginPath(); ctx.arc(cx, cy, s*0.25, 0, Math.PI*2); ctx.stroke(); break;
+      case 'star':      this._drawStar(ctx, cx, cy, 5, s/2, s/4); ctx.fill(); ctx.stroke(); break;
+      case 'heart':
+        this._drawHeart(ctx, cx, cy, s/2); ctx.fill(); ctx.stroke(); break;
+      case 'pointer':
+        ctx.beginPath(); ctx.moveTo(cx, cy-s/2); ctx.lineTo(cx+s/2, cy-s*0.1); ctx.lineTo(cx+s*0.3, cy);
+        ctx.lineTo(cx+s*0.35, cy+s/2); ctx.lineTo(cx-s*0.2, cy+s/2); ctx.lineTo(cx-s/2, cy+s*0.3);
+        ctx.closePath(); ctx.fill(); ctx.stroke(); break;
+      case 'cross':
+        const a2 = s*0.45, t2 = s*0.12;
+        ctx.fillRect(cx-t2, cy-a2, t2*2, a2*2); ctx.fillRect(cx-a2, cy-t2, a2*2, t2*2);
+        ctx.strokeRect(cx-t2, cy-a2, t2*2, a2*2); ctx.strokeRect(cx-a2, cy-t2, a2*2, t2*2); break;
+      case 'zoomIn':
+        ctx.beginPath(); ctx.arc(cx, cy, s*0.4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.moveTo(cx+s*0.3, cy+s*0.3); ctx.lineTo(cx+s*0.7, cy+s*0.7); ctx.stroke();
+        ctx.strokeRect(cx-s*0.12, cy, s*0.08, s*0.08); ctx.strokeRect(cx, cy-s*0.12, s*0.08, s*0.08); break;
+      case 'zoomOut':
+        ctx.beginPath(); ctx.arc(cx, cy, s*0.4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.moveTo(cx+s*0.3, cy+s*0.3); ctx.lineTo(cx+s*0.7, cy+s*0.7); ctx.stroke();
+        ctx.strokeRect(cx-s*0.12, cy, s*0.08, s*0.08); break;
+      case 'grab':
+        ctx.beginPath(); ctx.arc(cx, cy, s/2, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        const h = s*0.12; ctx.fillStyle = '#fff';
+        ctx.fillRect(cx-h, cy-s*0.5, h*2, h*4); ctx.fillRect(cx-s*0.3, cy-s*0.2, h*2, h*3); ctx.fillRect(cx+s*0.1, cy-s*0.2, h*2, h*3);
+        ctx.strokeRect(cx-h, cy-s*0.5, h*2, h*4); ctx.strokeRect(cx-s*0.3, cy-s*0.2, h*2, h*3); ctx.strokeRect(cx+s*0.1, cy-s*0.2, h*2, h*3);
         break;
-      case 'dot':
-        ctx.beginPath(); ctx.arc(cx, cy, s / 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); break;
-      case 'ring':
-        ctx.beginPath(); ctx.arc(cx, cy, s / 2, 0, Math.PI * 2); ctx.stroke();
-        ctx.beginPath(); ctx.arc(cx, cy, s * 0.25, 0, Math.PI * 2); ctx.stroke();
+      case 'text':
+        ctx.beginPath(); ctx.moveTo(cx, cy-s/2); ctx.lineTo(cx, cy+s/2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx-s/2, cy-s/3); ctx.lineTo(cx+s/2, cy-s/3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx-s/3, cy+s/2); ctx.lineTo(cx+s/3, cy+s/2); ctx.stroke();
         break;
-      case 'star':
-        this._drawStar(ctx, cx, cy, 5, s / 2, s / 4);
-        ctx.fill(); ctx.stroke();
+      case 'notAllowed':
+        ctx.beginPath(); ctx.arc(cx, cy, s/2, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx-s/3, cy-s/3); ctx.lineTo(cx+s/3, cy+s/3); ctx.lineWidth = c.border*1.5; ctx.stroke();
+        break;
+      case 'pencil':
+        ctx.beginPath(); ctx.moveTo(cx, cy-s/2); ctx.lineTo(cx+s/3, cy-s/4); ctx.lineTo(cx, cy+s/2); ctx.lineTo(cx-s/3, cy-s/4); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeRect(cx-s*0.15, cy+s*0.15, s*0.3, s*0.2);
+        break;
+      case 'move':
+        ctx.beginPath(); ctx.arc(cx, cy, s/2, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(cx, cy-s/3); ctx.lineTo(cx, cy+s/3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx-s/3, cy); ctx.lineTo(cx+s/3, cy); ctx.stroke();
+        break;
+      case 'help':
+        ctx.beginPath(); ctx.arc(cx, cy, s/2, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = `bold ${s*0.5}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('?', cx, cy);
+        break;
+      case 'cell':
+        ctx.fillRect(cx-s/2, cy-s/2, s, s);
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1;
+        ctx.strokeRect(cx-s/2, cy-s/2, s, s);
+        ctx.beginPath(); ctx.moveTo(cx, cy-s/2); ctx.lineTo(cx, cy+s/2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx-s/2, cy); ctx.lineTo(cx+s/2, cy); ctx.stroke();
         break;
     }
   }
 
   _drawStar(ctx, cx, cy, spikes, outerR, innerR) {
-    let rot = -Math.PI / 2;
-    const step = Math.PI / spikes;
-    ctx.beginPath();
+    let rot = -Math.PI/2; const step = Math.PI/spikes; ctx.beginPath();
     for (let i = 0; i < spikes; i++) {
-      ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
-      rot += step;
-      ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
-      rot += step;
-    }
-    ctx.closePath();
+      ctx.lineTo(cx+Math.cos(rot)*outerR, cy+Math.sin(rot)*outerR); rot += step;
+      ctx.lineTo(cx+Math.cos(rot)*innerR, cy+Math.sin(rot)*innerR); rot += step;
+    } ctx.closePath();
+  }
+
+  _drawHeart(ctx, cx, cy, r) {
+    const tw = r*0.2, lh = r*0.15;
+    ctx.beginPath(); ctx.moveTo(cx, cy+r*0.1);
+    ctx.bezierCurveTo(cx, cy-r*0.6, cx-r, cy-r*0.4, cx-r, cy+r*0.1);
+    ctx.bezierCurveTo(cx-r, cy+r*0.5, cx, cy+r*0.7, cx, cy+r*0.8);
+    ctx.bezierCurveTo(cx, cy+r*0.7, cx+r, cy+r*0.5, cx+r, cy+r*0.1);
+    ctx.bezierCurveTo(cx+r, cy-r*0.4, cx, cy-r*0.6, cx, cy+r*0.1);
   }
 
   generateCSS() {
-    const c = this.config;
-    const svg = this._generateSVGDataURI();
-    const css = `.custom-cursor {
-  cursor: url("${svg}"), auto;
-}`;
-    return css;
+    return `.custom-cursor { cursor: url("${this._generateSVGDataURI()}"), auto; }`;
   }
 
   _generateSVGDataURI() {
     const c = this.config;
     const size = c.size;
     let shape = '';
-
     switch (c.shape) {
-      case 'circle':
-        shape = `<circle cx="${size}" cy="${size}" r="${size * 0.7}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`;
-        break;
-      case 'crosshair': {
-        const arm = size * 0.9;
-        const thick = size * 0.18;
-        shape = `<rect x="${size - thick}" y="${size * 0.1}" width="${thick * 2}" height="${arm * 2}" fill="${c.color}" stroke="white" stroke-width="1"/>
-<rect x="${size * 0.1}" y="${size - thick}" width="${arm * 2}" height="${thick * 2}" fill="${c.color}" stroke="white" stroke-width="1"/>`;
-        break;
-      }
-      case 'diamond':
-        shape = `<polygon points="${size},${size * 0.2} ${size * 1.8},${size} ${size},${size * 1.8} ${size * 0.2},${size}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`;
-        break;
-      case 'square':
-        shape = `<rect x="${size * 0.2}" y="${size * 0.2}" width="${size * 1.6}" height="${size * 1.6}" rx="4" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`;
-        break;
-      case 'arrow':
-        shape = `<polygon points="${size},${size * 0.05} ${size * 1.9},${size} ${size * 1.2},${size} ${size * 1.2},${size * 1.7} ${size * 0.05},${size * 1.7} ${size * 0.05},${size * 0.85}" fill="${c.color}" stroke="white" stroke-width="1"/>`;
-        break;
-      case 'dot':
-        shape = `<circle cx="${size}" cy="${size}" r="${size * 0.3}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`;
-        break;
-      case 'ring':
-        shape = `<circle cx="${size}" cy="${size}" r="${size * 0.8}" fill="none" stroke="${c.color}" stroke-width="${c.border}"/>
-<circle cx="${size}" cy="${size}" r="${size * 0.35}" fill="none" stroke="${c.color}" stroke-width="${c.border}"/>`;
-        break;
-      case 'star':
-        shape = `<polygon points="${this._starPointsSVG(size, 5, size * 0.8, size * 0.35)}" fill="${c.color}" stroke="white" stroke-width="1"/>`;
-        break;
+      case 'circle':      shape = `<circle cx="${size}" cy="${size}" r="${size*0.7}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`; break;
+      case 'crosshair':   shape = `<rect x="${size-size*0.18}" y="${size*0.1}" width="${size*0.36}" height="${size*1.8}" fill="${c.color}" stroke="white" stroke-width="1"/><rect x="${size*0.1}" y="${size-size*0.18}" width="${size*1.8}" height="${size*0.36}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
+      case 'diamond':     shape = `<polygon points="${size},${size*0.2} ${size*1.8},${size} ${size},${size*1.8} ${size*0.2},${size}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`; break;
+      case 'square':      shape = `<rect x="${size*0.2}" y="${size*0.2}" width="${size*1.6}" height="${size*1.6}" rx="4" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`; break;
+      case 'arrow':       shape = `<polygon points="${size},${size*0.05} ${size*1.9},${size} ${size*1.2},${size} ${size*1.2},${size*1.7} ${size*0.05},${size*1.7} ${size*0.05},${size*0.85}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
+      case 'dot':         shape = `<circle cx="${size}" cy="${size}" r="${size*0.3}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`; break;
+      case 'ring':        shape = `<circle cx="${size}" cy="${size}" r="${size*0.8}" fill="none" stroke="${c.color}" stroke-width="${c.border}"/><circle cx="${size}" cy="${size}" r="${size*0.35}" fill="none" stroke="${c.color}" stroke-width="${c.border}"/>`; break;
+      case 'star':        shape = `<polygon points="${this._starPointsSVG(size,5,size*0.8,size*0.35)}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
+      case 'heart':       shape = `<path d="M${size} ${size*1.1} C${size} ${size*0.3} ${size-size*0.8} ${size*0.5} ${size-size*0.8} ${size*1.1} C${size-size*0.8} ${size*1.6} ${size} ${size*1.8} ${size} ${size*1.8} C${size} ${size*1.8} ${size+size*0.8} ${size*1.6} ${size+size*0.8} ${size*1.1} C${size+size*0.8} ${size*0.5} ${size} ${size*0.3} ${size} ${size*1.1}Z" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`; break;
+      case 'pointer':     shape = `<polygon points="${size*0.5},${size*0.05} ${size*1.8},${size*0.7} ${size*1.1},${size*0.85} ${size*1.15},${size*1.8} ${size*0.4},${size*1.8} ${size*0.15},${size*1.1}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
+      case 'cross':       shape = `<rect x="${size*0.65}" y="${size*0.1}" width="${size*0.35}" height="${size*1.8}" fill="${c.color}" stroke="white" stroke-width="1"/><rect x="${size*0.1}" y="${size*0.65}" width="${size*1.8}" height="${size*0.35}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
+      case 'zoomIn':      shape = `<circle cx="${size*0.6}" cy="${size*0.6}" r="${size*0.4}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/><line x1="${size*0.9}" y1="${size*0.9}" x2="${size*1.2}" y2="${size*1.2}" stroke="${c.color}" stroke-width="3"/><line x1="${size*0.47}" y1="${size*0.6}" x2="${size*0.73}" y2="${size*0.6}" stroke="white" stroke-width="2"/><line x1="${size*0.6}" y1="${size*0.47}" x2="${size*0.6}" y2="${size*0.73}" stroke="white" stroke-width="2"/>`; break;
+      case 'zoomOut':     shape = `<circle cx="${size*0.6}" cy="${size*0.6}" r="${size*0.4}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/><line x1="${size*0.9}" y1="${size*0.9}" x2="${size*1.2}" y2="${size*1.2}" stroke="${c.color}" stroke-width="3"/><line x1="${size*0.47}" y1="${size*0.6}" x2="${size*0.73}" y2="${size*0.6}" stroke="white" stroke-width="2"/>`; break;
+      case 'grab':        shape = `<circle cx="${size}" cy="${size}" r="${size*0.7}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/><rect x="${size*0.65}" y="${size*0.4}" width="${size*0.2}" height="${size*0.6}" fill="white"/><rect x="${size*0.4}" y="${size*0.55}" width="${size*0.2}" height="${size*0.5}" fill="white"/><rect x="${size*0.9}" y="${size*0.55}" width="${size*0.2}" height="${size*0.5}" fill="white"/>`; break;
+      case 'text':        shape = `<line x1="${size}" y1="${size*0.3}" x2="${size}" y2="${size*1.7}" stroke="${c.color}" stroke-width="${c.border+2}"/><line x1="${size*0.3}" y1="${size*0.6}" x2="${size*1.7}" y2="${size*0.6}" stroke="${c.color}" stroke-width="${c.border+1}"/><line x1="${size*0.5}" y1="${size*1.5}" x2="${size*1.5}" y2="${size*1.5}" stroke="${c.color}" stroke-width="${c.border+1}"/>`; break;
+      case 'notAllowed':  shape = `<circle cx="${size}" cy="${size}" r="${size*0.7}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/><line x1="${size*0.35}" y1="${size*0.35}" x2="${size*1.65}" y2="${size*1.65}" stroke="white" stroke-width="${c.border+2}"/>`; break;
+      case 'pencil':      shape = `<polygon points="${size},${size*0.3} ${size+size*0.4},${size*0.5} ${size},${size*1.7} ${size-size*0.4},${size*0.5}" fill="${c.color}" stroke="white" stroke-width="1"/><rect x="${size*0.7}" y="${size*1.1}" width="${size*0.6}" height="${size*0.4}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
+      case 'move':        shape = `<circle cx="${size}" cy="${size}" r="${size*0.7}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/><line x1="${size}" y1="${size*0.4}" x2="${size}" y2="${size*1.6}" stroke="white" stroke-width="${c.border+1}"/><line x1="${size*0.4}" y1="${size}" x2="${size*1.6}" y2="${size}" stroke="white" stroke-width="${c.border+1}"/>`; break;
+      case 'help':        shape = `<circle cx="${size}" cy="${size}" r="${size*0.7}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/><text x="${size}" y="${size}" fill="white" font-size="${size*0.6}px" font-weight="bold" text-anchor="middle" dominant-baseline="central">?</text>`; break;
+      case 'cell':        shape = `<rect x="${size*0.2}" y="${size*0.2}" width="${size*1.6}" height="${size*1.6}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/><line x1="${size}" y1="${size*0.2}" x2="${size}" y2="${size*1.8}" stroke="white" stroke-width="1"/><line x1="${size*0.2}" y1="${size}" x2="${size*1.8}" y2="${size}" stroke="white" stroke-width="1"/>`; break;
     }
 
-    // Shadow
     let shadow = '';
     if (c.shadow > 0) {
-      shadow = `<filter id="shadow"><feDropShadow dx="2" dy="2" stdDeviation="${c.shadow}" flood-opacity="0.5"/></filter>`;
-      shape = shape.replace(/>/, ` filter="url(#shadow)">`);
+      shadow = `<filter id="s"><feDropShadow dx="2" dy="2" stdDeviation="${c.shadow}" flood-opacity="0.5"/></filter>`;
+      shape = shape.replace(/>/, ' filter="url(#s)">');
     }
-
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size * 2}" height="${size * 2}" viewBox="0 0 ${size * 2} ${size * 2}">${shadow}${shape}</svg>`;
-    return 'data:image/svg+xml;base64,' + btoa(svg);
+    return `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="${size*2}" height="${size*2}">${shadow}${shape}</svg>`)}`;
   }
 
-  _starPointsSVG(cx, cy, spikes, outerR, innerR) {
-    let pts = [];
-    let rot = -Math.PI / 2;
-    const step = Math.PI / spikes;
+  _starPointsSVG(cx, spikes, outerR, innerR) {
+    let pts = [], rot = -Math.PI/2, step = Math.PI/spikes;
     for (let i = 0; i < spikes; i++) {
-      pts.push(`${cx + Math.cos(rot) * outerR},${cy + Math.sin(rot) * outerR}`);
-      rot += step;
-      pts.push(`${cx + Math.cos(rot) * innerR},${cy + Math.sin(rot) * innerR}`);
-      rot += step;
+      pts.push(`${cx+Math.cos(rot)*outerR},${cx+Math.sin(rot)*outerR}`); rot += step;
+      pts.push(`${cx+Math.cos(rot)*innerR},${cx+Math.sin(rot)*innerR}`); rot += step;
     }
     return pts.join(' ').replace(/,/g, ' ');
   }
@@ -582,94 +769,147 @@ class CursorStudio {
   updateCode() {
     const svg = this._generateSVGDataURI();
     const c = this.config;
-    const code = `/* Cursor: ${c.shape} | Size: ${c.size}px | Hotspot: ${c.hx}, ${c.hy} */
-.custom-cursor {
-  cursor: url("${svg}"), auto;
-  /* Hotspot offset: -${c.hx}px -${c.hy}px */
-}
-
-/* Apply to body */
-body {
-  cursor: url("${svg}"), auto !important;
-}`;
+    const animHint = this.animationType !== 'none' ? `/* Animation: ${this.animationType} */\n` : '';
+    const code = `${animHint}/* Cursor: ${c.shape} | ${c.size}px | HS: ${c.hx},${c.hy} */
+.custom-cursor { cursor: url("${svg}"), auto; }
+body { cursor: url("${svg}"), auto !important; }`;
     this.codeOutput.textContent = code;
   }
 
   exportCursorCSS() {
     const code = this.generateCSS();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(code).then(() => this.toast('CSS copied to clipboard!'));
-    } else {
-      const ta = document.createElement('textarea');
-      ta.value = code;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      this.toast('CSS copied!');
-    }
+    navigator.clipboard?.writeText(code).catch(() => {
+      const ta = document.createElement('textarea'); ta.value = code;
+      ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    }).then(() => this.toast('CSS copied!'));
+  }
+
+  exportCursorDataURI() {
+    const svg = this._generateSVGDataURI();
+    navigator.clipboard?.writeText(svg).catch(() => {
+      const ta = document.createElement('textarea'); ta.value = svg;
+      ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    }).then(() => this.toast('Data URI copied!'));
   }
 
   downloadCursorSvg() {
-    const svg = this._generateSVGDataURI().replace('data:image/svg+xml;base64,', '');
+    const svg = this._generateSVGDataURI().replace('data:image/svg+xml;base64,','');
     const decoded = atob(svg);
     const blob = new Blob([decoded], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const a = document.createElement('a'); a.href = url;
     a.download = `cursor-${this.currentPreset}-${this.config.size}px.svg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     this.toast('SVG downloaded!');
   }
 
-  testOnPage() {
-    // Show custom cursor overlay on page
+  downloadCursorPNG() {
+    const c = this.config;
+    const sc = document.createElement('canvas');
+    const s = Math.max(c.size * 4, 64);
+    sc.width = s; sc.height = s;
+    const ctx = sc.getContext('2d');
+    ctx.clearRect(0, 0, s, s);
+    // Draw on temp canvas at high res
+    ctx.save();
+    ctx.scale(s / (c.size * 2), s / (c.size * 2));
+    ctx.translate(c.size, c.size);
+    this._drawShape(ctx, c.size, c.size, c.size, c);
+    ctx.restore();
+    const link = document.createElement('a');
+    link.download = `cursor-${this.currentPreset}-${c.size}px.png`;
+    link.href = sc.toDataURL('image/png');
+    link.click();
+    this.toast('PNG downloaded!');
+  }
+
+  copyAgentConfig() {
+    const c = this.config;
+    const config = {
+      tool: 'shadow-studio/cursor-studio',
+      version: '5.2.0',
+      cursor: {
+        shape: c.shape,
+        color: c.color,
+        size_px: c.size,
+        border_width: c.border,
+        shadow_blur: c.shadow,
+        hotspot: { x: c.hx, y: c.hy }
+      },
+      animation: this.animationType !== 'none' ? {
+        type: this.animationType,
+        speed_multiplier: this.animSpeed
+      } : null,
+      svg_data_uri: this._generateSVGDataURI(),
+      generated_at: new Date().toISOString()
+    };
+    const json = JSON.stringify(config, null, 2);
+    navigator.clipboard?.writeText(json).catch(() => {
+      const ta = document.createElement('textarea'); ta.value = json;
+      ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    }).then(() => this.toast('Agent config copied!'));
+  }
+
+  exportToPage() {
+    const svg = this._generateSVGDataURI();
+    const c = this.config;
     const overlay = document.getElementById('cursorOverlay');
     const dot = document.getElementById('cursorDot');
     overlay.style.display = 'block';
-
-    const svg = this._generateSVGDataURI();
-    dot.style.width = this.config.size + 'px';
-    dot.style.height = this.config.size + 'px';
-    dot.style.border = `${this.config.border}px solid ${this.config.color}`;
-    dot.style.boxShadow = `0 0 ${this.config.shadow}px ${this.config.color}`;
-
-    document.addEventListener('mousemove', (e) => {
+    dot.style.width = c.size + 'px';
+    dot.style.height = c.size + 'px';
+    dot.style.border = `${c.border}px solid ${c.color}`;
+    dot.style.boxShadow = `0 0 ${c.shadow}px ${c.color}`;
+    const handler = (e) => {
       dot.style.left = e.clientX + 'px';
       dot.style.top = e.clientY + 'px';
-    });
-
+    };
+    document.addEventListener('mousemove', handler);
     document.addEventListener('mousedown', () => dot.classList.add('pressed'));
     document.addEventListener('mouseup', () => dot.classList.remove('pressed'));
-
-    this.toast('Custom cursor applied! Move mouse to see it.');
+    this.toast('Cursor applied!');
     setTimeout(() => { overlay.style.display = 'none'; }, 8000);
   }
 
   resetCursor() {
     document.getElementById('cursorOverlay').style.display = 'none';
     this.applyPreset('circle');
-    this.toast('Cursor reset to default');
   }
 
-  renderDemoGrid() {
-    const grid = document.getElementById('demoGrid');
-    Object.entries(PRESETS).forEach(([name, preset]) => {
-      const cell = document.createElement('div');
-      cell.className = 'demo-cell';
-      cell.innerHTML = `<span class="icon">${this._getIcon(name)}</span><span class="name">${name}</span>`;
-      cell.onclick = () => this.applyPreset(name);
-      grid.appendChild(cell);
+  renderShapeGrid() {
+    const grid = document.getElementById('shapeGrid');
+    const entries = Object.entries(PRESETS);
+    entries.forEach(([name, preset]) => {
+      const btn = document.createElement('button');
+      btn.className = 'theme-btn';
+      btn.dataset.cursor = name;
+      const icon = this._getIcon(name);
+      btn.innerHTML = `<span>${icon}</span> ${name.charAt(0).toUpperCase()+name.slice(1)}`;
+      btn.onclick = () => this.applyPreset(name);
+      grid.appendChild(btn);
     });
+    // Also populate bottom demo grid with all shapes
+    const demoGrid = document.getElementById('shapeDemoGrid');
+    if (demoGrid) {
+      entries.forEach(([name]) => {
+        const cell = document.createElement('div');
+        cell.className = 'demo-cell';
+        cell.innerHTML = `<span class="icon">${this._getIcon(name)}</span><span class="name">${name}</span>`;
+        cell.onclick = () => this.applyPreset(name);
+        demoGrid.appendChild(cell);
+      });
+    }
   }
 
   _getIcon(name) {
     const icons = {
-      circle: '●', crosshair: '╋', diamond: '◆', square: '■',
-      arrow: '➤', dot: '◉', ring: '◎', star: '★'
+      circle:'●', crosshair:'╋', diamond:'◆', square:'■', arrow:'➤', dot:'◉', ring:'◎', star:'★',
+      heart:'♥', pointer:'☝', cross:'✚', zoomIn:'🔍', zoomOut:'🔎', grab:'✊', text:'𝐓', notAllowed:'🚫',
+      pencil:'✏', move:'✥', help:'❓', cell:'⊞'
     };
     return icons[name] || '●';
   }
@@ -683,6 +923,9 @@ body {
 }
 
 const studio = new CursorStudio();
+window.studio = studio;
+function applyPreset(n) { studio.applyPreset(n); }
+</script>
 </script>
 </body>
 </html>
