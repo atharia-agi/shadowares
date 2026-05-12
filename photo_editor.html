@@ -74,7 +74,17 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 .shape-btn:hover{background:rgba(255,255,255,.04);color:var(--text);border-color:rgba(255,255,255,.08)}
 .shape-btn.active{background:rgba(124,77,255,.15);color:var(--primary);border-color:rgba(124,77,255,.3)}
 
-/* Export Modal */
+/* Brush Presets */
+       .brush-presets{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+       .brush-preset{padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);transition:all .15s;font-family:inherit}
+       .brush-preset:hover{border-color:var(--primary);color:var(--text)}
+       .brush-preset.active{border-color:var(--primary);color:var(--primary);background:rgba(124,77,255,.1)}
+
+       /* Custom Brush Shape Preview */
+       .brush-shape-preview{width:48px;height:48px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-top:8px;background:var(--bg);position:relative;overflow:hidden}
+       .brush-shape-preview canvas{image-rendering:pixelated}
+
+       /* Export Modal */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;justify-content:center;align-items:center}
 .modal-backdrop.show{display:flex}
 .modal{background:var(--surface);border-radius:12px;padding:28px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--border)}
@@ -192,22 +202,36 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
         </div>
       </div>
 
-      <!-- Draw Options -->
-      <div id="drawOptions" style="margin-top:12px">
-        <div class="slider-group">
-          <label>Brush Size <span id="brushSizeVal">5</span>px</label>
-          <input type="range" id="brushSize" min="1" max="50" value="5" oninput="PE.updateBrush()">
-        </div>
-        <div class="slider-group">
-          <label>Opacity <span id="brushOpacityVal">100</span>%</label>
-          <input type="range" id="brushOpacity" min="1" max="100" value="100" oninput="PE.updateBrush()">
-        </div>
-        <div class="color-row">
-          <label style="font-size:.75rem;color:var(--text-muted)">Color:</label>
-          <input type="color" id="brushColor" value="#000000" onchange="PE.updateBrush()">
-          <span class="color-val" id="brushColorVal">#000000</span>
-        </div>
-      </div>
+<!-- Draw Options -->
+       <div id="drawOptions" style="margin-top:12px">
+         <div class="slider-group">
+           <label>Brush Size <span id="brushSizeVal">5</span>px</label>
+           <input type="range" id="brushSize" min="1" max="50" value="5" oninput="PE.updateBrush()">
+         </div>
+         <div class="slider-group">
+           <label>Opacity <span id="brushOpacityVal">100</span>%</label>
+           <input type="range" id="brushOpacity" min="1" max="100" value="100" oninput="PE.updateBrush()">
+         </div>
+         <div class="color-row">
+           <label style="font-size:.75rem;color:var(--text-muted)">Color:</label>
+           <input type="color" id="brushColor" value="#000000" onchange="PE.updateBrush()">
+           <span class="color-val" id="brushColorVal">#000000</span>
+         </div>
+         <div style="margin-top:8px">
+           <label style="font-size:.72rem;color:var(--text-muted)">Brush Presets</label>
+           <div class="brush-presets" id="brushPresets">
+             <button class="brush-preset active" data-shape="round" onclick="PE.selectBrushShape('round',this)">⬤ Round</button>
+             <button class="brush-preset" data-shape="square" onclick="PE.selectBrushShape('square',this)">▣ Square</button>
+             <button class="brush-preset" data-shape="diamond" onclick="PE.selectBrushShape('diamond',this)">◆ Diamond</button>
+             <button class="brush-preset" data-shape="spray" onclick="PE.selectBrushShape('spray',this)">💨 Spray</button>
+             <button class="brush-preset" data-shape="calligraphy" onclick="PE.selectBrushShape('calligraphy',this)">✒️ Calligraphy</button>
+             <button class="brush-preset" data-shape="chalk" onclick="PE.selectBrushShape('chalk',this)">🖊️ Chalk</button>
+           </div>
+         </div>
+         <div class="brush-shape-preview" id="brushPreview">
+           <canvas id="brushPreviewCanvas" width="48" height="48"></canvas>
+         </div>
+       </div>
 
       <!-- Shape Options -->
       <div id="shapeOptions" style="margin-top:12px;display:none">
@@ -342,20 +366,25 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
     </div>
   </div>
 
-  <!-- Export Section -->
-  <div class="panel-section">
-    <h3>📦 Export</h3>
-    <div class="export-formats">
-      <button class="export-fmt-btn active" data-fmt="png" onclick="PE.selectFormat('png',this)">PNG</button>
-      <button class="export-fmt-btn" data-fmt="jpeg" onclick="PE.selectFormat('jpeg',this)">JPEG</button>
-      <button class="export-fmt-btn" data-fmt="webp" onclick="PE.selectFormat('webp',this)">WebP</button>
-      <button class="export-fmt-btn" data-fmt="svg" onclick="PE.selectFormat('svg',this)">SVG</button>
-    </div>
-    <div style="display:flex;gap:6px">
-      <button class="btn-sm btn-primary" onclick="PE.copyToClipboard()" style="flex:1">📋 Copy Data</button>
-      <button class="btn-sm btn-success" onclick="PE.downloadImage()" style="flex:1">💾 Download</button>
-    </div>
-  </div>
+<!-- Export Section -->
+   <div class="panel-section">
+     <h3>📦 Export</h3>
+     <div class="export-formats">
+       <button class="export-fmt-btn active" data-fmt="png" onclick="PE.selectFormat('png',this)">PNG</button>
+       <button class="export-fmt-btn" data-fmt="jpeg" onclick="PE.selectFormat('jpeg',this)">JPEG</button>
+       <button class="export-fmt-btn" data-fmt="webp" onclick="PE.selectFormat('webp',this)">WebP</button>
+       <button class="export-fmt-btn" data-fmt="svg" onclick="PE.selectFormat('svg',this)">SVG</button>
+     </div>
+     <div style="display:flex;gap:6px;margin-bottom:8px">
+       <button class="btn-sm btn-primary" onclick="PE.copyToClipboard()" style="flex:1">📋 Copy Data</button>
+       <button class="btn-sm btn-success" onclick="PE.downloadImage()" style="flex:1">💾 Download</button>
+     </div>
+     <!-- Per-asset downloads -->
+     <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px">
+       <h3 style="font-size:.72rem;color:var(--text-muted);margin-bottom:6px">📂 Export Assets</h3>
+       <div style="display:flex;flex-wrap:wrap;gap:4px" id="assetDownloads"></div>
+     </div>
+   </div>
 </div>
 
 <!-- Export Modal -->
@@ -394,10 +423,12 @@ const PE = {
   brushSize: 5,
   brushOpacity: 1,
   currentColor: '#000000',
+  brushShape: 'round',
   shapesStyle: { fill: '#7c4dff', stroke: '#000', strokeWidth: 2 },
   selectedShape: 'rect',
   history: [],
   historyIndex: -1,
+  savedAssets: [],
 
   init() {
     this.canvas = document.getElementById('photoCanvas');
@@ -408,6 +439,8 @@ const PE = {
     this._setupCanvasEvents();
     this._setupKeyboard();
     this._loadFromStorage();
+    this._drawBrushPreview();
+    this.buildAssetDownloads();
     document.getElementById('infoWidth').textContent = this.canvasWidth;
     document.getElementById('infoHeight').textContent = this.canvasHeight;
   },
@@ -475,25 +508,17 @@ const PE = {
 
       if (!this.isDrawing) return;
 
-      if (this.currentTool === 'draw') {
-        this.drawPoints.push({ x, y });
-        const last = this.drawPoints[this.drawPoints.length - 2];
-        this.ctx.strokeStyle = this.currentColor;
-        this.ctx.lineWidth = this.brushSize;
-        this.ctx.lineCap = 'round';
-        this.ctx.lineJoin = 'round';
-        this.ctx.globalAlpha = this.brushOpacity;
-        this.ctx.beginPath();
-        this.ctx.moveTo(last.x, last.y);
-        this.ctx.lineTo(x, y);
-        this.ctx.stroke();
-        this.ctx.globalAlpha = 1;
-      } else if (this.currentTool === 'eraser') {
-        this.ctx.lineWidth = this.brushSize * 3;
-        this.ctx.lineCap = 'round';
-        this.ctx.lineTo(x, y);
-        this.ctx.stroke();
-      } else if (this.currentTool === 'shape' && this.shapePoints.length === 1) {
+if (this.currentTool === 'draw') {
+         this.drawPoints.push({ x, y });
+         const last = this.drawPoints[this.drawPoints.length - 2];
+         this._stampBrush(last.x, last.y, x, y);
+       } else if (this.currentTool === 'eraser') {
+         this.drawPoints = [{ x, y }];
+         this.ctx.save();
+         this.ctx.globalCompositeOperation = 'destination-out';
+         this.ctx.beginPath();
+         this.ctx.moveTo(x, y);
+       } else if (this.currentTool === 'shape' && this.shapePoints.length === 1) {
         // Live preview
         this._redrawImage();
         this._drawShapePreview(this.shapePoints[0], { x, y });
@@ -773,15 +798,62 @@ const PE = {
     this.selectedShape = shape;
   },
 
-  // === BRUSH UPDATE ===
-  updateBrush() {
-    this.brushSize = document.getElementById('brushSize').value;
-    this.brushOpacity = document.getElementById('brushOpacity').value / 100;
-    this.currentColor = document.getElementById('brushColor').value;
-    document.getElementById('brushSizeVal').textContent = this.brushSize;
-    document.getElementById('brushOpacityVal').textContent = Math.round(this.brushOpacity * 100);
-    document.getElementById('brushColorVal').textContent = this.currentColor;
+  selectBrushShape(shape, el) {
+    document.querySelectorAll('.brush-preset').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    this.brushShape = shape;
+    this._drawBrushPreview();
+    this.toast('Brush: ' + shape);
   },
+
+  _drawBrushPreview() {
+    const preview = document.getElementById('brushPreviewCanvas');
+    if (!preview) return;
+    const ctx = preview.getContext('2d');
+    const s = 48, c = s/2;
+    ctx.clearRect(0, 0, s, s);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(0, 0, s, s);
+    ctx.fillStyle = this.currentColor;
+    ctx.globalAlpha = 0.8;
+    const r = Math.min(20, this.brushSize / 2.5);
+    switch (this.brushShape) {
+      case 'round':
+        ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI*2); ctx.fill(); break;
+      case 'square':
+        ctx.fillRect(c-r, c-r, r*2, r*2); break;
+      case 'diamond':
+        ctx.beginPath(); ctx.moveTo(c,c-r); ctx.lineTo(c+r,c); ctx.lineTo(c,c+r); ctx.lineTo(c-r,c); ctx.closePath(); ctx.fill(); break;
+      case 'spray':
+        for (let i = 0; i < 30; i++) {
+          const a = Math.random()*Math.PI*2, d = Math.random()*r;
+          ctx.fillRect(c+Math.cos(a)*d, c+Math.sin(a)*d, 2, 2);
+        } break;
+      case 'calligraphy':
+        ctx.save(); ctx.translate(c,c); ctx.rotate(-Math.PI/6);
+        ctx.fillRect(-r/4, -r, r/2, r*2); ctx.restore(); break;
+      case 'chalk':
+        for (let i = 0; i < 8; i++) {
+          const x = c + (Math.random()-0.5)*r*1.5;
+          const y = c + (Math.random()-0.5)*r*1.5;
+          ctx.beginPath(); ctx.arc(x, y, Math.random()*r*0.6+1, 0, Math.PI*2); ctx.fill();
+        } break;
+      default:
+        ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  },
+
+// === BRUSH UPDATE ===
+   updateBrush() {
+     this.brushSize = document.getElementById('brushSize').value;
+     this.brushOpacity = document.getElementById('brushOpacity').value / 100;
+     this.currentColor = document.getElementById('brushColor').value;
+     document.getElementById('brushSizeVal').textContent = this.brushSize;
+     document.getElementById('brushOpacityVal').textContent = Math.round(this.brushOpacity * 100);
+     document.getElementById('brushColorVal').textContent = this.currentColor;
+     this._drawBrushPreview();
+   },
 
   // === FILTERS ===
   applyFilter(filter, el) {
@@ -824,19 +896,19 @@ const PE = {
     this.ctx.filter = 'none';
   },
 
-  commitAdjustments() {
-    if (!this.originalImage) return;
-    // Burn adjustments into original
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = this.canvas.width;
-    tempCanvas.height = this.canvas.height;
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.drawImage(this.canvas, 0, 0);
-    this.originalImage = tempCanvas;
-    this._redrawImage();
-    this.toast('Adjustments committed ✓');
-    this.saveState();
-  },
+commitAdjustments() {
+     if (!this.originalImage) return;
+     const tempCanvas = document.createElement('canvas');
+     tempCanvas.width = this.canvas.width;
+     tempCanvas.height = this.canvas.height;
+     const tempCtx = tempCanvas.getContext('2d');
+     tempCtx.drawImage(this.canvas, 0, 0);
+     this.originalImage = tempCanvas;
+     this._redrawImage();
+     this.saveAsset('adjusted-' + Date.now(), this.getDataURL());
+     this.toast('Adjustments committed ✓');
+     this.saveState();
+   },
 
   resetAdjustments() {
     document.getElementById('brightness').value = 100;
@@ -863,7 +935,112 @@ const PE = {
     this.saveState();
   },
 
-  // === ROTATE / FLIP ===
+  // === STAMP BRUSH (custom brush shapes) ===
+   _stampBrush(x1, y1, x2, y2) {
+     this.ctx.save();
+     this.ctx.globalAlpha = this.brushOpacity;
+     const steps = Math.max(1, Math.round(Math.hypot(x2-x1, y2-y1) / (this.brushSize * 0.3)));
+     for (let i = 0; i <= steps; i++) {
+       const t = i / steps;
+       const x = x1 + (x2 - x1) * t;
+       const y = y1 + (y2 - y1) * t;
+       const r = this.brushSize / 2;
+       switch (this.brushShape) {
+         case 'round':
+           this.ctx.fillStyle = this.currentColor;
+           this.ctx.beginPath(); this.ctx.arc(x, y, r, 0, Math.PI*2); this.ctx.fill();
+           break;
+         case 'square':
+           this.ctx.fillStyle = this.currentColor;
+           this.ctx.fillRect(x - r, y - r, this.brushSize, this.brushSize);
+           break;
+         case 'diamond':
+           this.ctx.fillStyle = this.currentColor;
+           this.ctx.beginPath();
+           this.ctx.moveTo(x, y-r); this.ctx.lineTo(x+r, y);
+           this.ctx.lineTo(x, y+r); this.ctx.lineTo(x-r, y);
+           this.ctx.closePath(); this.ctx.fill();
+           break;
+         case 'spray':
+           this.ctx.fillStyle = this.currentColor;
+           for (let j = 0; j < 8; j++) {
+             const a = Math.random()*Math.PI*2, d = Math.random()*r*1.2;
+             this.ctx.fillRect(x+Math.cos(a)*d, y+Math.sin(a)*d, 2, 2);
+           }
+           break;
+         case 'calligraphy':
+           this.ctx.fillStyle = this.currentColor;
+           this.ctx.save(); this.ctx.translate(x,y);
+           const angle = Math.atan2(y2-y1, x2-x1) + Math.PI/2;
+           this.ctx.rotate(angle);
+           this.ctx.fillRect(-r/3, -r, r*0.67, r*2);
+           this.ctx.restore();
+           break;
+         case 'chalk':
+           this.ctx.fillStyle = this.currentColor;
+           for (let j = 0; j < 5; j++) {
+             const cx = x + (Math.random()-0.5)*r*1.5;
+             const cy = y + (Math.random()-0.5)*r*1.5;
+             this.ctx.beginPath(); this.ctx.arc(cx, cy, Math.random()*r*0.5+1, 0, Math.PI*2); this.ctx.fill();
+           }
+           break;
+         default:
+           this.ctx.fillStyle = this.currentColor;
+           this.ctx.beginPath(); this.ctx.arc(x, y, r, 0, Math.PI*2); this.ctx.fill();
+       }
+     }
+     this.ctx.restore();
+   },
+
+   // === ASSET MANAGEMENT ===
+   saveAsset(name, dataURL) {
+     this.savedAssets.push({ name, dataURL, timestamp: Date.now() });
+     this.buildAssetDownloads();
+     this._storeAsset(name, dataURL);
+   },
+
+   _storeAsset(name, dataURL) {
+     try {
+       shadowStudio?.save('assets', {
+         type: 'photo_asset',
+         name: name,
+         data: dataURL,
+         createdAt: new Date().toISOString()
+       });
+     } catch(e) { /* Silent fail */ }
+   },
+
+   buildAssetDownloads() {
+     const container = document.getElementById('assetDownloads');
+     if (!container) return;
+     container.innerHTML = '';
+     // Add current canvas as first download
+     this._addAssetDownload(container, this.canvas.toDataURL('image/png'), 'canvas-current.png', '📸 Current Canvas (PNG)');
+     this._addAssetDownload(container, this.canvas.toDataURL('image/jpeg', 0.9), 'canvas-current.jpg', '📸 Current Canvas (JPEG)');
+     this._addAssetDownload(container, this.canvas.toDataURL('image/webp', 0.9), 'canvas-current.webp', '📸 Current Canvas (WebP)');
+     if (this.originalImage) {
+       this._addAssetDownload(container, this.originalImage.src || '', 'original-image.png', '🖼️ Original Image');
+     }
+     this.savedAssets.forEach(a => {
+       this._addAssetDownload(container, a.dataURL, a.name + '.png', '💾 ' + a.name);
+     });
+   },
+
+   _addAssetDownload(container, dataURL, filename, label) {
+     if (!dataURL) return;
+     const a = document.createElement('a');
+     a.href = dataURL;
+     a.download = filename;
+     a.className = 'btn-sm btn-secondary';
+     a.style.fontSize = '.7rem';
+     a.style.padding = '4px 8px';
+     a.innerHTML = label;
+     a.onclick = () => {
+       this.toast('📦 Downloading: ' + filename);
+       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+     };
+     container.appendChild(a);
+   },
   rotate(deg) {
     if (!this.originalImage) return;
     const tempCanvas = document.createElement('canvas');
@@ -902,14 +1079,15 @@ const PE = {
     this._applyTransformed(tempCanvas);
   },
 
-  _applyTransformed(source) {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this._drawCheckerboard();
-    this.ctx.drawImage(source, 0, 0);
-    this.originalImage = source;
-    this.saveState();
-    this.toast('Transform applied ✓');
-  },
+_applyTransformed(source) {
+     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+     this._drawCheckerboard();
+     this.ctx.drawImage(source, 0, 0);
+     this.originalImage = source;
+     this.saveState();
+     this.saveAsset('transform-' + Date.now(), this.getDataURL());
+     this.toast('Transform applied ✓');
+   },
 
   // === EXPORT ===
   selectFormat(fmt, el) {
@@ -928,24 +1106,50 @@ const PE = {
     return this.canvas.toDataURL(this.currentFormat, 0.95);
   },
 
-  copyToClipboard() {
-    const data = this.getDataURL();
-    fetch(data).then(r => r.blob()).then(blob => {
-      navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]).then(() => {
-        this.toast('🖼️ Image copied to clipboard!');
-      }).catch(() => {
-        // Fallback: copy as base64
-        shadowStudio.get('utils')?.copy(data.split(',')[1]);
-        this.toast('📋 Base64 data copied to clipboard!');
-      });
-    });
-  },
+copyToClipboard() {
+     const data = this.getDataURL();
+     fetch(data).then(r => r.blob()).then(blob => {
+       navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]).then(() => {
+         this.toast('🖼️ Image copied to clipboard!');
+       }).catch(() => {
+         // Fallback
+         const ta = document.createElement('textarea');
+         ta.value = data.split(',')[1] || data;
+         ta.style.position = 'fixed'; ta.style.opacity = '0';
+         document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+         document.body.removeChild(ta);
+         this.toast('📋 Base64 data copied!');
+       });
+     }).catch(() => this.toast('❌ Copy failed'));
+   },
 
-  downloadImage() {
-    const data = this.getDataURL();
-    shadowStudio.get('utils')?.download('photo-editor.' + this.formatExt, data, this.currentFormat);
-    this.toast('💾 Image downloaded!');
-  },
+   downloadImage() {
+     const data = this.getDataURL();
+     try {
+       const utils = shadowStudio?.get?.('utils');
+       if (utils?.download) {
+         utils.download('photo-editor.' + this.formatExt, data, this.currentFormat);
+       } else {
+         // Fallback: trigger native download
+         const a = document.createElement('a');
+         a.href = data;
+         a.download = 'photo-editor.' + this.formatExt;
+         document.body.appendChild(a);
+         a.click();
+         document.body.removeChild(a);
+       }
+       this.toast('💾 Image downloaded!');
+     } catch(e) {
+       // Ultimate fallback
+       const a = document.createElement('a');
+       a.href = data;
+       a.download = 'photo-editor.png';
+       document.body.appendChild(a);
+       a.click();
+       document.body.removeChild(a);
+       this.toast('💾 Image downloaded (fallback)!');
+     }
+   },
 
   // === STATE HISTORY (Undo/Redo) ===
   saveState() {

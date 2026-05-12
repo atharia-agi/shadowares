@@ -149,11 +149,17 @@
                 <button class="btn btn-secondary" onclick="STS.stop()" id="stopBtn">⏹️ Stop</button>
             </div>
 
-            <div class="rec-section">
-                <p style="color:#8b949e;font-size:.82rem">💾 Save your soundscape as WAV file</p>
-                <button class="rec-btn" id="recBtn" onclick="STS.record()">⏺️ Record & Export WAV</button>
-                <div class="downloads" id="downloads"></div>
-            </div>
+<div class="rec-section">
+                 <p style="color:#8b949e;font-size:.82rem">💾 Save your soundscape as WAV file</p>
+                 <button class="rec-btn" id="recBtn" onclick="STS.record()">⏺️ Record & Export WAV</button>
+                 <div class="downloads" id="downloads"></div>
+             </div>
+
+             <!-- Per-layer downloads -->
+             <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+                 <h3 style="font-size:.78rem;color:#8b949e;margin-bottom:6px">📂 Export Individual Layers</h3>
+                 <div style="display:flex;flex-wrap:wrap;gap:6px" id="layerDownloads"></div>
+             </div>
 
             <div style="margin-top:20px">
                 <h3 style="font-size:.85rem;margin-bottom:8px;color:#8b949e">📋 Soundscape Parameters (for AI agents)</h3>
@@ -279,39 +285,43 @@ const STS = {
     }
   },
 
-  generateSequence(moodData) {
-    this._sequence = [];
-    const steps = 32;
-    const scale = this.chordDB[moodData.baseScale];
+generateSequence(moodData) {
+     this._sequence = [];
+     // Use duration parameter to determine step count
+     const durationSec = parseInt(document.getElementById('duration')?.value || '30');
+     const tempoVal = parseInt(document.getElementById('tempo')?.value || '70');
+     const stepsPerSecond = tempoVal / 60 / 4; // 16th notes per second
+     const steps = Math.max(8, Math.round(durationSec * stepsPerSecond));
+     const scale = this.chordDB[moodData.baseScale];
 
-    for (let i = 0; i < steps; i++) {
-      const step = { notes: [], effects: [] };
+     for (let i = 0; i < steps; i++) {
+       const step = { notes: [], effects: [] };
 
-      // Bass note every 2 steps
-      if (i % 2 === 0) step.notes.push({ freq: scale[0] / 2, type: 'sawtooth', vol: 0.3, dur: 0.3 });
+       // Bass note every 2 steps
+       if (i % 2 === 0) step.notes.push({ freq: scale[0] / 2, type: 'sawtooth', vol: 0.3, dur: 0.3 });
 
-      // Chord hit every 4 steps
-      if (i % 4 === 0) {
-        const chord = [scale[0], scale[2], scale[4]];
-        chord.forEach((f, j) => {
-          step.notes.push({ freq: f, type: moodData.instruments[0], vol: 0.15, dur: 0.5, delay: j * 0.03 });
-        });
-      }
+       // Chord hit every 4 steps
+       if (i % 4 === 0) {
+         const chord = [scale[0], scale[2], scale[4]];
+         chord.forEach((f, j) => {
+           step.notes.push({ freq: f, type: moodData.instruments[0], vol: 0.15, dur: 0.5, delay: j * 0.03 });
+         });
+       }
 
-      // Melody (random based on energy)
-      if (Math.random() < moodData.energy + 0.2) {
-        const note = scale[Math.floor(Math.random() * (scale.length - 4)) + 4];
-        step.notes.push({ freq: note, type: moodData.instruments[moodData.instruments.length - 1], vol: 0.1, dur: 0.2 });
-      }
+       // Melody (random based on energy)
+       if (Math.random() < moodData.energy + 0.2) {
+         const note = scale[Math.floor(Math.random() * (scale.length - 4)) + 4];
+         step.notes.push({ freq: note, type: moodData.instruments[moodData.instruments.length - 1], vol: 0.1, dur: 0.2 });
+       }
 
-      // Percussion
-      if (i % 4 === 0) step.effects.push({ type: 'kick', time: 0 });
-      if (i % 4 === 2 && Math.random() > 0.4) step.effects.push({ type: 'hat', time: 0 });
-      if (i % 8 === 4) step.effects.push({ type: 'snare', time: 0 });
+       // Percussion
+       if (i % 4 === 0) step.effects.push({ type: 'kick', time: 0 });
+       if (i % 4 === 2 && Math.random() > 0.4) step.effects.push({ type: 'hat', time: 0 });
+       if (i % 8 === 4) step.effects.push({ type: 'snare', time: 0 });
 
-      this._sequence.push(step);
-    }
-  },
+       this._sequence.push(step);
+     }
+   },
 
   initAudio() {
     if (!this.audioCtx) {
@@ -468,6 +478,9 @@ const STS = {
     }
 
     this.initAudio();
+    // Auto-play the soundscape when recording starts
+    if (!this.isPlaying) this.play();
+
     const chunks = [];
     this.mediaRecorder = new MediaRecorder(this.destStream, { mimeType: 'audio/webm;codecs=opus' });
     this.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
@@ -524,50 +537,217 @@ const STS = {
     this.toast('✅ WAV downloaded!');
   },
 
-  copyParams() {
-    const text = document.getElementById('textInput').value;
-    const mood = this.currentMood || 'calm';
-    const moodData = this.moodDB[mood];
-    const params = {
-      type: 'text_to_soundscape',
-      tool: 'shadow-studio/text-to-soundscape',
-      version: '5.0.0',
-      input: {
-        text: text,
-        detected_mood: mood,
-        mood_confidence: moodData ? 'high' : 'low',
-        parameters: {
-          tempo: parseInt(document.getElementById('tempo').value),
-          duration_seconds: parseInt(document.getElementById('duration').value),
-          intensity: parseInt(document.getElementById('intensity').value) / 100,
-          scale: moodData.baseScale,
-          instruments: moodData.instruments,
-          energy: moodData.energy
-        }
-      },
-      generated_at: new Date().toISOString()
-    };
-    this._copyAndToast(JSON.stringify(params, null, 2), 'Parameters copied for AI agent!');
-  },
+copyParams() {
+     const text = document.getElementById('textInput').value;
+     const mood = this.currentMood || 'calm';
+     const moodData = this.moodDB[mood];
+     const params = {
+       type: 'text_to_soundscape',
+       tool: 'shadow-studio/text-to-soundscape',
+       version: '5.0.0',
+       input: {
+         text: text,
+         detected_mood: mood,
+         mood_confidence: moodData ? 'high' : 'low',
+         parameters: {
+           tempo: parseInt(document.getElementById('tempo').value),
+           duration_seconds: parseInt(document.getElementById('duration').value),
+           intensity: parseInt(document.getElementById('intensity').value) / 100,
+           scale: moodData ? moodData.baseScale : 'minor_pentatonic',
+           instruments: moodData ? moodData.instruments : ['sine'],
+           energy: moodData ? moodData.energy : 0.5
+         }
+       },
+       generated_at: new Date().toISOString()
+     };
+     this._copyAndToast(JSON.stringify(params, null, 2), 'Parameters copied for AI agent!');
+   },
 
-  downloadParams() {
-    const text = document.getElementById('textInput').value;
-    const params = {
-      type: 'text_to_soundscape',
-      version: '5.0.0',
-      input: {
-        text: text,
-        detected_mood: this.currentMood,
-        tempo: parseInt(document.getElementById('tempo').value),
-        duration: parseInt(document.getElementById('duration').value),
-        intensity: parseInt(document.getElementById('intensity').value) / 100
-      },
-      chords: this.chordDB[this.moodDB[this.currentMood]?.baseScale || 'minor_pentatonic'],
-      generated_at: new Date().toISOString()
+downloadParams() {
+     const text = document.getElementById('textInput').value;
+     const mood = this.currentMood || 'calm';
+     const moodData = this.moodDB[mood];
+     const params = {
+       type: 'text_to_soundscape',
+       version: '5.0.0',
+       input: {
+         text: text,
+         detected_mood: mood,
+         tempo: parseInt(document.getElementById('tempo').value),
+         duration: parseInt(document.getElementById('duration').value),
+         intensity: parseInt(document.getElementById('intensity').value) / 100
+       },
+       chords: this.chordDB[moodData?.baseScale || 'minor_pentatonic'],
+       generated_at: new Date().toISOString()
+     };
+     const json = JSON.stringify(params, null, 2);
+     // Try shadowStudio utils first, fallback to clipboard/download
+     try {
+       if (typeof shadowStudio !== 'undefined' && shadowStudio.get && shadowStudio.get('utils') && shadowStudio.get('utils').download) {
+         shadowStudio.get('utils').download('soundscape-params.json', json, 'application/json');
+       } else {
+         this._downloadFallback('soundscape-params.json', json, 'application/json');
+       }
+     } catch(e) {
+       this._downloadFallback('soundscape-params.json', json, 'application/json');
+     }
+     this.toast('💾 Parameters downloaded!');
+   },
+
+   _downloadFallback(filename, content, mime) {
+     const blob = new Blob([content], { type: mime });
+     const url = URL.createObjectURL(blob);
+     const a = document.createElement('a');
+     a.href = url;
+     a.download = filename;
+     document.body.appendChild(a);
+     a.click();
+     document.body.removeChild(a);
+     setTimeout(() => URL.revokeObjectURL(url), 1000);
+   },
+
+  // Per-layer export
+  _layerGenerators = {
+    bass: { fn: (t, s, d) => this._kick(t), label: 'Kick/Bass', dur: 0.2 },
+    snare: { fn: (t, s, d) => { this._snare(t); }, label: 'Snare', dur: 0.15 },
+    hat: { fn: (t, s, d) => { this._hat(t, 0.1); }, label: 'Hi-Hat', dur: 0.1 },
+    melody: { fn: (t, s, d) => { this._melodyNote(440, s, t, false); }, label: 'Melody', dur: 0.5 },
+  };
+
+  _generateLayerWav(layerName) {
+    // Render one cycle of the soundscape to an OfflineAudioContext
+    const tempoVal = parseInt(document.getElementById('tempo')?.value || '70');
+    const durationSec = parseInt(document.getElementById('duration')?.value || '30');
+    const sampleRate = 44100;
+    const totalSamples = Math.floor(durationSec * sampleRate);
+    const offline = new OfflineAudioContext(2, totalSamples, sampleRate);
+
+    // Re-route sound generators to offline context
+    const origCtx = this.audioCtx;
+    const origMaster = this.masterGain;
+    const origAnalyser = this.analyser;
+    const origDest = this.destStream;
+
+    const offMaster = offline.createGain();
+    offMaster.gain.value = 0.5;
+    offMaster.connect(offline.destination);
+
+    // Only play the selected layer type for one bar
+    const barBeats = 8; // 8 steps per bar
+    const stepDuration = 60 / tempoVal / 4;
+    const layerInfo = this._layerGenerators[layerName];
+    if (!layerInfo) return;
+
+    for (let i = 0; i < barBeats; i++) {
+      const t = i * stepDuration;
+      if (layerName === 'bass') this._kick(t, false);
+      else if (layerName === 'snare') this._snare(t, false);
+      else if (layerName === 'hat') this._hat(t, undefined, false);
+      else if (layerName === 'melody') {
+        const moodData = this.moodDB[this.currentMood || 'calm'];
+        const scale = this.chordDB[moodData?.baseScale || 'minor_pentatonic'];
+        this._melodyNote(scale[4 + (i % 4)], moodData?.instruments?.[0] || 'sine', t, false);
+      }
+    }
+
+    // We can't easily re-route, so use a simpler approach: record a short clip
+    this._renderLayerViaRecording(layerName, layerInfo);
+  }
+
+  async _renderLayerViaRecording(layerName, layerInfo) {
+    this.initAudio();
+    const dest = this.audioCtx.createMediaStreamDestination();
+    const origConn = this.masterGain.connect(dest);
+    const rec = new MediaRecorder(dest, { mimeType: 'audio/webm;codecs=opus' });
+    const chunks = [];
+    rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    rec.onstop = async () => {
+      this.masterGain.disconnect(dest);
+      const webmBlob = new Blob(chunks, { type: 'audio/webm' });
+      const wavBlob = await this._webmToWavBlob(webmBlob);
+      this._showLayerDownload(layerName, wavBlob);
     };
-    shadowStudio.get('utils').download('soundscape-params.json', JSON.stringify(params, null, 2), 'application/json');
-    this.toast('💾 Parameters downloaded!');
-  },
+    rec.start();
+
+    // Play just this layer for ~2 seconds
+    const now = this.audioCtx.currentTime;
+    for (let i = 0; i < 8; i++) {
+      const t = now + i * 0.25;
+      if (layerName === 'bass') this._kick(t, false);
+      else if (layerName === 'snare') this._snare(t, false);
+      else if (layerName === 'hat') this._hat(t, undefined, false);
+      else if (layerName === 'melody') {
+        const moodData = this.moodDB[this.currentMood || 'calm'];
+        const scale = this.chordDB[moodData?.baseScale || 'minor_pentatonic'];
+        const inst = moodData?.instruments?.[0] || 'sine';
+        this._melodyNote(scale[4 + (i % 4)], inst, t, false);
+      }
+    }
+
+    setTimeout(() => { if (rec.state !== 'inactive') rec.stop(); }, 3000);
+  }
+
+  _showLayerDownload(layerName, wavBlob) {
+    const container = document.getElementById('layerDownloads');
+    if (!container) return;
+    const url = URL.createObjectURL(wavBlob);
+    const sizeKB = (wavBlob.size / 1024).toFixed(1);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `layer_${layerName}_${Date.now()}.wav`;
+    a.className = 'dl-link';
+    a.innerHTML = `⬇️ ${layerName} (${sizeKB} KB)`;
+    a.onclick = () => setTimeout(() => URL.revokeObjectURL(url), 1000);
+    container.appendChild(a);
+    this.toast(`✅ Layer "${layerName}" exported!`);
+  }
+
+  buildLayerDownloads() {
+    const container = document.getElementById('layerDownloads');
+    if (!container) return;
+    ['bass','snare','hat','melody'].forEach(name => {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-secondary';
+      btn.style.fontSize = '.75rem';
+      btn.style.padding = '6px 12px';
+      btn.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+      btn.onclick = () => this._renderLayerViaRecording(name, this._layerGenerators[name]);
+      container.appendChild(btn);
+    });
+  }
+
+  _webmToWavBlob(webmBlob) {
+    return (async () => {
+      const buf = await webmBlob.arrayBuffer();
+      const ctx = new AudioContext();
+      const buf2 = await ctx.decodeAudioData(buf);
+      await ctx.close();
+
+      const nc = buf2.numberOfChannels;
+      const len = buf2.length * nc * 2 + 44;
+      const ab = new ArrayBuffer(len);
+      const dv = new DataView(ab);
+      const ws = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+      ws(0,'RIFF'); dv.setUint32(4,len-8,true); ws(8,'WAVE');
+      ws(12,'fmt '); dv.setUint32(16,16,true); dv.setUint16(20,1,true);
+      dv.setUint16(22,nc,true); dv.setUint32(24,44100,true);
+      dv.setUint32(28,44100*nc*2,true); dv.setUint16(32,nc*2,true);
+      dv.setUint16(34,16,true); ws(36,'data');
+      dv.setUint32(40,buf2.length*nc*2,true);
+
+      const ch = [];
+      for (let c = 0; c < nc; c++) ch.push(buf2.getChannelData(c));
+      let off = 44;
+      for (let i = 0; i < buf2.length; i++) {
+        for (let c = 0; c < nc; c++) {
+          let s = Math.max(-1, Math.min(1, ch[c][i]));
+          dv.setInt16(off, s * (s < 0 ? 0x8000 : 0x7FFF), true);
+          off += 2;
+        }
+      }
+      return new Blob([ab], { type: 'audio/wav' });
+    })();
+  }
 
   updateParams(text, mood, moodData) {
     const el = document.getElementById('paramsOutput');
@@ -618,6 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('intensity').addEventListener('input', e => {
     document.getElementById('intensityVal').textContent = e.target.value;
   });
+  STS.buildLayerDownloads();
 });
 </script>
 </body>
