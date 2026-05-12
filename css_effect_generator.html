@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✨ CSS Effect Generator — Shadow Studio</title>
+<style>
+:root{--bg:#0a0b14;--surface:#15172a;--border:#2a2d4a;--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1300px;margin:0 auto;padding:40px}
+.header{text-align:center;margin-bottom:40px}
+.header h1{font-size:2.5rem;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,#7c4dff,#9c6bff,#00e5ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--text-muted);font-size:1.1rem}
+
+.studio{display:grid;grid-template-columns:320px 1fr;gap:24px}
+.panel{background:var(--surface);border-radius:12px;padding:24px;border:1px solid var(--border)}
+.panel h2{font-size:1rem;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel h2 .ico{font-size:1.2rem}
+
+.effect-list{display:flex;flex-direction:column;gap:4px;margin-bottom:16px}
+.effect-btn{padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--text-muted);cursor:pointer;transition:all .2s;font-size:.82rem;font-family:inherit;text-align:left;display:flex;align-items:center;gap:8px}
+.effect-btn:hover{border-color:var(--primary);color:var(--text);background:rgba(124,77,255,.05)}
+.effect-btn.active{border-color:var(--primary);background:rgba(124,77,255,.15);color:var(--primary);box-shadow:0 0 12px rgba(124,77,255,.15)}
+.effect-btn .dot{width:8px;height:8px;border-radius:50%}
+
+.control-group{margin-bottom:16px}
+.control-group label{display:block;font-size:.72rem;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.control-group input[type="range"]{width:100%;height:6px;-webkit-appearance:none;background:var(--border);border-radius:3px;outline:none}
+.control-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--primary);border-radius:50%;cursor:pointer;box-shadow:0 0 6px rgba(124,77,255,.5)}
+.control-group input[type="color"]{width:100%;height:36px;border:none;border-radius:8px;cursor:pointer;background:var(--bg)}
+.control-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.val{text-align:right;font-size:.72rem;color:var(--accent);margin-top:2px;display:block}
+
+/* Preview Area */
+.preview-wrap{background:var(--surface);border-radius:12px;padding:32px;border:1px solid var(--border);min-height:400px;display:flex;flex-direction:column}
+.preview-label{font-size:.72rem;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:6px}
+.preview-label .dot2{width:6px;height:6px;border-radius:50%;background:var(--primary)}
+
+.demo-box{
+  width:100%;max-width:400px;height:200px;border-radius:12px;margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;font-weight:700;color:#fff;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.demo-box::after{content:attr(data-text);position:absolute;bottom:12px;right:16px;font-size:.65rem;opacity:.5}
+
+/* Buttons */
+.btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{padding:10px 18px;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;border:none;font-size:.82rem;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,#7c4dff,#9c6bff);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,77,255,.3)}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary)}
+.btn-accent{background:linear-gradient(135deg,#00e5ff,#22d3ee);color:#0a0b14;font-weight:700}
+.btn-accent:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,229,255,.3)}
+
+/* Code Block */
+.code-block{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Fira Code',monospace;font-size:.75rem;color:#a0a8c0;white-space:pre-wrap;overflow-x:auto;max-height:180px;overflow-y:auto;margin-top:12px}
+.code-block .cmt{color:#5c7a99}.code-block .key{color:#82aaff}.code-block .val{color:#c3e88d}
+
+/* Color Presets */
+.color-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px}
+.color-preset{padding:8px;border-radius:6px;border:2px solid var(--border);cursor:pointer;transition:all .2s;text-align:center;font-size:.7rem;color:var(--text-muted)}
+.color-preset:hover{border-color:var(--primary);transform:scale(1.05)}
+.color-preset.active{border-color:var(--primary);box-shadow:0 0 10px rgba(124,77,255,.3)}
+.color-preset .swatch{width:100%;height:24px;border-radius:4px;margin-bottom:4px}
+
+/* Responsive */
+@media(max-width:768px){
+  .studio{grid-template-columns:1fr}
+  .container{padding:16px}
+}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.85rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4);pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* Export buttons row */
+.export-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.export-btns .btn{font-size:.78rem;padding:8px 14px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>✨ CSS Effect Generator</h1>
+    <p>Production-ready CSS effects — generate, preview, copy & export</p>
+  </div>
+
+  <div class="studio">
+    <!-- Side Panel -->
+    <div class="panel">
+      <h2><span class="ico">🎨</span> Effects</h2>
+      <div class="effect-list" id="effectList">
+        <button class="effect-btn active" data-effect="glassmorphism" onclick="CE.apply('glassmorphism')">
+          <span class="dot" style="background:rgba(255,255,255,.3)"></span> Glassmorphism
+        </button>
+        <button class="effect-btn" data-effect="neon-glow" onclick="CE.apply('neon-glow')">
+          <span class="dot" style="background:#00e5ff"></span> Neon Glow
+        </button>
+        <button class="effect-btn" data-effect="3d-tilt" onclick="CE.apply('3d-tilt')">
+          <span class="dot" style="background:#ff6b81"></span> 3D Tilt
+        </button>
+        <button class="effect-btn" data-effect="animated-gradient" onclick="CE.apply('animated-gradient')">
+          <span class="dot" style="background:linear-gradient(90deg,#7c4dff,#00e5ff)"></span> Animated Gradient
+        </button>
+        <button class="effect-btn" data-effect="shimmer" onclick="CE.apply('shimmer')">
+          <span class="dot" style="background:#f59e0b"></span> Shimmer
+        </button>
+        <button class="effect-btn" data-effect="pulse" onclick="CE.apply('pulse')">
+          <span class="dot" style="background:#ef4444"></span> Pulse
+        </button>
+        <button class="effect-btn" data-effect="deep-shadow" onclick="CE.apply('deep-shadow')">
+          <span class="dot" style="background:#64748b"></span> Deep Shadow
+        </button>
+        <button class="effect-btn" data-effect="frosted" onclick="CE.apply('frosted')">
+          <span class="dot" style="background:rgba(255,255,255,.1)"></span> Frosted Glass
+        </button>
+        <button class="effect-btn" data-effect="gradient-text" onclick="CE.apply('gradient-text')">
+          <span class="dot" style="background:linear-gradient(90deg,#f59e0b,#ff6b81)"></span> Gradient Text
+        </button>
+        <button class="effect-btn" data-effect="neon-border" onclick="CE.apply('neon-border')">
+          <span class="dot" style="background:#a78bfa"></span> Neon Border
+        </button>
+      </div>
+
+      <h2 style="margin-top:24px"><span class="ico">⚙️</span> Parameters</h2>
+
+      <div id="glassmorphism-controls">
+        <div class="control-group">
+          <label>Blur Amount: <span class="val" id="blurVal">20</span>px</label>
+          <input type="range" id="blur" min="0" max="50" value="20">
+        </div>
+        <div class="control-group">
+          <label>Opacity: <span class="val" id="opacityVal">0.15</span></label>
+          <input type="range" id="opacity" min="0" max="100" value="15">
+        </div>
+        <div class="control-group">
+          <label>Border: <span class="val" id="borderVal">1</span>px</label>
+          <input type="range" id="borderW" min="0" max="5" value="1">
+        </div>
+        <div class="control-group">
+          <label>Tint Color</label>
+          <input type="color" id="tintColor" value="#7c4dff">
+        </div>
+      </div>
+
+      <div id="neon-controls" style="display:none">
+        <div class="control-group">
+          <label>Glow Color</label>
+          <input type="color" id="neonColor" value="#00e5ff">
+        </div>
+        <div class="control-group">
+          <label>Glow Size: <span class="val" id="glowVal">20</span>px</label>
+          <input type="range" id="glowSize" min="0" max="60" value="20">
+        </div>
+        <div class="control-group">
+          <label>Intensity: <span class="val" id="glowIntensityVal">0.8</span></label>
+          <input type="range" id="glowIntensity" min="0" max="100" value="80">
+        </div>
+      </div>
+
+      <div id="tilt-controls" style="display:none">
+        <div class="control-row">
+          <div class="control-group">
+            <label>Tilt X: <span class="val" id="tiltXVal">15</span>°</label>
+            <input type="range" id="tiltX" min="-45" max="45" value="15">
+          </div>
+          <div class="control-group">
+            <label>Tilt Y: <span class="val" id="tiltYVal">-15</span>°</label>
+            <input type="range" id="tiltY" min="-45" max="45" value="-15">
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Perspective: <span class="val" id="perspVal">800</span>px</label>
+          <input type="range" id="persp" min="200" max="2000" value="800">
+        </div>
+      </div>
+
+      <div id="gradient-controls" style="display:none">
+        <div class="control-group">
+          <label>Speed: <span class="val" id="gradSpeedVal">5</span>s</label>
+          <input type="range" id="gradSpeed" min="1" max="20" value="5">
+        </div>
+        <div class="control-group">
+          <label>Angle: <span class="val" id="gradAngleVal">45</span>°</label>
+          <input type="range" id="gradAngle" min="0" max="360" value="45">
+        </div>
+        <div class="control-group">
+          <label>Color 1</label>
+          <input type="color" id="gradC1" value="#7c4dff">
+        </div>
+        <div class="control-group">
+          <label>Color 2</label>
+          <input type="color" id="gradC2" value="#00e5ff">
+        </div>
+        <div class="control-group">
+          <label>Color 3</label>
+          <input type="color" id="gradC3" value="#ff6b81">
+        </div>
+      </div>
+
+      <div id="shimmer-controls" style="display:none">
+        <div class="control-group">
+          <label>Speed: <span class="val" id="shimmerSpeedVal">2</span>s</label>
+          <input type="range" id="shimmerSpeed" min="1" max="10" value="2">
+        </div>
+        <div class="control-group">
+          <label>Width: <span class="val" id="shimmerWidthVal">60</span>%</label>
+          <input type="range" id="shimmerWidth" min="10" max="100" value="60">
+        </div>
+      </div>
+
+      <div id="pulse-controls" style="display:none">
+        <div class="control-group">
+          <label>Speed: <span class="val" id="pulseSpeedVal">2</span>s</label>
+          <input type="range" id="pulseSpeed" min="1" max="10" value="2">
+        </div>
+        <div class="control-group">
+          <label>Scale: <span class="val" id="pulseScaleVal">1.05</span></label>
+          <input type="range" id="pulseScale" min="100" max="150" value="105">
+        </div>
+        <div class="control-group">
+          <label>Pulse Color</label>
+          <input type="color" id="pulseColor" value="#7c4dff">
+        </div>
+      </div>
+
+      <div id="shadow-controls" style="display:none">
+        <div class="control-group">
+          <label>Shadow X: <span class="val" id="shXVal">10</span>px</label>
+          <input type="range" id="shX" min="-30" max="30" value="10">
+        </div>
+        <div class="control-group">
+          <label>Shadow Y: <span class="val" id="shYVal">10</span>px</label>
+          <input type="range" id="shY" min="-30" max="30" value="10">
+        </div>
+        <div class="control-group">
+          <label>Blur: <span class="val" id="shBlurVal">30</span>px</label>
+          <input type="range" id="shBlur" min="0" max="80" value="30">
+        </div>
+        <div class="control-group">
+          <label>Spread: <span class="val" id="shSpreadVal">0</span>px</label>
+          <input type="range" id="shSpread" min="-20" max="30" value="0">
+        </div>
+        <div class="control-group">
+          <label>Shadow Color</label>
+          <input type="color" id="shColor" value="#000000">
+        </div>
+      </div>
+
+      <div id="frosted-controls" style="display:none">
+        <div class="control-group">
+          <label>Blur: <span class="val" id="frostBlurVal">16</span>px</label>
+          <input type="range" id="frostBlur" min="0" max="50" value="16">
+        </div>
+        <div class="control-group">
+          <label>Saturation: <span class="val" id="frostSatVal">180</span>%</label>
+          <input type="range" id="frostSat" min="0" max="400" value="180">
+        </div>
+        <div class="control-group">
+          <label>Opacity: <span class="val" id="frostOpacityVal">0.25</span></label>
+          <input type="range" id="frostOpacity" min="0" max="100" value="25">
+        </div>
+      </div>
+
+      <div id="gradient-text-controls" style="display:none">
+        <div class="control-group">
+          <label>Color 1</label>
+          <input type="color" id="gtC1" value="#7c4dff">
+        </div>
+        <div class="control-group">
+          <label>Color 2</label>
+          <input type="color" id="gtC2" value="#00e5ff">
+        </div>
+        <div class="control-group">
+          <label>Angle: <span class="val" id="gtAngleVal">45</span>°</label>
+          <input type="range" id="gtAngle" min="0" max="360" value="45">
+        </div>
+      </div>
+
+      <div id="neon-border-controls" style="display:none">
+        <div class="control-group">
+          <label>Border Color</label>
+          <input type="color" id="nbColor" value="#a78bfa">
+        </div>
+        <div class="control-group">
+          <label>Width: <span class="val" id="nbWidthVal">2</span>px</label>
+          <input type="range" id="nbWidth" min="1" max="10" value="2">
+        </div>
+        <div class="control-group">
+          <label>Glow Spread: <span class="val" id="nbGlowVal">8</span>px</label>
+          <input type="range" id="nbGlow" min="0" max="40" value="8">
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div>
+      <div class="preview-wrap" style="background:var(--surface);border-radius:12px;padding:32px;border:1px solid var(--border);display:flex;flex-direction:column">
+        <div class="preview-label"><span class="dot2"></span> Live Preview — Settings update in real-time</div>
+
+        <div class="demo-box" id="demoBox" data-text="Shadow Studio">
+          Hover Me
+        </div>
+
+        <div class="export-btns">
+          <button class="btn btn-primary" onclick="CE.copyCSS()">📋 Copy CSS</button>
+          <button class="btn btn-secondary" onclick="CE.downloadHTML()">💾 Export HTML</button>
+          <button class="btn btn-accent" onclick="CE.downloadPNG()">📸 Screenshot PNG</button>
+        </div>
+
+        <div class="code-block" id="codeOutput">
+/* Select an effect to generate CSS */</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================
+   CSS EFFECT GENERATOR v5.0 — MAX LEVEL
+   All effects production-ready
+   ============================================ */
+
+const CE = {
+  currentEffect: 'glassmorphism',
+  config: {},
+
+  init() {
+    // Default configs per effect
+    this.config = {
+      'glassmorphism': { blur: 20, opacity: 15, border: 1, tint: '#7c4dff' },
+      'neon-glow': { color: '#00e5ff', size: 20, intensity: 80 },
+      '3d-tilt': { tiltX: 15, tiltY: -15, perspective: 800 },
+      'animated-gradient': { speed: 5, angle: 45, c1: '#7c4dff', c2: '#00e5ff', c3: '#ff6b81' },
+      'shimmer': { speed: 2, width: 60 },
+      'pulse': { speed: 2, scale: 105, color: '#7c4dff' },
+      'deep-shadow': { x: 10, y: 10, blur: 30, spread: 0, color: '#000000' },
+      'frosted': { blur: 16, saturation: 180, opacity: 25 },
+      'gradient-text': { c1: '#7c4dff', c2: '#00e5ff', angle: 45 },
+      'neon-border': { color: '#a78bfa', width: 2, glow: 8 },
+    };
+
+    this.bindControls();
+    this.update();
+  },
+
+  apply(effect) {
+    this.currentEffect = effect;
+
+    // Update UI
+    document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-effect="${effect}"]`)?.classList.add('active');
+
+    // Show/hide control groups
+    const groups = ['glassmorphism','neon-glow','3d-tilt','animated-gradient','shimmer','pulse','deep-shadow','frosted','gradient-text','neon-border'];
+    groups.forEach(g => {
+      const el = document.getElementById(g.replace('-','')+'-controls');
+      if(el) el.style.display = (g === effect) ? 'block' : 'none';
+    });
+
+    this.update();
+    this.toast(`Effect: ${effect}`);
+  },
+
+  bindControls() {
+    // Bind all inputs
+    const inputs = document.querySelectorAll('.panel input[type="range"], .panel input[type="color"]');
+    inputs.forEach(input => {
+      input.addEventListener('input', () => this.update());
+    });
+  },
+
+  getConfig() {
+    const c = {};
+    switch(this.currentEffect) {
+      case 'glassmorphism':
+        return {
+          blur: document.getElementById('blur').value,
+          opacity: (document.getElementById('opacity').value / 100),
+          border: document.getElementById('borderW').value,
+          tint: document.getElementById('tintColor').value
+        };
+      case 'neon-glow':
+        return {
+          color: document.getElementById('neonColor').value,
+          size: document.getElementById('glowSize').value,
+          intensity: (document.getElementById('glowIntensity').value / 100)
+        };
+      case '3d-tilt':
+        return {
+          tiltX: document.getElementById('tiltX').value,
+          tiltY: document.getElementById('tiltY').value,
+          perspective: document.getElementById('persp').value
+        };
+      case 'animated-gradient':
+        return {
+          speed: document.getElementById('gradSpeed').value,
+          angle: document.getElementById('gradAngle').value,
+          c1: document.getElementById('gradC1').value,
+          c2: document.getElementById('gradC2').value,
+          c3: document.getElementById('gradC3').value
+        };
+      case 'shimmer':
+        return {
+          speed: document.getElementById('shimmerSpeed').value,
+          width: document.getElementById('shimmerWidth').value
+        };
+      case 'pulse':
+        return {
+          speed: document.getElementById('pulseSpeed').value,
+          scale: document.getElementById('pulseScale').value / 100,
+          color: document.getElementById('pulseColor').value
+        };
+      case 'deep-shadow':
+        return {
+          x: document.getElementById('shX').value,
+          y: document.getElementById('shY').value,
+          blur: document.getElementById('shBlur').value,
+          spread: document.getElementById('shSpread').value,
+          color: document.getElementById('shColor').value
+        };
+      case 'frosted':
+        return {
+          blur: document.getElementById('frostBlur').value,
+          saturation: document.getElementById('frostSat').value,
+          opacity: (document.getElementById('frostOpacity').value / 100)
+        };
+      case 'gradient-text':
+        return {
+          c1: document.getElementById('gtC1').value,
+          c2: document.getElementById('gtC2').value,
+          angle: document.getElementById('gtAngle').value
+        };
+      case 'neon-border':
+        return {
+          color: document.getElementById('nbColor').value,
+          width: document.getElementById('nbWidth').value,
+          glow: document.getElementById('nbGlow').value
+        };
+    }
+  },
+
+  update() {
+    const c = this.getConfig();
+
+    // Update displayed values
+    Object.entries(c).forEach(([k, v]) => {
+      const el = document.getElementById(`${k}Val`);
+      if (el) {
+        if (typeof v === 'number') el.textContent = v;
+        else el.textContent = v;
+      }
+    });
+
+    this.applyPreview(c);
+    this.updateCode(c);
+  },
+
+  applyPreview(c) {
+    const box = document.getElementById('demoBox');
+    const style = box.style;
+
+    switch(this.currentEffect) {
+      case 'glassmorphism':
+        style.background = `rgba(255,255,255,${c.opacity})`;
+        style.backdropFilter = `blur(${c.blur}px)`;
+        style.webkitBackdropFilter = `blur(${c.blur}px)`;
+        style.border = `${c.border}px solid rgba(255,255,255,0.3)`;
+        style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
+        style.borderRadius = '12px';
+        style.background = `linear-gradient(135deg, ${c.tint}33, ${c.tint}11)`;
+        break;
+
+      case 'neon-glow':
+        style.background = '#111';
+        style.boxShadow = `0 0 ${c.size}px ${c.color}, 0 0 ${c.size*2}px ${c.color}${parseInt(c.color.slice(1),16) ? '' : '88'}, 0 0 ${c.size*3}px ${c.color}44`;
+        style.textShadow = `0 0 ${c.size/2}px ${c.color}`;
+        style.color = c.color;
+        break;
+
+      case '3d-tilt':
+        style.transform = `perspective(${c.perspective}px) rotateX(${c.tiltY}deg) rotateY(${c.tiltX}deg)`;
+        style.transition = 'transform 0.3s';
+        style.background = 'linear-gradient(135deg, #7c4dff, #00e5ff)';
+        break;
+
+      case 'animated-gradient':
+        style.background = `linear-gradient(${c.angle}deg, ${c.c1}, ${c.c2}, ${c.c3})`;
+        style.backgroundSize = `${c.speed * 200}% ${c.speed * 200}%`;
+        style.animation = `gradientShift${this.currentEffect} ${c.speed}s ease infinite`;
+
+        // Dynamically inject keyframes
+        let styleTag = document.getElementById('dynamicKeyframes');
+        if (!styleTag) {
+          styleTag = document.createElement('style');
+          styleTag.id = 'dynamicKeyframes';
+          document.head.appendChild(styleTag);
+        }
+        styleTag.textContent = `
+          @keyframes gradientShift${this.currentEffect} {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+        `;
+        break;
+
+      case 'shimmer':
+        style.background = '#1a1d2e';
+        style.backgroundImage = `linear-gradient(
+          ${-45 + (1 - c.width/100) * 90}deg,
+          transparent 25%,
+          rgba(255,255,255,0.4) 37%,
+          rgba(255,255,255,0.8) 45%,
+          rgba(255,255,255,0.4) 53%,
+          transparent 65%
+        )`;
+        style.backgroundSize = `${c.width * 2}% 100%`;
+        style.animation = `shimmerAnim${this.currentEffect} ${c.speed}s linear infinite`;
+
+        let sTag = document.getElementById('shimmerKeyframes');
+        if (!sTag) {
+          sTag = document.createElement('style');
+          sTag.id = 'shimmerKeyframes';
+          document.head.appendChild(sTag);
+        }
+        sTag.textContent = `
+          @keyframes shimmerAnim${this.currentEffect} {
+            0% { background-position: -${c.width * 2 * 2}% 0; }
+            100% { background-position: ${c.width * 2 * 2}% 0; }
+          }
+        `;
+        style.color = '#fff';
+        break;
+
+      case 'pulse':
+        style.background = c.color;
+        style.animation = `pulseAnim${this.currentEffect} ${c.speed}s ease-in-out infinite`;
+        style.transform = `scale(${c.scale})`;
+
+        let pTag = document.getElementById('pulseKeyframes');
+        if (!pTag) {
+          pTag = document.createElement('style');
+          pTag.id = 'pulseKeyframes';
+          document.head.appendChild(pTag);
+        }
+        pTag.textContent = `
+          @keyframes pulseAnim${this.currentEffect} {
+            0%, 100% { box-shadow: 0 0 0 0 ${c.color}88; }
+            50% { box-shadow: 0 0 0 20px ${c.color}00; }
+          }
+        `;
+        break;
+
+      case 'deep-shadow':
+        style.background = '#fff';
+        style.color = '#333';
+        style.boxShadow = `${c.x}px ${c.y}px ${c.blur}px ${c.spread}px ${c.color}`;
+        break;
+
+      case 'frosted':
+        style.background = `rgba(255,255,255,${c.opacity})`;
+        style.backdropFilter = `blur(${c.blur}px) saturate(${c.saturation}%)`;
+        style.webkitBackdropFilter = `blur(${c.blur}px) saturate(${c.saturation}%)`;
+        style.border = '1px solid rgba(255,255,255,0.2)';
+        style.boxShadow = '0 8px 32px rgba(0,0,0,0.1)';
+        style.borderRadius = '12px';
+        style.background = `linear-gradient(135deg, rgba(255,255,255,${c.opacity}), rgba(200,200,255,${c.opacity * 0.8}))`;
+        break;
+
+      case 'gradient-text':
+        style.background = 'linear-gradient(135deg, #111, #111)';
+        style.color = 'transparent';
+        style.backgroundClip = 'text';
+        style.webkitBackgroundClip = 'text';
+        style.backgroundImage = `linear-gradient(${c.angle}deg, ${c.c1}, ${c.c2})`;
+        style.fontSize = '2.5rem';
+        style.fontWeight = '900';
+        break;
+
+      case 'neon-border':
+        style.background = '#0a0b14';
+        style.border = `${c.width}px solid ${c.color}`;
+        style.boxShadow = `inset 0 0 ${c.glow}px ${c.color}44, 0 0 ${c.glow}px ${c.color}44, 0 0 ${c.glow * 2}px ${c.color}22`;
+        break;
+    }
+  },
+
+  generateCSS(c) {
+    c = c || this.getConfig();
+    const eff = this.currentEffect;
+
+    switch(eff) {
+      case 'glassmorphism':
+        return `/* Glassmorphism Effect */
+.glass-effect {
+  background: rgba(255, 255, 255, ${c.opacity});
+  backdrop-filter: blur(${c.blur}px);
+  -webkit-backdrop-filter: blur(${c.blur}px);
+  border: ${c.border}px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  background-image: linear-gradient(135deg, ${c.tint}33, ${c.tint}11);
+}`;
+
+      case 'neon-glow':
+        return `/* Neon Glow Effect */
+.neon-glow {
+  color: ${c.color};
+  text-shadow: 0 0 ${c.size/2}px ${c.color};
+  box-shadow:
+    0 0 ${c.size}px ${c.color},
+    0 0 ${c.size*2}px ${c.color}88,
+    0 0 ${c.size*3}px ${c.color}44;
+}`;
+
+      case '3d-tilt':
+        return `/* 3D Tilt Effect */
+.tilt-3d {
+  perspective: ${c.perspective}px;
+  transform: rotateX(${c.tiltY}deg) rotateY(${c.tiltX}deg);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tilt-3d:hover {
+  transform: rotateX(0) rotateY(0);
+}`;
+
+      case 'animated-gradient':
+        return `/* Animated Gradient */
+@keyframes gradient-flow-${eff} {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animated-gradient {
+  background: linear-gradient(${c.angle}deg, ${c.c1}, ${c.c2}, ${c.c3});
+  background-size: ${c.speed * 200}% ${c.speed * 200}%;
+  animation: gradient-flow-${eff} ${c.speed}s ease infinite;
+}`;
+
+      case 'shimmer':
+        return `/* Shimmer Effect */
+@keyframes shimmer-flow-${eff} {
+  0% { background-position: -${(c.width * 2)*2}% 0; }
+  100% { background-position: ${(c.width * 2)*2}% 0; }
+}
+.shimmer {
+  background: #1a1d2e;
+  background-image: linear-gradient(
+    ${-45 + (1 - c.width/100) * 90}deg,
+    transparent 25%,
+    rgba(255,255,255,0.4) 37%,
+    rgba(255,255,255,0.8) 45%,
+    rgba(255,255,255,0.4) 53%,
+    transparent 65%
+  );
+  background-size: ${c.width * 2}% 100%;
+  animation: shimmer-flow-${eff} ${c.speed}s linear infinite;
+}`;
+
+      case 'pulse':
+        return `/* Pulse Effect */
+@keyframes pulse-${eff} {
+  0%, 100% { box-shadow: 0 0 0 0 ${c.color}88; }
+  50% { box-shadow: 0 0 0 20px ${c.color}00; }
+}
+.pulse-effect {
+  background: ${c.color};
+  animation: pulse-${eff} ${c.speed}s ease-in-out infinite;
+  transform: scale(${c.scale});
+}`;
+
+      case 'deep-shadow':
+        return `/* Deep Shadow */
+.deep-shadow {
+  box-shadow: ${c.x}px ${c.y}px ${c.blur}px ${c.spread}px ${c.color};
+}`;
+
+      case 'frosted':
+        return `/* Frosted Glass */
+.frosted {
+  background: rgba(255, 255, 255, ${c.opacity});
+  backdrop-filter: blur(${c.blur}px) saturate(${c.saturation}%);
+  -webkit-backdrop-filter: blur(${c.blur}px) saturate(${c.saturation}%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}`;
+
+      case 'gradient-text':
+        return `/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(${c.angle}deg, ${c.c1}, ${c.c2});
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 900;
+}`;
+
+      case 'neon-border':
+        return `/* Neon Border */
+.neon-border {
+  border: ${c.width}px solid ${c.color};
+  box-shadow:
+    inset 0 0 ${c.glow}px ${c.color}44,
+    0 0 ${c.glow}px ${c.color}44,
+    0 0 ${c.glow * 2}px ${c.color}22;
+}`;
+    }
+  },
+
+  async copyCSS() {
+    const css = this.generateCSS();
+    await shadowStudio.get('utils').copy(css);
+    this.toast('✅ CSS copied to clipboard! Paste into your code.');
+  },
+
+  async downloadPNG() {
+    const box = document.getElementById('demoBox');
+    const rect = box.getBoundingClientRect();
+
+    // Use html2canvas-compatible approach (native)
+    const canvas = document.createElement('canvas');
+    canvas.width = rect.width * 2;
+    canvas.height = rect.height * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+
+    // Draw background
+    ctx.fillStyle = '#0a0b14';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    // Draw effect
+    ctx.save();
+    switch(this.currentEffect) {
+      case 'glassmorphism':
+        ctx.fillStyle = `rgba(255,255,255,0.15)`;
+        ctx.filter = `blur(20px)`;
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        ctx.filter = 'none';
+        ctx.fillStyle = `rgba(124,77,255,0.2)`;
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, rect.width, rect.height);
+        break;
+      case 'neon-glow':
+        ctx.shadowColor = '#00e5ff';
+        ctx.shadowBlur = 40;
+        ctx.fillStyle = '#00e5ff';
+        ctx.font = 'bold 48px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('GLOW', rect.width/2, rect.height/2 + 16);
+        break;
+      case '3d-tilt':
+        ctx.save();
+        ctx.translate(rect.width/2, rect.height/2);
+        ctx.rotateX(-15 * Math.PI / 180);
+        ctx.rotateY(15 * Math.PI / 180);
+        const grad = ctx.createLinearGradient(0, 0, rect.width, rect.height);
+        grad.addColorStop(0, '#7c4dff');
+        grad.addColorStop(1, '#00e5ff');
+        ctx.fillStyle = grad;
+        ctx.fillRect(-rect.width/2, -rect.height/2, rect.width, rect.height);
+        ctx.restore();
+        break;
+      case 'animated-gradient':
+      case 'shimmer': {
+        const grad = ctx.createLinearGradient(0, 0, rect.width, rect.height);
+        const config = this.getConfig();
+        grad.addColorStop(0, config.c1 || '#7c4dff');
+        grad.addColorStop(0.5, config.c2 || '#00e5ff');
+        grad.addColorStop(1, config.c3 || '#ff6b81');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        break;
+      }
+      case 'pulse': {
+        const config = this.getConfig();
+        ctx.shadowColor = config.color || '#7c4dff';
+        ctx.shadowBlur = 30;
+        ctx.fillStyle = config.color || '#7c4dff';
+        ctx.fillRect(rect.width * 0.15, rect.height * 0.15, rect.width * 0.7, rect.height * 0.7);
+        break;
+      }
+      case 'deep-shadow': {
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetX = 10;
+        ctx.shadowOffsetY = 10;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(10, 10, rect.width - 20, rect.height - 20);
+        break;
+      }
+      case 'frosted': {
+        ctx.filter = 'blur(16px) saturate(1.8)';
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        ctx.filter = 'none';
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, rect.width, rect.height);
+        break;
+      }
+      case 'gradient-text': {
+        const config = this.getConfig();
+        const grad = ctx.createLinearGradient(0, 0, rect.width, 0);
+        grad.addColorStop(0, config.c1 || '#7c4dff');
+        grad.addColorStop(1, config.c2 || '#00e5ff');
+        ctx.fillStyle = grad;
+        ctx.font = 'bold 48px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('TEXT', rect.width/2, rect.height/2 + 16);
+        break;
+      }
+      case 'neon-border': {
+        const config = this.getConfig();
+        ctx.strokeStyle = config.color || '#a78bfa';
+        ctx.lineWidth = config.width || 2;
+        ctx.shadowColor = config.color || '#a78bfa';
+        ctx.shadowBlur = config.glow || 8;
+        ctx.strokeRect(2, 2, rect.width - 4, rect.height - 4);
+        break;
+      }
+    }
+    ctx.restore();
+
+    this._downloadCanvas(canvas, 'css-effect.png');
+  },
+
+  async downloadHTML() {
+    const css = this.generateCSS();
+    const effectName = this.currentEffect;
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${effectName} — Shadow Studio Export</title>
+<style>
+body{margin:0;padding:40px;min-height:100vh;background:#0a0b14;display:flex;align-items:center;justify-content:center;font-family:sans-serif}
+.demo{width:320px;height:180px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:700;${css.split('{').pop().replace('.glass-effect','').replace('.neon-glow','').replace('.tilt-3d','').replace('.animated-gradient','').replace('.shimmer','').replace('.pulse-effect','').replace('.deep-shadow','').replace('.frosted','').replace('.gradient-text','').replace('.neon-border','')}}
+</style></head><body><div class="${effectName.replace('-','-')} demo">${effectName}</div></body></html>`;
+    shadowStudio.get('utils').download(`${effectName}-export.html`, html, 'text/html');
+    this.toast('✅ HTML exported!');
+  },
+
+  updateCode(c) {
+    this.codeOutput = document.getElementById('codeOutput');
+    const css = this.generateCSS();
+    this.codeOutput.textContent = css;
+  },
+
+  toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  },
+
+  _downloadCanvas(canvas, filename) {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => CE.init());
+document.getElementById('demoBox').style.background = 'linear-gradient(135deg, rgba(124,77,255,0.3), rgba(0,229,255,0.1))';
+</script>
+</body>
+</html>

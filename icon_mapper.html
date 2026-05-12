@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗺️ Sprite Mapper v5.0 — Shadow Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0b14;--surface:#15172a;--border:#2a2d4a;--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+.container{max-width:1400px;margin:0 auto;padding:24px}
+.header{text-align:center;margin-bottom:28px}
+.header h1{font-size:2rem;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,#7c4dff,#00e5ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--text-muted);font-size:.92rem}
+
+/* Layout */
+.studio{display:grid;grid-template-columns:300px 1fr;gap:20px}
+.panel{background:var(--surface);border-radius:12px;padding:20px;border:1px solid var(--border)}
+.panel h2{font-size:.95rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* Upload */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:.3s;margin-bottom:16px;background:rgba(255,255,255,.02)}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--primary);background:rgba(124,77,255,.05)}
+.upload-zone .icon{font-size:2.5rem;margin-bottom:8px}
+
+/* Controls */
+.control-group{margin-bottom:14px}
+.control-group label{display:block;font-size:.75rem;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.control-group input[type="range"]{width:100%;height:5px;-webkit-appearance:none;background:var(--border);border-radius:3px}
+.control-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--primary);border-radius:50%;cursor:pointer}
+.control-group .val{text-align:right;font-size:.72rem;color:var(--accent)}
+.control-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Main Canvas */
+.canvas-wrap{background:var(--surface);border-radius:12px;border:1px solid var(--border);padding:12px;overflow:auto;position:relative;min-height:320px}
+canvas.main-canvas{background:#fff;border-radius:8px;cursor:crosshair;display:block;max-width:100%}
+.canvas-info{position:absolute;top:16px;right:16px;font-size:.7rem;color:var(--text-muted);background:rgba(0,0,0,.5);padding:4px 10px;border-radius:6px}
+
+/* Extracted sprites */
+.output-section{margin-top:20px}
+.output-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
+.output-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.output-cell:hover{border-color:var(--primary);transform:translateY(-2px)}
+.output-cell canvas{width:100%;image-rendering:pixelated}
+.output-cell .sprite-name{font-size:.62rem;color:var(--text-muted);margin-top:4px}
+.cell-actions{position:absolute;top:4px;right:4px;display:none;gap:2px}
+.output-cell:hover .cell-actions{display:flex}
+.cell-actions button{background:rgba(0,0,0,.6);border:none;color:#fff;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:.65rem;display:flex;align-items:center;justify-content:center}
+
+/* Action Bar */
+.action-bar{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap;justify-content:center}
+.btn{padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;transition:all .2s;border:none;font-size:.82rem;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,#7c4dff,#9c6bff);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(124,77,255,.3)}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary)}
+.btn-accent{background:linear-gradient(135deg,#00e5ff,#22d3ee);color:#0a0b14;font-weight:700}
+.btn-accent:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,229,255,.3)}
+.btn-danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
+
+/* Sprite Sheet Preview */
+.sheet-preview{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;overflow:auto;margin-top:16px;display:none}
+.sheet-preview.show{display:block}
+.sheet-preview h3{font-size:.85rem;margin-bottom:10px;color:var(--text-muted)}
+
+/* Export Options */
+.export-panels{margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.export-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.export-panel h3{font-size:.88rem;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.export-panel p{font-size:.75rem;color:var(--text-muted);margin-bottom:12px}
+
+/* Sprite Sheet Config */
+.sheet-config{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.sheet-config .control-group{margin-bottom:0}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.85rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* Selection overlay */
+.selection-overlay{position:absolute;border:2px dashed var(--accent);pointer-events:none;display:none;z-index:5}
+.selection-overlay.active{display:block}
+
+/* Status bar */
+.status-bar{display:flex;gap:16px;padding:8px 12px;background:rgba(0,0,0,.2);border-radius:8px;margin:12px 0;font-size:.75rem;color:var(--text-muted)}
+.status-bar span{display:flex;align-items:center;gap:4px}
+
+/* Mode tabs */
+.mode-tabs{display:flex;gap:4px;margin-bottom:16px}
+.mode-tab{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:.8rem;transition:all .2s}
+.mode-tab:hover{color:var(--text);border-color:var(--primary)}
+.mode-tab.active{background:rgba(124,77,255,.15);color:var(--primary);border-color:var(--primary)}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🗺️ Sprite Mapper v5.0</h1>
+    <p>Upload spritesheets → Extract frames → Export as sheet, strip, or individual PNGs</p>
+  </div>
+
+  <div class="studio">
+    <!-- Left Panel: Controls -->
+    <div class="panel">
+      <h2>🎛️ Options</h2>
+
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="SM.setMode('extract')">🔍 Extract</button>
+        <button class="mode-tab" onclick="SM.setMode('slice')">✂️ Grid Slice</button>
+        <button class="mode-tab" onclick="SM.setMode('select')">📐 Select</button>
+      </div>
+
+      <!-- Extract mode controls -->
+      <div id="extract-controls">
+        <div class="control-group">
+          <label>Threshold</label>
+          <input type="range" id="threshold" min="1" max="254" value="100">
+          <span class="val" id="tVal">100</span>
+        </div>
+        <div class="control-row">
+          <div class="control-group">
+            <label>Min Width</label>
+            <input type="range" id="minW" min="4" max="128" value="16">
+            <span class="val" id="minWVal">16</span>
+          </div>
+          <div class="control-group">
+            <label>Min Height</label>
+            <input type="range" id="minH" min="4" max="128" value="16">
+            <span class="val" id="minHVal">16</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Padding: <span class="val" id="padVal">2</span>px</label>
+          <input type="range" id="padding" min="0" max="16" value="2">
+        </div>
+        <div class="control-group">
+          <label>Background Detection</label>
+          <select id="bgMode">
+            <option value="alpha">Alpha Transparency</option>
+            <option value="top-left">Top-Left Pixel Color</option>
+            <option value="flood">Flood Fill (0,0)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Grid slice controls -->
+      <div id="slice-controls" style="display:none">
+        <div class="control-row">
+          <div class="control-group">
+            <label>Columns</label>
+            <input type="range" id="cols" min="1" max="32" value="8">
+            <span class="val" id="colsVal">8</span>
+          </div>
+          <div class="control-group">
+            <label>Rows</label>
+            <input type="range" id="rows" min="1" max="32" value="4">
+            <span class="val" id="rowsVal">4</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Spacing: <span class="val" id="spacingVal">0</span>px</label>
+          <input type="range" id="spacing" min="0" max="32" value="0">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="SM.detect()" style="width:100%;margin-bottom:8px">🔍 Detect Sprites</button>
+      <button class="btn btn-secondary" onclick="SM.loadDemo()" style="width:100%;margin-bottom:8px">🧪 Load Demo Sprite</button>
+      <button class="btn btn-accent" onclick="SM.clearAll()" style="width:100%">🗑️ Clear</button>
+
+      <div class="status-bar" style="margin-top:16px">
+        <span>Sprites: <b id="spriteCount">0</b></span>
+        <span>Canvas: <b id="canvasSize">—</b></span>
+      </div>
+    </div>
+
+    <!-- Right: Canvas + Output -->
+    <div>
+      <!-- Upload zone -->
+      <div class="upload-zone" id="uploadZone">
+        <div class="icon">📤</div>
+        <strong>Drop spritesheet here or click to upload</strong>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+      </div>
+
+      <!-- Canvas -->
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas class="main-canvas" id="mainCanvas"></canvas>
+        <div class="canvas-info" id="canvasInfo">No image loaded</div>
+        <div class="selection-overlay" id="selectionOverlay"></div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar" id="actionBar" style="display:none">
+        <button class="btn btn-primary" onclick="SM.exportSheet()">📦 Export Sheet</button>
+        <button class="btn btn-primary" onclick="SM.exportStrip()">📊 Export Strip</button>
+        <button class="btn btn-accent" onclick="SM.exportIndividual()">💾 Individual PNGs</button>
+        <button class="btn btn-secondary" onclick="SM.copySheetToClipboard()">📋 Copy to Clipboard</button>
+        <button class="btn btn-secondary" onclick="SM.exportJSON()">📋 Sprite Data JSON</button>
+        <button class="btn btn-danger" onclick="SM.copyDataURIs()">📋 Copy Data URIs</button>
+      </div>
+
+      <!-- Sprite Grid -->
+      <div class="output-section">
+        <h3 style="font-size:.9rem;margin-bottom:8px;color:var(--text-muted)">Extracted Sprites</h3>
+        <div class="output-grid" id="spriteGrid"></div>
+      </div>
+
+      <!-- Sprite Sheet Preview -->
+      <div class="sheet-preview" id="sheetPreview">
+        <h3>🖼️ Sprite Sheet Preview</h3>
+        <canvas id="sheetCanvas"></canvas>
+      </div>
+
+      <!-- Export Options -->
+      <div class="export-panels">
+        <div class="export-panel">
+          <h3>📦 Export as Sprite Sheet</h3>
+          <p>Pack all sprites into a single image</p>
+          <div class="sheet-config">
+            <div class="control-group">
+              <label>Columns</label>
+              <input type="range" id="sheetCols" min="1" max="16" value="4">
+              <span class="val" id="sheetColsVal">4</span>
+            </div>
+            <div class="control-group">
+              <label>Max Size</label>
+              <select id="sheetMaxSize">
+                <option value="512">512px</option>
+                <option value="1024" selected>1024px</option>
+                <option value="2048">2048px</option>
+                <option value="4096">4096px</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="SM.packAndExport()" style="width:100%">✨ Generate & Export</button>
+        </div>
+        <div class="export-panel">
+          <h3>🔄 Copy to Coding Agent</h3>
+          <p>Get structured data for AI-assisted workflows</p>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <button class="btn btn-secondary" onclick="SM.copyForAI()" style="width:100%">🤖 AI-Ready JSON</button>
+            <button class="btn btn-secondary" onclick="SM.copyCSS()" style="width:100%">📋 CSS Spritesheet</button>
+            <button class="btn btn-secondary" onclick="SM.copyDataURLSheet()" style="width:100%">🖼️ Data URL Sheet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================
+   SPRITE MAPPER v5.0 — MAX LEVEL
+   Flood fill extraction, grid slicing,
+   sprite sheet packing, multi-format export
+   ============================================ */
+
+const SM = {
+  canvas: null,
+  ctx: null,
+  imgData: null,
+  width: 0,
+  height: 0,
+  sprites: [],
+  originalImage: null,
+  mode: 'extract',
+
+  init() {
+    this.canvas = document.getElementById('mainCanvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.bindEvents();
+  },
+
+  bindEvents() {
+    // File upload
+    document.getElementById('uploadZone').addEventListener('click', () => document.getElementById('fileInput').click());
+    document.getElementById('fileInput').addEventListener('change', e => { if(e.target.files[0]) this.loadFile(e.target.files[0]); });
+
+    const uz = document.getElementById('uploadZone');
+    uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('dragover'); });
+    uz.addEventListener('dragleave', () => uz.classList.remove('dragover'));
+    uz.addEventListener('drop', e => { e.preventDefault(); uz.classList.remove('dragover'); if(e.dataTransfer.files[0]) this.loadFile(e.dataTransfer.files[0]); });
+
+    // Controls
+    ['threshold','minW','minH','padding'].forEach(id => {
+      document.getElementById(id).addEventListener('input', e => {
+        document.getElementById(id+'Val').textContent = e.target.value;
+      });
+    });
+    ['cols','rows','spacing'].forEach(id => {
+      document.getElementById(id).addEventListener('input', e => {
+        document.getElementById(id+'Val').textContent = e.target.value;
+      });
+    });
+    document.getElementById('sheetCols').addEventListener('input', e => {
+      document.getElementById('sheetColsVal').textContent = e.target.value;
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') e.preventDefault();
+    });
+  },
+
+  setMode(mode) {
+    this.mode = mode;
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('extract-controls').style.display = mode === 'extract' ? 'block' : 'none';
+    document.getElementById('slice-controls').style.display = mode === 'slice' ? 'block' : 'none';
+  },
+
+  loadFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        this.originalImage = img;
+        this.canvas.width = img.width;
+        this.canvas.height = img.height;
+        this.width = img.width;
+        this.height = img.height;
+        this.ctx.drawImage(img, 0, 0);
+        document.getElementById('canvasInfo').textContent = `${img.width} × ${img.height}px`;
+        document.getElementById('canvasSize').textContent = `${img.width}×${img.height}`;
+        document.getElementById('uploadZone').style.display = 'none';
+        document.getElementById('actionBar').style.display = 'flex';
+        this.imgData = this.ctx.getImageData(0, 0, this.width, this.height);
+        document.getElementById('spriteGrid').innerHTML = '';
+        this.sprites = [];
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  },
+
+  loadDemo() {
+    // Generate a demo spritesheet inline
+    const size = 256;
+    this.canvas.width = size * 4;
+    this.canvas.height = size * 2;
+    this.width = this.canvas.width;
+    this.height = this.canvas.height;
+
+    const ctx = this.ctx;
+    const colors = ['#7c4dff','#00e5ff','#ff6b81','#f59e0b','#22c55e','#ef4444','#a855f7','#ec4899'];
+
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < 4; col++) {
+        const x = col * size;
+        const y = row * size;
+        const ci = row * 4 + col;
+
+        // Background
+        ctx.fillStyle = '#1a1d2e';
+        ctx.fillRect(x, y, size, size);
+
+        // Shape
+        ctx.fillStyle = colors[ci];
+        ctx.beginPath();
+        const shapes = ['circle','rect','diamond','triangle'];
+        const shape = shapes[ci % shapes.length];
+        const cx = x + size/2, cy = y + size/2;
+        const s = size * 0.35;
+
+        if (shape === 'circle') {
+          ctx.arc(cx, cy, s, 0, Math.PI * 2);
+        } else if (shape === 'rect') {
+          ctx.rect(cx - s, cy - s, s * 2, s * 2);
+        } else if (shape === 'diamond') {
+          ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s, cy);
+          ctx.lineTo(cx, cy + s); ctx.lineTo(cx - s, cy);
+        } else {
+          ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s, cy + s);
+          ctx.lineTo(cx - s, cy + s);
+        }
+        ctx.fill();
+
+        // Highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.beginPath();
+        ctx.arc(cx - s * 0.2, cy - s * 0.2, s * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    this.imgData = this.ctx.getImageData(0, 0, this.width, this.height);
+    document.getElementById('canvasInfo').textContent = `${this.width} × ${this.height}px`;
+    document.getElementById('canvasSize').textContent = `${this.width}×${this.height}`;
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('actionBar').style.display = 'flex';
+    document.getElementById('spriteGrid').innerHTML = '';
+    this.sprites = [];
+  },
+
+  detect() {
+    if (!this.imgData) { this.toast('⚠️ Upload an image first!'); return; }
+
+    const threshold = parseInt(document.getElementById('threshold').value);
+    const minW = parseInt(document.getElementById('minW').value);
+    const minH = parseInt(document.getElementById('minH').value);
+    const bgMode = document.getElementById('bgMode').value;
+
+    const visited = new Set();
+    const sprites = [];
+    const data = this.imgData.data;
+
+    for (let y = 0; y < this.height; y += 1) {
+      for (let x = 0; x < this.width; x += 1) {
+        const idx = (y * this.width + x) * 4;
+        if (data[idx + 3] > threshold && !visited.has(`${x},${y}`)) {
+          const rect = this._floodFill(x, y, data, visited, threshold, bgMode);
+          if (rect.w >= minW && rect.h >= minH && rect.w < this.width && rect.h < this.height) {
+            sprites.push(rect);
+          }
+        }
+      }
+    }
+
+    // Sort by size desc, limit to 200
+    sprites.sort((a, b) => (b.w * b.h) - (a.w * a.h));
+    this.sprites = sprites.slice(0, 200);
+
+    // Render thumbnails
+    this._renderSprites();
+    this.toast(`🔍 Found ${this.sprites.length} sprites!`);
+  },
+
+  _floodFill(sx, sy, data, visited, threshold, bgMode) {
+    let minX = sx, maxX = sx, minY = sy, maxY = sy;
+    const stack = [[sx, sy]];
+    visited.add(`${sx},${sy}`);
+
+    while (stack.length) {
+      const [cx, cy] = stack.pop();
+      for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const nx = cx + dx, ny = cy + dy;
+        const key = `${nx},${ny}`;
+        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height && !visited.has(key)) {
+          const idx = (ny * this.width + nx) * 4;
+          if (data[idx + 3] > threshold) {
+            visited.add(key);
+            stack.push([nx, ny]);
+            minX = Math.min(minX, nx); maxX = Math.max(maxX, nx);
+            minY = Math.min(minY, ny); maxY = Math.max(maxY, ny);
+          }
+        }
+      }
+    }
+    return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+  }
+
+  slice() {
+    if (!this.originalImage) { this.toast('⚠️ Upload image first!'); return; }
+
+    const cols = parseInt(document.getElementById('cols').value);
+    const rows = parseInt(document.getElementById('rows').value);
+    const spacing = parseInt(document.getElementById('spacing').value);
+
+    const cellW = this.width / cols;
+    const cellH = this.height / rows;
+
+    this.sprites = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        this.sprites.push({
+          x: Math.floor(c * cellW + spacing / 2),
+          y: Math.floor(r * cellH + spacing / 2),
+          w: Math.floor(cellW - spacing),
+          h: Math.floor(cellH - spacing)
+        });
+      }
+    }
+
+    this._renderSprites();
+    this.toast(`✂️ Sliced into ${this.sprites.length} cells!`);
+  },
+
+  _renderSprites() {
+    const grid = document.getElementById('spriteGrid');
+    grid.innerHTML = '';
+
+    const padding = parseInt(document.getElementById('padding').value) || 0;
+
+    this.sprites.forEach((sprite, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'output-cell';
+
+      const c = document.createElement('canvas');
+      c.width = sprite.w + padding * 2;
+      c.height = sprite.h + padding * 2;
+      const cc = c.getContext('2d');
+
+      // Transparent background
+      cc.clearRect(0, 0, c.width, c.height);
+      cc.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, padding, padding, sprite.w, sprite.h);
+
+      const name = `sprite_${String(i).padStart(3, '0')}`;
+      cell.innerHTML = `
+        <canvas></canvas>
+        <div class="sprite-name">${name}</div>
+        <div class="cell-actions">
+          <button onclick="SM.copySprite(${i})" title="Copy">📋</button>
+          <button onclick="SM.downloadSprite(${i})" title="Download">💾</button>
+        </div>
+      `;
+      cell.querySelector('canvas').replaceWith(c);
+      cell.onclick = () => this._selectSprite(cell, i);
+      grid.appendChild(cell);
+    });
+
+    document.getElementById('spriteCount').textContent = this.sprites.length;
+  },
+
+  _selectSprite(cell, idx) {
+    document.querySelectorAll('.output-cell').forEach(c => c.style.borderColor = '');
+    cell.style.borderColor = 'var(--primary)';
+
+    // Draw selection on canvas
+    const overlay = document.getElementById('selectionOverlay');
+    const wrap = document.getElementById('canvasWrap');
+    const s = this.sprites[idx];
+    const scale = wrap.clientWidth / this.width;
+    overlay.style.left = (s.x * scale) + 'px';
+    overlay.style.top = (s.y * scale) + 'px';
+    overlay.style.width = (s.w * scale) + 'px';
+    overlay.style.height = (s.h * scale) + 'px';
+    overlay.classList.add('active');
+  }
+
+  // ===== EXPORT FUNCTIONS =====
+
+  exportSheet() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites detected!'); return; }
+
+    const cols = parseInt(document.getElementById('sheetCols').value);
+    const maxSize = parseInt(document.getElementById('sheetMaxSize').value);
+    const padding = parseInt(document.getElementById('padding').value) || 0;
+
+    // Calculate cell size
+    let maxW = 0, maxH = 0;
+    this.sprites.forEach(s => { maxW = Math.max(maxW, s.w); maxH = Math.max(maxH, s.h); });
+    const cellW = maxW + padding * 2;
+    const cellH = maxH + padding * 2;
+
+    const rows = Math.ceil(this.sprites.length / cols);
+    const sheetW = Math.min(maxSize, cellW * cols);
+    const sheetH = Math.min(maxSize, cellH * rows);
+    const colsFit = Math.floor(sheetW / cellW);
+
+    const sheet = document.createElement('canvas');
+    sheet.width = colsFit * cellW;
+    sheet.height = Math.ceil(this.sprites.length / colsFit) * cellH;
+    const sctx = sheet.getContext('2d');
+    sctx.clearRect(0, 0, sheet.width, sheet.height);
+
+    this.sprites.forEach((sprite, i) => {
+      const col = i % colsFit;
+      const row = Math.floor(i / colsFit);
+      sctx.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h,
+        col * cellW + padding, row * cellH + padding, sprite.w, sprite.h);
+    });
+
+    this._downloadCanvas(sheet, 'sprite-sheet.png');
+    this.toast(`📦 Sprite sheet exported! (${colsFit}×${Math.ceil(this.sprites.length/colsFit)})`);
+  }
+
+  exportStrip() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+
+    const padding = parseInt(document.getElementById('padding').value) || 0;
+    let totalW = 0, maxH = 0;
+    this.sprites.forEach(s => { totalW += s.w + padding * 2; maxH = Math.max(maxH, s.h + padding * 2); });
+
+    const strip = document.createElement('canvas');
+    strip.width = totalW;
+    strip.height = maxH;
+    const ctx = strip.getContext('2d');
+
+    let x = 0;
+    this.sprites.forEach(sprite => {
+      ctx.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h,
+        x + padding, padding, sprite.w, sprite.h);
+      x += sprite.w + padding * 2;
+    });
+
+    this._downloadCanvas(strip, 'sprite-strip.png');
+    this.toast('📊 Sprite strip exported!');
+  }
+
+  async exportIndividual() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+
+    const zipAvailable = typeof JSZip !== 'undefined';
+    if (zipAvailable) {
+      const zip = new JSZip();
+      this.sprites.forEach((sprite, i) => {
+        const c = document.createElement('canvas');
+        c.width = sprite.w; c.height = sprite.h;
+        const cc = c.getContext('2d');
+        cc.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0, sprite.w, sprite.h);
+        const dataUrl = c.toDataURL('image/png');
+        const data = this._dataURLToBase64(dataUrl);
+        zip.file(`sprite_${String(i).padStart(4,'0')}.png`, data, { base64: true });
+      });
+      const blob = await zip.generateAsync({ type: 'blob' });
+      this._downloadBlob(blob, 'sprites.zip');
+      this.toast(`💾 ${this.sprites.length} sprites as ZIP!`);
+    } else {
+      // Download first sprite as demo
+      const c = document.createElement('canvas');
+      c.width = this.sprites[0].w; c.height = this.sprites[0].h;
+      c.getContext('2d').drawImage(this.canvas, this.sprites[0].x, this.sprites[0].y, this.sprites[0].w, this.sprites[0].h, 0, 0);
+      this._downloadCanvas(c, 'sprite_0000.png');
+      this.toast('💾 First sprite downloaded (add JSZip for batch)');
+    }
+  }
+
+  copySprite(idx) {
+    const sprite = this.sprites[idx];
+    const c = document.createElement('canvas');
+    c.width = sprite.w; c.height = sprite.h;
+    c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+
+    c.toBlob(blob => {
+      if (navigator.clipboard && navigator.clipboard.write) {
+        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        this.toast('📋 Sprite copied to clipboard!');
+      } else {
+        this._downloadCanvas(c, `sprite_${idx}.png`);
+      }
+    }, 'image/png');
+  }
+
+  downloadSprite(idx) {
+    const sprite = this.sprites[idx];
+    const c = document.createElement('canvas');
+    c.width = sprite.w; c.height = sprite.h;
+    c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+    this._downloadCanvas(c, `sprite_${String(idx).padStart(4,'0')}.png`);
+    this.toast('💾 Sprite downloaded!');
+  }
+
+  copySheetToClipboard() {
+    this.packAndExport(true);
+  }
+
+  packAndExport(copyOnly = false) {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+
+    const cols = parseInt(document.getElementById('sheetCols').value);
+    const padding = parseInt(document.getElementById('padding').value) || 0;
+
+    let maxW = 0, maxH = 0;
+    this.sprites.forEach(s => { maxW = Math.max(maxW, s.w); maxH = Math.max(maxH, s.h); });
+    const cellW = maxW + padding * 2;
+    const cellH = maxH + padding * 2;
+    const rows = Math.ceil(this.sprites.length / cols);
+
+    const sheet = document.createElement('canvas');
+    sheet.width = cellW * cols;
+    sheet.height = cellH * rows;
+    const sctx = sheet.getContext('2d');
+    sctx.clearRect(0, 0, sheet.width, sheet.height);
+
+    this.sprites.forEach((sprite, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      sctx.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h,
+        col * cellW + padding, row * cellH + padding, sprite.w, sprite.h);
+    });
+
+    if (copyOnly) {
+      sheet.toBlob(blob => {
+        navigator.clipboard?.write([new ClipboardItem({ 'image/png': blob })]);
+        this.toast('📋 Sheet copied to clipboard!');
+      }, 'image/png');
+    } else {
+      this._downloadCanvas(sheet, `sprite-sheet-${cols}x${rows}.png`);
+      this.toast(`📦 Sheet exported: ${cols}×${rows} grid`);
+    }
+
+    // Preview
+    const preview = document.getElementById('sheetPreview');
+    preview.classList.add('show');
+    const pc = document.getElementById('sheetCanvas');
+    pc.width = Math.min(sheet.width, 800);
+    pc.height = Math.floor(sheet.height * (Math.min(sheet.width, 800) / sheet.width));
+    pc.getContext('2d').imageSmoothingEnabled = false;
+    pc.getContext('2d').drawImage(sheet, 0, 0, pc.width, pc.height);
+  }
+
+  exportJSON() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+
+    const data = {
+      meta: {
+        sourceWidth: this.width,
+        sourceHeight: this.height,
+        count: this.sprites.length,
+        generated: new Date().toISOString(),
+        tool: 'shadow-studio/sprite-mapper',
+        version: '5.0.0'
+      },
+      sprites: this.sprites.map((s, i) => ({
+        name: `sprite_${String(i).padStart(4, '0')}`,
+        x: s.x, y: s.y,
+        width: s.w, height: s.h,
+        cx: s.x + s.w / 2,
+        cy: s.y + s.h / 2
+      }))
+    };
+
+    navigator.clipboard?.writeText(JSON.stringify(data, null, 2)) || this._fallbackCopy(JSON.stringify(data, null, 2));
+    this.toast('📋 JSON sprite data copied!');
+  }
+
+  async copyDataURIs() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+
+    const uris = [];
+    this.sprites.forEach((sprite, i) => {
+      const c = document.createElement('canvas');
+      c.width = sprite.w; c.height = sprite.h;
+      c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+      uris.push({ name: `sprite_${i}`, dataUrl: c.toDataURL('image/png') });
+    });
+
+    const blob = new Blob([JSON.stringify(uris, null, 2)], { type: 'application/json' });
+    navigator.clipboard?.writeText(JSON.stringify(uris)) || this._fallbackCopy(JSON.stringify(uris));
+    this.toast(`📋 ${uris.length} Data URIs copied!`);
+  }
+
+  copyCSS() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+
+    let css = `/* Sprite Sheet CSS — Generated by Shadow Studio */\n.sprite-sheet {\n  background-image: url('sprite-sheet.png');\n  background-repeat: no-repeat;\n}\n\n`;
+
+    const cols = parseInt(document.getElementById('sheetCols').value);
+    const padding = parseInt(document.getElementById('padding').value) || 0;
+    let maxW = 0, maxH = 0;
+    this.sprites.forEach(s => { maxW = Math.max(maxW, s.w); maxH = Math.max(maxH, s.h); });
+
+    this.sprites.forEach((sprite, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      css += `.sprite-${String(i).padStart(4, '0')} {\n  width: ${sprite.w}px;\n  height: ${sprite.h}px;\n  background-position: -${col * (maxW + padding * 2) + padding}px -${row * (maxH + padding * 2) + padding}px;\n}\n\n`;
+    });
+
+    navigator.clipboard?.writeText(css) || this._fallbackCopy(css);
+    this.toast('📋 CSS sprites copied!');
+  }
+
+  copyForAI() {
+    if (!this.sprites.length) { this.toast('⚠️ No sprites!'); return; }
+
+    const data = {
+      type: 'sprite_extraction_result',
+      tool: 'shadow-studio/sprite-mapper',
+      version: '5.0.0',
+      source_dimensions: { width: this.width, height: this.height },
+      sprites: this.sprites.map((s, i) => ({
+        id: `sprite_${String(i).padStart(4, '0')}`,
+        x: s.x, y: s.y, width: s.w, height: s.h,
+        data_url: this._extractDataURL(s),
+        center: { x: Math.round(s.x + s.w / 2), y: Math.round(s.y + s.h / 2) }
+      })),
+      generated_at: new Date().toISOString()
+    };
+
+    navigator.clipboard?.writeText(JSON.stringify(data, null, 2)) || this._fallbackCopy(JSON.stringify(data));
+    this.toast('🤖 AI-ready data copied!');
+  }
+
+  copyDataURLSheet() {
+    const cols = parseInt(document.getElementById('sheetCols').value);
+    const padding = parseInt(document.getElementById('padding').value) || 0;
+    let maxW = 0, maxH = 0;
+    this.sprites.forEach(s => { maxW = Math.max(maxW, s.w); maxH = Math.max(maxH, s.h); });
+
+    const sheet = document.createElement('canvas');
+    sheet.width = (maxW + padding * 2) * cols;
+    sheet.height = (maxH + padding * 2) * Math.ceil(this.sprites.length / cols);
+    const ctx = sheet.getContext('2d');
+
+    this.sprites.forEach((sprite, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      ctx.drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h,
+        col * (maxW + padding * 2) + padding, row * (maxH + padding * 2) + padding, sprite.w, sprite.h);
+    });
+
+    navigator.clipboard?.writeText(sheet.toDataURL()) || this._fallbackCopy(sheet.toDataURL());
+    this.toast('🖼️ Data URL copied!');
+  }
+
+  clearAll() {
+    this.sprites = [];
+    this.originalImage = null;
+    this.imgData = null;
+    this.canvas.width = 0;
+    this.canvas.height = 0;
+    document.getElementById('spriteGrid').innerHTML = '';
+    document.getElementById('uploadZone').style.display = 'block';
+    document.getElementById('actionBar').style.display = 'none';
+    document.getElementById('canvasInfo').textContent = 'No image loaded';
+    document.getElementById('canvasSize').textContent = '—';
+    document.getElementById('spriteCount').textContent = '0';
+    document.getElementById('selectionOverlay').classList.remove('active');
+    document.getElementById('sheetPreview').classList.remove('show');
+    this.toast('🗑️ Cleared!');
+  }
+
+  // Utilitas
+  _extractDataURL(sprite) {
+    const c = document.createElement('canvas');
+    c.width = sprite.w; c.height = sprite.h;
+    c.getContext('2d').drawImage(this.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0);
+    return c.toDataURL('image/png');
+  }
+
+  _downloadCanvas(c, name) {
+    const a = document.createElement('a');
+    a.href = c.toDataURL('image/png');
+    a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+
+  _downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  }
+
+  _fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+
+  toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => SM.init());
+</script>
+</body>
+</html>

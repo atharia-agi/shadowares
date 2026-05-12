@@ -1,186 +1,688 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shadow Cursor Generator</title>
-    <style>
-        :root { --bg:#07080f; --surface:rgba(15,23,42,.75); --border:#1e293b; --text:#f1f5f9; }
-        * { box-sizing:border-box; margin:0; padding:0; }
-        body { background:var(--bg); color:var(--text); font-family:"Segoe UI",system-ui,sans-serif; min-height:100vh; overflow-x:hidden; }
-        body::before { content:""; position:fixed; inset:0; background:radial-gradient(ellipse at 30% 0%,#1e1b4b33 0%,transparent 60%),radial-gradient(ellipse at 70% 100%,#0c4a6e22 0%,transparent 60%); pointer-events:none; }
-        .header, .section { position:relative; z-index:1; }
-        .header { text-align:center; padding:48px 20px 24px; }
-        .header h1 { font-size:3rem; font-weight:900; background:linear-gradient(135deg,#c084fc,#60a5fa,#34d399); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-        .header p { color:#94a3b8; max-width:860px; margin:10px auto 0; }
-        .badge { display:inline-block; margin-top:14px; padding:7px 14px; border:1px solid #4c1d95; border-radius:999px; font-size:.75rem; color:#c4b5fd; }
-        .controls { margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-        .controls button { border:none; border-radius:10px; color:#fff; font-weight:700; padding:11px 18px; cursor:pointer; }
-        #changeCursorBtn { background:#8b5cf6; }
-        #copyCodeBtn { background:#10b981; }
-        #copyStatus { min-height:20px; margin-top:10px; font-size:.92rem; color:#10b981; }
-        .section { max-width:1320px; margin:26px auto; padding:0 20px; }
-        .section-title { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-        .section-title h2 { font-size:1.35rem; }
-        .section-title .line { flex:1; height:1px; background:linear-gradient(90deg,var(--border),transparent); }
-        .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
-        .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; transition:.2s; position:relative; overflow:hidden; }
-        .card:hover { transform:translateY(-3px); border-color:var(--card-color,#64748b); }
-        .card.active { border-color:var(--card-color,#22d3ee); box-shadow:0 0 0 1px var(--card-color,#22d3ee) inset; }
-        .card.active::after { content:"ACTIVE"; position:absolute; top:8px; right:8px; font-size:.62rem; font-weight:800; padding:2px 8px; border-radius:999px; color:#000; background:var(--card-color,#22d3ee); }
-        .icon { font-size:1.9rem; margin-bottom:6px; }
-        .meta { color:#94a3b8; font-size:.82rem; margin-top:4px; }
-        .states { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 12px; }
-        .st { font-size:.68rem; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,.06); color:#cbd5e1; }
-        .btn { width:100%; border:none; border-radius:8px; padding:9px 10px; cursor:pointer; color:#fff; font-weight:700; background:var(--card-color,#8b5cf6); }
-        .now-playing { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
-        .np-label { font-size:.72rem; color:#64748b; letter-spacing:1.2px; text-transform:uppercase; }
-        .np-name { margin-top:5px; font-size:1.35rem; font-weight:900; }
-        .test-zone { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-        .zone { border:1px dashed #334155; border-radius:10px; min-height:130px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:8px; padding:12px; }
-        .zone .lbl { font-size:.7rem; letter-spacing:1px; color:#64748b; text-transform:uppercase; }
-        .zone input, .zone textarea, .zone button { width:85%; border-radius:8px; padding:10px; border:1px solid #334155; background:#0f172a; color:#fff; }
-        .zone button { border:none; background:#8b5cf6; font-weight:700; cursor:pointer; }
-        .code-box { background:#0f172a; border:1px solid #1e293b; border-radius:10px; padding:16px; font-family:"Cascadia Code","Consolas",monospace; font-size:.84rem; white-space:pre; overflow:auto; position:relative; }
-        .cp { position:absolute; top:8px; right:8px; border:none; border-radius:6px; background:#334155; color:#e2e8f0; padding:5px 10px; cursor:pointer; }
-        @media (max-width: 860px) { .header h1 { font-size:2.2rem; } .test-zone { grid-template-columns:1fr; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🖱️ Cursor Studio — Shadow Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0b14;--surface:#15172a;--border:#2a2d4a;--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff;--gradient:linear-gradient(135deg,#7c4dff,#9c6bff,#00e5ff)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:40px}
+.header{text-align:center;margin-bottom:40px}
+.header h1{font-size:2.5rem;font-weight:900;margin-bottom:8px;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--text-muted);font-size:1.1rem}
+
+/* Layout */
+.studio{display:grid;grid-template-columns:300px 1fr;gap:24px;margin-bottom:40px}
+.panel{background:var(--surface);border-radius:12px;padding:24px;border:1px solid var(--border)}
+.panel h2{font-size:1.1rem;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel h2 .icon{font-size:1.4rem}
+
+/* Theme Buttons */
+.theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.theme-btn{padding:10px;border-radius:8px;border:2px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);cursor:pointer;transition:all .2s;font-size:.82rem;font-family:inherit;text-align:left;display:flex;align-items:center;gap:6px}
+.theme-btn:hover{border-color:var(--primary);background:rgba(124,77,255,.08)}
+.theme-btn.active{border-color:var(--primary);background:rgba(124,77,255,.15);box-shadow:0 0 12px rgba(124,77,255,.25)}
+
+/* Controls */
+.control-group{margin-bottom:20px}
+.control-group label{display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.control-group input[type="range"]{width:100%;height:6px;-webkit-appearance:none;background:var(--border);border-radius:3px;outline:none}
+.control-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--primary);border-radius:50%;cursor:pointer;box-shadow:0 0 8px rgba(124,77,255,.5)}
+.control-group input[type="color"]{width:100%;height:36px;border:none;border-radius:6px;cursor:pointer;background:var(--bg)}
+.control-row{display:flex;gap:12px}
+.control-row .control-group{flex:1}
+.control-group .val{text-align:right;font-size:.75rem;color:var(--accent);margin-top:2px}
+
+/* Preview Area */
+.preview-wrap{background:var(--surface);border-radius:12px;padding:32px;border:1px solid var(--border);min-height:420px;position:relative}
+.preview-label{font-size:.75rem;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:6px}
+.preview-label .dot{width:6px;height:6px;border-radius:50%;background:var(--primary)}
+
+/* The actual custom cursor overlay */
+.cursor-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  pointer-events:none;z-index:999999;
+  mix-blend-mode:difference;
+}
+.cursor-dot{
+  position:absolute;width:24px;height:24px;
+  border:2px solid #fff;border-radius:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;transition:width .15s,height .15s;
+  box-shadow:0 0 12px rgba(255,255,255,.3);
+}
+.cursor-dot.pressed{width:18px;height:18px;border-width:3px}
+
+/* Hotspot marker in preview */
+.hotspot-marker{
+  position:absolute;width:20px;height:20px;
+  border:2px solid var(--accent);border-radius:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;z-index:10;
+  box-shadow:0 0 12px rgba(0,229,255,.5);
+}
+.hotspot-marker::after{
+  content:'';position:absolute;top:50%;left:50%;
+  width:4px;height:4px;background:var(--accent);
+  border-radius:50%;transform:translate(-50%,-50%);
+}
+
+/* Interactive Preview Canvas */
+.canvas-frame{
+  width:100%;aspect-ratio:16/9;background:#1a1d29;
+  border-radius:8px;border:1px solid var(--border);
+  position:relative;overflow:hidden;cursor:none;
+}
+.canvas-frame canvas{width:100%;height:100%;display:block}
+
+/* Grid pattern background */
+.grid-bg{
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:20px 20px;
+}
+
+/* Buttons */
+.btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{padding:10px 18px;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;border:none;font-size:.82rem;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--gradient);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,77,255,.3)}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary)}
+.btn-outline{background:transparent;color:var(--text-muted);border:1px solid var(--border)}
+.btn-outline:hover{color:var(--text);border-color:var(--primary)}
+
+/* Code Output */
+.code-block{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Fira Code',monospace;font-size:.75rem;color:#a0a8c0;white-space:pre-wrap;overflow-x:auto;margin-top:12px;max-height:180px;overflow-y:auto}
+.code-block .cmt{color:#5c7a99}.code-block .key{color:#82aaff}.code-block .val{color:#c3e88d}
+
+/* Demo Grid */
+.demo-area{margin-top:40px}
+.demo-area h2{font-size:1.2rem;margin-bottom:16px}
+.demo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.demo-cell{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .2s}
+.demo-cell:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.demo-cell .icon{font-size:1.8rem;margin-bottom:6px;display:block}
+.demo-cell .name{font-size:.72rem;color:var(--text-muted);font-weight:500}
+
+/* Section dividers */
+.section-title{font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:12px;margin-top:20px;display:flex;align-items:center;gap:8px}
+
+/* Responsive */
+@media(max-width:768px){
+  .studio{grid-template-columns:1fr}
+  .container{padding:16px}
+}
+
+/* Notification toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;background:var(--surface);
+  border:1px solid var(--primary);border-radius:10px;padding:12px 20px;
+  font-size:.85rem;z-index:100000;opacity:0;transform:translateY(20px);
+  transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
 </head>
 <body>
-    <div class="header">
-        <h1>Shadow Cursor Generator</h1>
-        <p>Puluhan tema cursor siap pakai untuk UMKM, gaming, dan creative stack, lengkap state idle, hover, click, dan texting.</p>
-        <div class="badge" id="themeCountBadge">Loading themes...</div>
-        <div class="controls">
-            <button id="changeCursorBtn">Cycle Theme</button>
-            <button id="copyCodeBtn">Copy Code</button>
+<div class="container">
+  <div class="header">
+    <h1>🖱️ Cursor Studio</h1>
+    <p>Design custom cursors with real-time preview and export</p>
+  </div>
+
+  <div class="studio">
+    <!-- Side Panel -->
+    <div class="panel">
+      <h2><span class="icon">🎨</span> Cursor Themes</h2>
+
+      <!-- Preset Color -->
+      <div class="control-group">
+        <label>Cursor Color</label>
+        <input type="color" id="cursorColor" value="#7c4dff">
+      </div>
+
+      <!-- Size -->
+      <div class="control-group">
+        <label>Size: <span class="val" id="sizeVal">32</span>px</label>
+        <input type="range" id="cursorSize" min="16" max="64" value="32">
+      </div>
+
+      <!-- Hotspot -->
+      <div class="control-group">
+        <label>Hotspot X: <span class="val" id="hxVal">0</span></label>
+        <input type="range" id="hotspotX" min="0" max="63" value="0">
+      </div>
+      <div class="control-group">
+        <label>Hotspot Y: <span class="val" id="hyVal">0</span></label>
+        <input type="range" id="hotspotY" min="0" max="63" value="0">
+      </div>
+
+      <!-- Shadow -->
+      <div class="control-group">
+        <label>Shadow: <span class="val" id="shadowVal">4</span>px</label>
+        <input type="range" id="shadowSize" min="0" max="20" value="4">
+      </div>
+
+      <!-- Border -->
+      <div class="control-group">
+        <label>Border Width: <span class="val" id="bwVal">2</span>px</label>
+        <input type="range" id="borderWidth" min="0" max="6" value="2">
+      </div>
+
+      <div class="section-title">📋 Quick Themes</div>
+      <div class="theme-grid">
+        <button class="theme-btn" data-cursor="circle" onclick="applyPreset('circle')">
+          <span style="color:var(--primary)">●</span> Circle
+        </button>
+        <button class="theme-btn" data-cursor="crosshair" onclick="applyPreset('crosshair')">
+          <span style="color:var(--accent)">╋</span> Crosshair
+        </button>
+        <button class="theme-btn" data-cursor="diamond" onclick="applyPreset('diamond')">
+          <span style="color:#ff6b81">◆</span> Diamond
+        </button>
+        <button class="theme-btn" data-cursor="square" onclick="applyPreset('square')">
+          <span style="color:var(--success)">■</span> Square
+        </button>
+        <button class="theme-btn" data-cursor="arrow" onclick="applyPreset('arrow')">
+          <span>➤</span> Arrow
+        </button>
+        <button class="theme-btn" data-cursor="dot" onclick="applyPreset('dot')">
+          <span style="color:var(--warning)">◉</span> Dot
+        </button>
+        <button class="theme-btn" data-cursor="ring" onclick="applyPreset('ring')">
+          <span>◎</span> Ring
+        </button>
+        <button class="theme-btn" data-cursor="star" onclick="applyPreset('star')">
+          <span style="color:#f59e0b">★</span> Star
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Preview -->
+    <div>
+      <div class="preview-wrap">
+        <div class="preview-label"><span class="dot"></span> Interactive Preview — Move mouse over the area below</div>
+
+        <div class="canvas-frame" id="previewFrame">
+          <canvas id="previewCanvas"></canvas>
+          <!-- Hotspot marker -->
+          <div class="hotspot-marker" id="hotspotMarker" style="left:0;top:0"></div>
         </div>
-        <div id="copyStatus"></div>
-    </div>
 
-    <div class="section">
-        <div class="now-playing">
-            <div class="np-label">Tema Aktif</div>
-            <div class="np-name" id="np-name">-</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="exportCursorCSS()">📋 Export CSS Code</button>
+          <button class="btn btn-secondary" onclick="downloadCursorSvg()">💾 Download SVG Cursor</button>
+          <button class="btn btn-outline" onclick="testOnPage()">🧪 Apply to This Page</button>
+          <button class="btn btn-outline" onclick="resetCursor()">🔄 Reset Cursor</button>
         </div>
+      </div>
+
+      <!-- Code Output -->
+      <div class="code-block" id="codeOutput">
+/* Select a theme or customize to generate cursor CSS */</div>
     </div>
+  </div>
 
-    <div class="section">
-        <div class="section-title"><h2>UMKM and Business</h2><div class="line"></div></div>
-        <div class="grid" id="grid-business"></div>
-    </div>
-    <div class="section">
-        <div class="section-title"><h2>Gaming</h2><div class="line"></div></div>
-        <div class="grid" id="grid-gaming"></div>
-    </div>
-    <div class="section">
-        <div class="section-title"><h2>Creative and Futuristic</h2><div class="line"></div></div>
-        <div class="grid" id="grid-creative"></div>
-    </div>
+  <!-- Demo Grid -->
+  <div class="demo-area">
+    <h2>🎯 All Presets — Click to Apply</h2>
+    <div class="demo-grid" id="demoGrid"></div>
+  </div>
+</div>
 
-    <div class="section">
-        <div class="section-title"><h2>Test Zone</h2><div class="line"></div></div>
-        <div class="test-zone">
-            <div class="zone"><div class="lbl">Idle and Move</div><span style="font-size:2rem">🖱️</span><p>Gerakin mouse dan lihat halo plus ghost trail.</p></div>
-            <div class="zone"><div class="lbl">Hover and Texting</div><button>Hover Tombol</button><input type="text" placeholder="Ketik di sini"><textarea rows="2" placeholder="Coba typing state"></textarea></div>
-            <div class="zone"><div class="lbl">Click and Ripple</div><button onclick="void(0)">Klik Cepat</button><p>Dengar SFX klik dan lihat ripple.</p></div>
-        </div>
-    </div>
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
 
-    <div class="section" style="padding-bottom:50px;">
-        <div class="section-title"><h2>Integrasi</h2><div class="line"></div></div>
-        <div class="code-box"><button class="cp" id="copyInlineBtn">Copy</button><code id="inlineCode">&lt;script src="shadow-cursor-engine.js"&gt;&lt;/script&gt;
-&lt;script&gt;
-  shadowCursor.setTheme('default');
-&lt;/script&gt;</code></div>
-    </div>
+<!-- Custom cursor overlay for the page -->
+<div class="cursor-overlay" id="cursorOverlay" style="display:none">
+  <div class="cursor-dot" id="cursorDot"></div>
+</div>
 
-    <script src="shadow-cursor-engine.js"></script>
-    <script>
-        const themes = shadowCursor.themes;
-        const groupToGrid = {
-            business: document.getElementById("grid-business"),
-            gaming: document.getElementById("grid-gaming"),
-            creative: document.getElementById("grid-creative")
-        };
-
-        const themeKeys = Object.keys(themes);
-        let currentThemeIndex = themeKeys.indexOf("default");
-        if (currentThemeIndex < 0) currentThemeIndex = 0;
-
-        document.getElementById("themeCountBadge").textContent = `v3.0 - ${themeKeys.length} THEMES - FULL STATE (IDLE/HOVER/CLICK/TEXTING)`;
-
-        function makeCard(key, t) {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.id = `card-${key}`;
-            card.style.setProperty("--card-color", t.fill);
-            card.innerHTML = `
-                <div class="icon">${t.accent || "✨"}</div>
-                <h3>${t.name}</h3>
-                <div class="meta">Trail: <b>${t.trail}</b> · Type: ${t.cursorType || "arrow"}</div>
-                <div class="states">
-                    <div class="st">idle</div><div class="st">hover</div><div class="st">click</div><div class="st">texting</div>
-                </div>
-                <button class="btn" onclick="activate('${key}')">Aktifkan</button>
-            `;
-            (groupToGrid[t.group || "creative"] || groupToGrid.creative).appendChild(card);
-        }
-
-        themeKeys.forEach((k) => makeCard(k, themes[k]));
-
-        function activate(key) {
-            document.querySelectorAll(".card").forEach((c) => c.classList.remove("active"));
-            const card = document.getElementById(`card-${key}`);
-            if (card) card.classList.add("active");
-
-            shadowCursor.setTheme(key);
-            const t = themes[key];
-            document.getElementById("np-name").textContent = `${t.accent} ${t.name}`;
-            document.getElementById("np-name").style.color = t.fill;
-            currentThemeIndex = themeKeys.indexOf(key);
-
-            if (window.parent !== window) {
-                window.parent.postMessage({ type: "shadow-cursor-set-theme", theme: key }, "*");
-            }
-        }
-
-        function buildCode(key) {
-            return `<!-- Put this in your HTML -->
-<script src="shadow-cursor-engine.js"><\\/script>
 <script>
-  shadowCursor.setTheme('${key}');
-<\\/script>`;
-        }
+/* ============================================
+   CURSOR STUDIO v5.0 — Fully Working
+   Custom cursor design with real preview
+   ============================================ */
 
-        document.getElementById("changeCursorBtn").addEventListener("click", () => {
-            currentThemeIndex = (currentThemeIndex + 1) % themeKeys.length;
-            activate(themeKeys[currentThemeIndex]);
-        });
+// Preset configurations
+const PRESETS = {
+  circle:   { shape:'circle',  color:'#7c4dff', size:32, border:2, shadow:4, hx:16, hy:16 },
+  crosshair:{ shape:'crosshair',color:'#00e5ff',size:32, border:2, shadow:4, hx:16, hy:16 },
+  diamond:  { shape:'diamond', color:'#ff6b81', size:28, border:2, shadow:4, hx:14, hy:14 },
+  square:   { shape:'square',  color:'#34d399', size:28, border:2, shadow:4, hx:14, hy:14 },
+  arrow:    { shape:'arrow',   color:'#f1f3f7', size:32, border:2, shadow:6, hx:2,  hy:2  },
+  dot:      { shape:'dot',     color:'#f59e0b', size:20, border:3, shadow:6, hx:10, hy:10 },
+  ring:     { shape:'ring',    color:'#a78bfa', size:32, border:3, shadow:4, hx:16, hy:16 },
+  star:     { shape:'star',    color:'#f59e0b', size:36, border:2, shadow:6, hx:18, hy:18 }
+};
 
-        async function copyCode() {
-            const key = themeKeys[currentThemeIndex];
-            const code = buildCode(key);
-            try {
-                await navigator.clipboard.writeText(code);
-                const status = document.getElementById("copyStatus");
-                status.textContent = "Code copied";
-                status.style.color = "#10b981";
-                document.getElementById("inlineCode").textContent = code;
-                setTimeout(() => { status.textContent = ""; }, 2500);
-            } catch (_err) {
-                const status = document.getElementById("copyStatus");
-                status.textContent = "Copy failed";
-                status.style.color = "#ef4444";
-                setTimeout(() => { status.textContent = ""; }, 2500);
-            }
-        }
+class CursorStudio {
+  constructor() {
+    this.canvas = document.getElementById('previewCanvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.frame = document.getElementById('previewFrame');
+    this.hotspotMarker = document.getElementById('hotspotMarker');
+    this.codeOutput = document.getElementById('codeOutput');
+    this.toastEl = document.getElementById('toast');
+    this.currentPreset = 'circle';
+    this.config = { ...PRESETS.circle };
 
-        document.getElementById("copyCodeBtn").addEventListener("click", copyCode);
-        document.getElementById("copyInlineBtn").addEventListener("click", copyCode);
+    // DOM elements
+    this.colorEl = document.getElementById('cursorColor');
+    this.sizeEl = document.getElementById('cursorSize');
+    this.hxEl = document.getElementById('hotspotX');
+    this.hyEl = document.getElementById('hotspotY');
+    this.shadowEl = document.getElementById('shadowSize');
+    this.bwEl = document.getElementById('borderWidth');
 
-        activate("default");
-        document.getElementById("inlineCode").textContent = buildCode("default");
-    </script>
+    this.bindControls();
+    this.setupCanvasInteraction();
+    this.renderDemoGrid();
+    this.update();
+  }
+
+  bindControls() {
+    const update = () => {
+      this.config.color = this.colorEl.value;
+      this.config.size = parseInt(this.sizeEl.value);
+      this.config.hx = parseInt(this.hxEl.value);
+      this.config.hy = parseInt(this.hyEl.value);
+      this.config.shadow = parseInt(this.shadowEl.value);
+      this.config.border = parseInt(this.bwEl.value);
+
+      document.getElementById('sizeVal').textContent = this.config.size;
+      document.getElementById('hxVal').textContent = this.config.hx;
+      document.getElementById('hyVal').textContent = this.config.hy;
+      document.getElementById('shadowVal').textContent = this.config.shadow;
+      document.getElementById('bwVal').textContent = this.config.border;
+
+      this.updateHotspotMarker();
+      this.drawCursor();
+      this.updateCode();
+    };
+
+    this.colorEl.addEventListener('input', update);
+    this.sizeEl.addEventListener('input', update);
+    this.hxEl.addEventListener('input', update);
+    this.hyEl.addEventListener('input', update);
+    this.shadowEl.addEventListener('input', update);
+    this.bwEl.addEventListener('input', update);
+  }
+
+  applyPreset(name) {
+    const preset = PRESETS[name];
+    if (!preset) return;
+
+    this.currentPreset = name;
+    this.config = { ...preset };
+
+    this.colorEl.value = preset.color;
+    this.sizeEl.value = preset.size;
+    this.hxEl.value = preset.hx;
+    this.hyEl.value = preset.hy;
+    this.shadowEl.value = preset.shadow;
+    this.bwEl.value = preset.border;
+
+    // Update labels
+    document.getElementById('sizeVal').textContent = preset.size;
+    document.getElementById('hxVal').textContent = preset.hx;
+    document.getElementById('hyVal').textContent = preset.hy;
+    document.getElementById('shadowVal').textContent = preset.shadow;
+    document.getElementById('bwVal').textContent = preset.border;
+
+    this.updateHotspotMarker();
+    this.drawCursor();
+    this.updateCode();
+    this.toast(`Applied: ${name} theme`);
+
+    // Highlight active button
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-cursor="${name}"]`)?.classList.add('active');
+  }
+
+  setupCanvasInteraction() {
+    const frame = this.frame;
+    const canvas = this.canvas;
+
+    frame.addEventListener('mousemove', (e) => {
+      const rect = frame.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Update hotspot marker position
+      this.hotspotMarker.style.left = (x / rect.width * canvas.width) + 'px';
+      this.hotspotMarker.style.top = (y / rect.height * canvas.height) + 'px';
+    });
+  }
+
+  updateHotspotMarker() {
+    const mx = (this.config.hx / 63) * 100;
+    const my = (this.config.hy / 63) * 100;
+    this.hotspotMarker.style.left = mx + '%';
+    this.hotspotMarker.style.top = my + '%';
+  }
+
+  drawCursor() {
+    const c = this.config;
+    const size = c.size;
+    this.canvas.width = size * 3;
+    this.canvas.height = size * 3;
+    const ctx = this.ctx;
+    const cx = size * 1.5;
+    const cy = size * 1.5;
+
+    // Clear
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < this.canvas.width; i += 20) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, this.canvas.height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(this.canvas.width, i); ctx.stroke();
+    }
+
+    // Hotspot crosshair
+    ctx.strokeStyle = 'rgba(0,229,255,0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size); ctx.lineTo(cx, cy + size);
+    ctx.moveTo(cx - size, cy); ctx.lineTo(cx + size, cy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Shadow
+    if (c.shadow > 0) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.4)';
+      ctx.shadowBlur = c.shadow;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+      this._drawShape(ctx, cx + 2, cy + 2, size, c);
+      ctx.restore();
+    }
+
+    // Main shape
+    ctx.save();
+    this._drawShape(ctx, cx, cy, size, c);
+    ctx.restore();
+
+    // Inner detail
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    switch (c.shape) {
+      case 'circle':
+        ctx.beginPath(); ctx.arc(cx, cy, size * 0.35, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'diamond':
+        const d = size * 0.3;
+        ctx.beginPath(); ctx.moveTo(cx, cy - d); ctx.lineTo(cx + d, cy); ctx.lineTo(cx, cy + d); ctx.lineTo(cx - d, cy); ctx.fill();
+        break;
+      case 'star':
+        this._drawStar(ctx, cx, cy, 5, size * 0.4, size * 0.2);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fill();
+        break;
+    }
+    ctx.restore();
+
+    // Hotspot indicator
+    ctx.save();
+    ctx.fillStyle = '#00e5ff';
+    ctx.strokeStyle = '#0a0b14';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx + c.hx - size * 1.5, cy + c.hy - size * 1.5, 4, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  _drawShape(ctx, cx, cy, size, c) {
+    const s = size - c.border;
+    ctx.fillStyle = c.color;
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = c.border;
+
+    switch (c.shape) {
+      case 'circle':
+        ctx.beginPath(); ctx.arc(cx, cy, s / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); break;
+      case 'crosshair':
+        const arm = s * 0.8;
+        const thick = s * 0.15;
+        ctx.fillRect(cx - thick, cy - arm, thick * 2, arm * 2);
+        ctx.fillRect(cx - arm, cy - thick, arm * 2, thick * 2);
+        ctx.strokeRect(cx - thick, cy - arm, thick * 2, arm * 2);
+        ctx.strokeRect(cx - arm, cy - thick, arm * 2, thick * 2);
+        break;
+      case 'diamond':
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - s / 2); ctx.lineTo(cx + s / 2, cy);
+        ctx.lineTo(cx, cy + s / 2); ctx.lineTo(cx - s / 2, cy); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+      case 'square':
+        ctx.beginPath();
+        ctx.roundRect(cx - s / 2, cy - s / 2, s, s, 4);
+        ctx.fill(); ctx.stroke();
+        break;
+      case 'arrow':
+        // Draw an arrow cursor
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - s / 2);
+        ctx.lineTo(cx + s / 2, cy);
+        ctx.lineTo(cx + s * 0.3, cy);
+        ctx.lineTo(cx + s * 0.3, cy + s / 2);
+        ctx.lineTo(cx - s / 2, cy + s / 2);
+        ctx.lineTo(cx - s / 2, cy - s * 0.1);
+        ctx.lineTo(cx - s * 0.15, cy - s * 0.1);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+      case 'dot':
+        ctx.beginPath(); ctx.arc(cx, cy, s / 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); break;
+      case 'ring':
+        ctx.beginPath(); ctx.arc(cx, cy, s / 2, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, s * 0.25, 0, Math.PI * 2); ctx.stroke();
+        break;
+      case 'star':
+        this._drawStar(ctx, cx, cy, 5, s / 2, s / 4);
+        ctx.fill(); ctx.stroke();
+        break;
+    }
+  }
+
+  _drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+    let rot = -Math.PI / 2;
+    const step = Math.PI / spikes;
+    ctx.beginPath();
+    for (let i = 0; i < spikes; i++) {
+      ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+      rot += step;
+      ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+      rot += step;
+    }
+    ctx.closePath();
+  }
+
+  generateCSS() {
+    const c = this.config;
+    const svg = this._generateSVGDataURI();
+    const css = `.custom-cursor {
+  cursor: url("${svg}"), auto;
+}`;
+    return css;
+  }
+
+  _generateSVGDataURI() {
+    const c = this.config;
+    const size = c.size;
+    let shape = '';
+
+    switch (c.shape) {
+      case 'circle':
+        shape = `<circle cx="${size}" cy="${size}" r="${size * 0.7}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`;
+        break;
+      case 'crosshair': {
+        const arm = size * 0.9;
+        const thick = size * 0.18;
+        shape = `<rect x="${size - thick}" y="${size * 0.1}" width="${thick * 2}" height="${arm * 2}" fill="${c.color}" stroke="white" stroke-width="1"/>
+<rect x="${size * 0.1}" y="${size - thick}" width="${arm * 2}" height="${thick * 2}" fill="${c.color}" stroke="white" stroke-width="1"/>`;
+        break;
+      }
+      case 'diamond':
+        shape = `<polygon points="${size},${size * 0.2} ${size * 1.8},${size} ${size},${size * 1.8} ${size * 0.2},${size}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`;
+        break;
+      case 'square':
+        shape = `<rect x="${size * 0.2}" y="${size * 0.2}" width="${size * 1.6}" height="${size * 1.6}" rx="4" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`;
+        break;
+      case 'arrow':
+        shape = `<polygon points="${size},${size * 0.05} ${size * 1.9},${size} ${size * 1.2},${size} ${size * 1.2},${size * 1.7} ${size * 0.05},${size * 1.7} ${size * 0.05},${size * 0.85}" fill="${c.color}" stroke="white" stroke-width="1"/>`;
+        break;
+      case 'dot':
+        shape = `<circle cx="${size}" cy="${size}" r="${size * 0.3}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`;
+        break;
+      case 'ring':
+        shape = `<circle cx="${size}" cy="${size}" r="${size * 0.8}" fill="none" stroke="${c.color}" stroke-width="${c.border}"/>
+<circle cx="${size}" cy="${size}" r="${size * 0.35}" fill="none" stroke="${c.color}" stroke-width="${c.border}"/>`;
+        break;
+      case 'star':
+        shape = `<polygon points="${this._starPointsSVG(size, 5, size * 0.8, size * 0.35)}" fill="${c.color}" stroke="white" stroke-width="1"/>`;
+        break;
+    }
+
+    // Shadow
+    let shadow = '';
+    if (c.shadow > 0) {
+      shadow = `<filter id="shadow"><feDropShadow dx="2" dy="2" stdDeviation="${c.shadow}" flood-opacity="0.5"/></filter>`;
+      shape = shape.replace(/>/, ` filter="url(#shadow)">`);
+    }
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size * 2}" height="${size * 2}" viewBox="0 0 ${size * 2} ${size * 2}">${shadow}${shape}</svg>`;
+    return 'data:image/svg+xml;base64,' + btoa(svg);
+  }
+
+  _starPointsSVG(cx, cy, spikes, outerR, innerR) {
+    let pts = [];
+    let rot = -Math.PI / 2;
+    const step = Math.PI / spikes;
+    for (let i = 0; i < spikes; i++) {
+      pts.push(`${cx + Math.cos(rot) * outerR},${cy + Math.sin(rot) * outerR}`);
+      rot += step;
+      pts.push(`${cx + Math.cos(rot) * innerR},${cy + Math.sin(rot) * innerR}`);
+      rot += step;
+    }
+    return pts.join(' ').replace(/,/g, ' ');
+  }
+
+  updateCode() {
+    const svg = this._generateSVGDataURI();
+    const c = this.config;
+    const code = `/* Cursor: ${c.shape} | Size: ${c.size}px | Hotspot: ${c.hx}, ${c.hy} */
+.custom-cursor {
+  cursor: url("${svg}"), auto;
+  /* Hotspot offset: -${c.hx}px -${c.hy}px */
+}
+
+/* Apply to body */
+body {
+  cursor: url("${svg}"), auto !important;
+}`;
+    this.codeOutput.textContent = code;
+  }
+
+  exportCursorCSS() {
+    const code = this.generateCSS();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(() => this.toast('CSS copied to clipboard!'));
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      this.toast('CSS copied!');
+    }
+  }
+
+  downloadCursorSvg() {
+    const svg = this._generateSVGDataURI().replace('data:image/svg+xml;base64,', '');
+    const decoded = atob(svg);
+    const blob = new Blob([decoded], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cursor-${this.currentPreset}-${this.config.size}px.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.toast('SVG downloaded!');
+  }
+
+  testOnPage() {
+    // Show custom cursor overlay on page
+    const overlay = document.getElementById('cursorOverlay');
+    const dot = document.getElementById('cursorDot');
+    overlay.style.display = 'block';
+
+    const svg = this._generateSVGDataURI();
+    dot.style.width = this.config.size + 'px';
+    dot.style.height = this.config.size + 'px';
+    dot.style.border = `${this.config.border}px solid ${this.config.color}`;
+    dot.style.boxShadow = `0 0 ${this.config.shadow}px ${this.config.color}`;
+
+    document.addEventListener('mousemove', (e) => {
+      dot.style.left = e.clientX + 'px';
+      dot.style.top = e.clientY + 'px';
+    });
+
+    document.addEventListener('mousedown', () => dot.classList.add('pressed'));
+    document.addEventListener('mouseup', () => dot.classList.remove('pressed'));
+
+    this.toast('Custom cursor applied! Move mouse to see it.');
+    setTimeout(() => { overlay.style.display = 'none'; }, 8000);
+  }
+
+  resetCursor() {
+    document.getElementById('cursorOverlay').style.display = 'none';
+    this.applyPreset('circle');
+    this.toast('Cursor reset to default');
+  }
+
+  renderDemoGrid() {
+    const grid = document.getElementById('demoGrid');
+    Object.entries(PRESETS).forEach(([name, preset]) => {
+      const cell = document.createElement('div');
+      cell.className = 'demo-cell';
+      cell.innerHTML = `<span class="icon">${this._getIcon(name)}</span><span class="name">${name}</span>`;
+      cell.onclick = () => this.applyPreset(name);
+      grid.appendChild(cell);
+    });
+  }
+
+  _getIcon(name) {
+    const icons = {
+      circle: '●', crosshair: '╋', diamond: '◆', square: '■',
+      arrow: '➤', dot: '◉', ring: '◎', star: '★'
+    };
+    return icons[name] || '●';
+  }
+
+  toast(msg) {
+    const el = this.toastEl;
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  }
+}
+
+const studio = new CursorStudio();
+</script>
 </body>
 </html>

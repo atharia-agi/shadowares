@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📷 Photo Editor — Shadow Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0b14;--surface:#15172a;--surface-2:#1c1f36;--border:#2a2d4a;--border-light:rgba(255,255,255,.06);--text:#f1f3f7;--text-muted:#94a0b8;--text-faint:#64748b;--primary:#7c4dff;--primary-light:#9c6bff;--accent:#00e5ff;--success:#34d399;--warning:#f59e0b;--error:#ef4444;--gradient:linear-gradient(135deg,#7c4dff,#9c6bff,#00e5ff);--shadow-lg:0 20px 60px rgba(0,0,0,.4);--shadow-sm:0 4px 12px rgba(0,0,0,.2);--radius:12px;--transition:all .25s cubic-bezier(.4,0,.2,1)}
+*::before,*::after{box-sizing:border-box}
+html{font-size:15px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+
+/* Top Bar */
+.topbar{height:52px;min-height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.topbar-section{display:flex;gap:4px;align-items:center}
+.topbar-divider{width:1px;height:24px;background:var(--border);margin:0 6px}
+.top-icon{width:34px;height:34px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .2s;position:relative}
+.top-icon:hover{background:rgba(255,255,255,.05);color:var(--text);border-color:var(--primary)}
+.top-icon.active{background:rgba(124,77,255,.15);color:var(--primary);border-color:var(--primary)}
+.top-icon input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.topbar-title{flex:1;font-size:.9rem;font-weight:600;min-width:100px}
+.topbar-actions{display:flex;gap:6px;align-items:center}
+
+.btn-sm{padding:5px 10px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#6c3dee}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary)}
+.btn-success{background:var(--success);color:#000}
+.btn-danger{background:transparent;color:var(--error);border:1px solid rgba(239,68,68,.3)}
+.btn-danger:hover{background:rgba(239,68,68,.1);border-color:var(--error)}
+
+/* Canvas Area */
+.canvas-wrapper{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;background:var(--bg);background-image:radial-gradient(circle,#1a1d2e 1px,transparent 1px);background-size:20px 20px;position:relative}
+#photoCanvas{max-width:100%;max-height:100%;cursor:crosshair;image-rendering:auto}
+.canvas-info{position:absolute;bottom:12px;left:12px;background:rgba(0,0,0,.7);color:#fff;padding:4px 10px;border-radius:6px;font-size:.72rem;font-family:monospace;pointer-events:none}
+
+/* Right Panel */
+.right-panel{width:300px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.panel-section{padding:12px 14px;border-bottom:1px solid var(--border)}
+.panel-section h3{font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+/* Tools Grid */
+.photo-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.photo-tool{padding:8px 4px;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;font-size:.72rem;color:var(--text-muted);border:1px solid transparent;background:transparent}
+.photo-tool:hover{background:rgba(255,255,255,.04);color:var(--text);border-color:rgba(255,255,255,.08)}
+.photo-tool.active{background:rgba(124,77,255,.15);color:var(--primary);border-color:rgba(124,77,255,.3)}
+.photo-tool .tool-icon{font-size:1.3rem;margin-bottom:2px}
+
+/* Slider Controls */
+.slider-group{margin-bottom:12px}
+.slider-group label{display:flex;justify-content:space-between;font-size:.75rem;color:var(--text-muted);margin-bottom:4px}
+.slider-group label span{color:var(--text);font-weight:600}
+.slider-group input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer}
+
+/* Color Picker */
+.color-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.color-row input[type=color]{width:36px;height:30px;border:none;border-radius:6px;cursor:pointer;background:none;padding:0}
+.color-row input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+.color-row input[type=color]::-webkit-color-swatch{border-radius:4px;border:1px solid var(--border)}
+.color-row .color-val{font-size:.75rem;color:var(--text-muted);font-family:monospace}
+
+/* Filter Presets */
+.filter-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.filter-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .15s;font-size:.68rem;color:var(--text-muted)}
+.filter-card:hover{border-color:var(--primary);color:var(--text)}
+.filter-card.active{border-color:var(--primary);background:rgba(124,77,255,.1);color:var(--primary)}
+.filter-card .filter-icon{font-size:1.2rem;margin-bottom:2px}
+
+/* Shapes Grid */
+.shapes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.shape-btn{padding:8px 4px;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;font-size:.72rem;color:var(--text-muted);border:1px solid transparent;background:transparent}
+.shape-btn:hover{background:rgba(255,255,255,.04);color:var(--text);border-color:rgba(255,255,255,.08)}
+.shape-btn.active{background:rgba(124,77,255,.15);color:var(--primary);border-color:rgba(124,77,255,.3)}
+
+/* Export Modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;justify-content:center;align-items:center}
+.modal-backdrop.show{display:flex}
+.modal{background:var(--surface);border-radius:12px;padding:28px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--border)}
+.modal h3{margin-bottom:16px;font-size:1.1rem}
+.modal-close{float:right;background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer}
+.modal-actions{display:flex;gap:8px;margin-top:16px}
+.modal-actions button{flex:1}
+.code-block{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Fira Code',monospace;font-size:.72rem;color:#a0a8c0;white-space:pre-wrap;max-height:300px;overflow-y:auto;margin-top:12px}
+
+/* Export format buttons */
+.export-formats{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.export-fmt-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .15s;font-family:inherit}
+.export-fmt-btn:hover{border-color:var(--primary);color:var(--text)}
+.export-fmt-btn.active{border-color:var(--primary);color:var(--primary);background:rgba(124,77,255,.1)}
+
+/* Status Bar */
+.status-bar{height:28px;background:var(--surface-2);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 16px;font-size:.7rem;color:var(--text-faint);gap:16px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.85rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* Tab toggle */
+.tab-toggle{display:flex;gap:2px;margin-bottom:12px;background:var(--bg);border-radius:8px;padding:3px}
+.tab-btn{flex:1;padding:6px;border:none;background:none;color:var(--text-muted);font-size:.75rem;font-weight:600;cursor:pointer;border-radius:6px;transition:all .15s;font-family:inherit}
+.tab-btn.active{background:var(--primary);color:#fff}
+
+/* Tab Content */
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* Adjustments grid */
+.adj-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+@media(max-width:768px){
+  .right-panel{width:240px}
+  .photo-tools{grid-template-columns:repeat(4,1fr)}
+  .topbar{padding:0 8px}
+}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-section">
+    <button class="top-icon" onclick="PE.undo()" title="Undo (Ctrl+Z)">↩️</button>
+    <button class="top-icon" onclick="PE.redo()" title="Redo (Ctrl+Y)">↪️</button>
+    <div class="topbar-divider"></div>
+    <button class="top-icon" onclick="PE.loadImage()" title="Open Image">📂</button>
+    <button class="top-icon" onclick="PE.saveImage()" title="Save/Export">💾</button>
+    <div class="topbar-divider"></div>
+    <button class="top-icon" onclick="PE.resetAll()" title="Reset All">🔄</button>
+  </div>
+  <span class="topbar-title" id="pageTitle">📷 Photo Editor</span>
+  <div class="topbar-actions">
+    <button class="btn-sm btn-secondary" onclick="PE.copyToClipboard()">📋 Copy</button>
+    <button class="btn-sm btn-primary" onclick="PE.downloadImage()">💾 Download</button>
+  </div>
+</div>
+
+<!-- Canvas -->
+<div class="canvas-wrapper" id="canvasWrapper">
+  <canvas id="photoCanvas"></canvas>
+  <div class="canvas-info" id="canvasInfo">No image loaded</div>
+</div>
+
+<!-- Right Panel -->
+<div class="right-panel">
+  <!-- Tools Tab -->
+  <div class="panel-section">
+    <div class="tab-toggle">
+      <button class="tab-btn active" onclick="PE.switchTab('tools',this)">🛠️ Tools</button>
+      <button class="tab-btn" onclick="PE.switchTab('filters',this)">🎨 Filters</button>
+      <button class="tab-btn" onclick="PE.switchTab('adjust',this)">⚙️ Adjust</button>
+    </div>
+
+    <!-- Tools Tab Content -->
+    <div class="tab-content active" id="tab-tools">
+      <div class="photo-tools">
+        <div class="photo-tool active" data-tool="crop" onclick="PE.selectTool('crop',this)" title="Crop">
+          <div class="tool-icon">✂️</div>Crop
+        </div>
+        <div class="photo-tool" data-tool="rotate" onclick="PE.selectTool('rotate',this)" title="Rotate">
+          <div class="tool-icon">🔄</div>Rotate
+        </div>
+        <div class="photo-tool" data-tool="flipH" onclick="PE.selectTool('flipH',this)" title="Flip Horizontal">
+          <div class="tool-icon">↔️</div>Flip H
+        </div>
+        <div class="photo-tool" data-tool="flipV" onclick="PE.selectTool('flipV',this)" title="Flip Vertical">
+          <div class="tool-icon">↕️</div>Flip V
+        </div>
+        <div class="photo-tool" data-tool="draw" onclick="PE.selectTool('draw',this)" title="Draw Freehand">
+          <div class="tool-icon">✏️</div>Draw
+        </div>
+        <div class="photo-tool" data-tool="text" onclick="PE.selectTool('text',this)" title="Add Text">
+          <div class="tool-icon">🔤</div>Text
+        </div>
+        <div class="photo-tool" data-tool="shape" onclick="PE.selectTool('shape',this)" title="Shapes">
+          <div class="tool-icon">⬜</div>Shapes
+        </div>
+        <div class="photo-tool" data-tool="eraser" onclick="PE.selectTool('eraser',this)" title="Eraser">
+          <div class="tool-icon">🧹</div>Eraser
+        </div>
+        <div class="photo-tool" data-tool="blur" onclick="PE.selectTool('blur',this)" title="Blur / Smudge">
+          <div class="tool-icon">🌫️</div>Blur
+        </div>
+        <div class="photo-tool" data-tool="fill" onclick="PE.selectTool('fill',this)" title="Fill Area">
+          <div class="tool-icon">🪣</div>Fill
+        </div>
+        <div class="photo-tool" data-tool="eyedropper" onclick="PE.selectTool('eyedropper',this)" title="Eyedropper">
+          <div class="tool-icon">👁️</div>Pick
+        </div>
+        <div class="photo-tool" data-tool="select" onclick="PE.selectTool('select',this)" title="Selection">
+          <div class="tool-icon">📌</div>Select
+        </div>
+      </div>
+
+      <!-- Draw Options -->
+      <div id="drawOptions" style="margin-top:12px">
+        <div class="slider-group">
+          <label>Brush Size <span id="brushSizeVal">5</span>px</label>
+          <input type="range" id="brushSize" min="1" max="50" value="5" oninput="PE.updateBrush()">
+        </div>
+        <div class="slider-group">
+          <label>Opacity <span id="brushOpacityVal">100</span>%</label>
+          <input type="range" id="brushOpacity" min="1" max="100" value="100" oninput="PE.updateBrush()">
+        </div>
+        <div class="color-row">
+          <label style="font-size:.75rem;color:var(--text-muted)">Color:</label>
+          <input type="color" id="brushColor" value="#000000" onchange="PE.updateBrush()">
+          <span class="color-val" id="brushColorVal">#000000</span>
+        </div>
+      </div>
+
+      <!-- Shape Options -->
+      <div id="shapeOptions" style="margin-top:12px;display:none">
+        <div class="shapes-grid">
+          <div class="shape-btn active" data-shape="rect" onclick="PE.selectShape('rect',this)">⬜</div>
+          <div class="shape-btn" data-shape="circle" onclick="PE.selectShape('circle',this)">⭕</div>
+          <div class="shape-btn" data-shape="line" onclick="PE.selectShape('line',this)">📏</div>
+          <div class="shape-btn" data-shape="triangle" onclick="PE.selectShape('triangle',this)">🔺</div>
+          <div class="shape-btn" data-shape="arrow" onclick="PE.selectShape('arrow',this)">➡️</div>
+          <div class="shape-btn" data-shape="star" onclick="PE.selectShape('star',this)">⭐</div>
+          <div class="shape-btn" data-shape="ellipse" onclick="PE.selectShape('ellipse',this)">🔵</div>
+          <div class="shape-btn" data-shape="heart" onclick="PE.selectShape('heart',this)">❤️</div>
+        </div>
+        <div class="color-row" style="margin-top:8px">
+          <label style="font-size:.75rem;color:var(--text-muted)">Fill:</label>
+          <input type="color" id="shapeFill" value="#7c4dff">
+          <label style="font-size:.75rem;color:var(--text-muted)">Stroke:</label>
+          <input type="color" id="shapeStroke" value="#000000">
+          <label style="font-size:.75rem;color:var(--text-muted)">Width:</label>
+          <input type="range" id="shapeStrokeWidth" min="1" max="10" value="2" style="flex:1">
+        </div>
+      </div>
+
+      <!-- Text Options -->
+      <div id="textOptions" style="margin-top:12px;display:none">
+        <div class="prop-group">
+          <label style="font-size:.72rem;color:var(--text-muted)">Text</label>
+          <input type="text" id="textInput" placeholder="Type your text..." style="width:100%;padding:6px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.8rem;font-family:inherit">
+        </div>
+        <div class="adj-grid">
+          <div class="prop-group">
+            <label style="font-size:.72rem;color:var(--text-muted)">Font Size</label>
+            <input type="number" id="textSize" value="24" min="8" max="200" style="width:100%;padding:6px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.8rem">
+          </div>
+          <div class="prop-group">
+            <label style="font-size:.72rem;color:var(--text-muted)">Font</label>
+            <select id="textFont" style="width:100%;padding:6px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.8rem">
+              <option>Arial</option><option>Helvetica</option><option>Georgia</option><option>Courier New</option><option>Times New Roman</option><option>Verdana</option><option>Impact</option>
+            </select>
+          </div>
+        </div>
+        <div class="color-row">
+          <label style="font-size:.75rem;color:var(--text-muted)">Text Color:</label>
+          <input type="color" id="textColor" value="#ffffff">
+          <label style="font-size:.75rem;margin-left:8px;color:var(--text-muted)">BG:</label>
+          <input type="color" id="textBG" value="#00000000">
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters Tab Content -->
+    <div class="tab-content" id="tab-filters">
+      <div class="filter-grid">
+        <div class="filter-card" data-filter="none" onclick="PE.applyFilter('none',this)">
+          <div class="filter-icon">🖼️</div>None
+        </div>
+        <div class="filter-card" data-filter="grayscale(100%)" onclick="PE.applyFilter('grayscale(100%)',this)">
+          <div class="filter-icon">🌑</div>B&W
+        </div>
+        <div class="filter-card" data-filter="sepia(100%)" onclick="PE.applyFilter('sepia(100%)',this)">
+          <div class="filter-icon">📜</div>Sepia
+        </div>
+        <div class="filter-card" data-filter="blur(4px)" onclick="PE.applyFilter('blur(4px)',this)">
+          <div class="filter-icon">🌫️</div>Blur
+        </div>
+        <div class="filter-card" data-filter="saturate(200%)" onclick="PE.applyFilter('saturate(200%)',this)">
+          <div class="filter-icon">🌈</div>Vivid
+        </div>
+        <div class="filter-card" data-filter="contrast(200%)" onclick="PE.applyFilter('contrast(200%)',this)">
+          <div class="filter-icon">🔲</div>High Contrast
+        </div>
+        <div class="filter-card" data-filter="brightness(150%)" onclick="PE.applyFilter('brightness(150%)',this)">
+          <div class="filter-icon">☀️</div>Bright
+        </div>
+        <div class="filter-card" data-filter="hue-rotate(90deg)" onclick="PE.applyFilter('hue-rotate(90deg)',this)">
+          <div class="filter-icon">🌀</div>Hue Shift
+        </div>
+        <div class="filter-card" data-filter="invert(100%)" onclick="PE.applyFilter('invert(100%)',this)">
+          <div class="filter-icon">🔮</div>Invert
+        </div>
+        <div class="filter-card" data-filter="saturate(0%)" onclick="PE.applyFilter('saturate(0%)',this)">
+          <div class="filter-icon">🏜️</div>Desaturate
+        </div>
+        <div class="filter-card" data-filter="sepia(50%) saturate(140%)" onclick="PE.applyFilter('sepia(50%) saturate(140%)',this)">
+          <div class="filter-icon">🎞️</div>Vintage
+        </div>
+        <div class="filter-card" data-filter="contrast(150%) brightness(110%) saturate(120%)" onclick="PE.applyFilter('contrast(150%) brightness(110%) saturate(120%)',this)">
+          <div class="filter-icon">✨</div>Vibrant
+        </div>
+      </div>
+    </div>
+
+    <!-- Adjust Tab Content -->
+    <div class="tab-content" id="tab-adjust">
+      <div class="slider-group">
+        <label>Brightness <span id="brightnessVal">100</span>%</label>
+        <input type="range" id="brightness" min="0" max="200" value="100" oninput="PE.applyAdjustments()">
+      </div>
+      <div class="slider-group">
+        <label>Contrast <span id="contrastVal">100</span>%</label>
+        <input type="range" id="contrast" min="0" max="200" value="100" oninput="PE.applyAdjustments()">
+      </div>
+      <div class="slider-group">
+        <label>Saturation <span id="saturationVal">100</span>%</label>
+        <input type="range" id="saturation" min="0" max="200" value="100" oninput="PE.applyAdjustments()">
+      </div>
+      <div class="slider-group">
+        <label>Hue Rotate <span id="hueRotateVal">0</span>°</label>
+        <input type="range" id="hueRotate" min="0" max="360" value="0" oninput="PE.applyAdjustments()">
+      </div>
+      <div class="slider-group">
+        <label>Blur <span id="blurVal">0</span>px</label>
+        <input type="range" id="blurAmt" min="0" max="20" value="0" step="0.5" oninput="PE.applyAdjustments()">
+      </div>
+      <div class="slider-group">
+        <label>Sharpen <span id="sharpenVal">0</span>%</label>
+        <input type="range" id="sharpenAmt" min="0" max="100" value="0" oninput="PE.applyAdjustments()">
+      </div>
+      <button class="btn-sm btn-primary" onclick="PE.commitAdjustments()" style="width:100%;margin-top:8px">✓ Apply Adjustments</button>
+      <button class="btn-sm btn-secondary" onclick="PE.resetAdjustments()" style="width:100%;margin-top:4px">Reset All</button>
+    </div>
+  </div>
+
+  <!-- Canvas Size Info -->
+  <div class="panel-section">
+    <h3>📐 Canvas Info</h3>
+    <div style="font-size:.75rem;color:var(--text-muted);line-height:1.8">
+      <div>Width: <span id="infoWidth">-</span>px</div>
+      <div>Height: <span id="infoHeight">-</span>px</div>
+      <div>Scale: <span id="infoScale">100%</span></div>
+      <div>Tool: <span id="infoTool">None</span></div>
+    </div>
+  </div>
+
+  <!-- Export Section -->
+  <div class="panel-section">
+    <h3>📦 Export</h3>
+    <div class="export-formats">
+      <button class="export-fmt-btn active" data-fmt="png" onclick="PE.selectFormat('png',this)">PNG</button>
+      <button class="export-fmt-btn" data-fmt="jpeg" onclick="PE.selectFormat('jpeg',this)">JPEG</button>
+      <button class="export-fmt-btn" data-fmt="webp" onclick="PE.selectFormat('webp',this)">WebP</button>
+      <button class="export-fmt-btn" data-fmt="svg" onclick="PE.selectFormat('svg',this)">SVG</button>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="btn-sm btn-primary" onclick="PE.copyToClipboard()" style="flex:1">📋 Copy Data</button>
+      <button class="btn-sm btn-success" onclick="PE.downloadImage()" style="flex:1">💾 Download</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-backdrop" id="exportModal" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('exportModal').classList.remove('show')">&times;</button>
+    <h3>📥 Exported Image</h3>
+    <div id="exportPreview"></div>
+    <div class="modal-actions">
+      <button class="btn-sm btn-primary" onclick="PE.copyExportData()">📋 Copy</button>
+      <button class="btn-sm btn-success" onclick="PE.downloadExportFile()">💾 Download</button>
+      <button class="btn-sm btn-secondary" onclick="document.getElementById('exportModal').classList.remove('show')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Load Core -->
+<script src="shadow-core-v5.js"></script>
+<script>
+const PE = {
+  canvas: null,
+  ctx: null,
+  canvasWidth: 800,
+  canvasHeight: 600,
+  originalImage: null,
+  currentTool: 'crop',
+  currentFormat: 'image/png',
+  formatExt: 'png',
+  isDrawing: false,
+  drawPoints: [],
+  shapePoints: [],
+  isDragging: false,
+  dragStart: null,
+  brushSize: 5,
+  brushOpacity: 1,
+  currentColor: '#000000',
+  shapesStyle: { fill: '#7c4dff', stroke: '#000', strokeWidth: 2 },
+  selectedShape: 'rect',
+  history: [],
+  historyIndex: -1,
+
+  init() {
+    this.canvas = document.getElementById('photoCanvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.canvas.width = this.canvasWidth;
+    this.canvas.height = this.canvasHeight;
+    this._drawCheckerboard();
+    this._setupCanvasEvents();
+    this._setupKeyboard();
+    this._loadFromStorage();
+    document.getElementById('infoWidth').textContent = this.canvasWidth;
+    document.getElementById('infoHeight').textContent = this.canvasHeight;
+  },
+
+  _drawCheckerboard() {
+    const ctx = this.ctx;
+    const size = 20;
+    for (let y = 0; y < this.canvasHeight; y += size) {
+      for (let x = 0; x < this.canvasWidth; x += size) {
+        ctx.fillStyle = ((x/size + y/size) % 2 === 0) ? '#e8e8e8' : '#d0d0d0';
+        ctx.fillRect(x, y, size, size);
+      }
+    }
+  },
+
+  _setupCanvasEvents() {
+    const cvs = this.canvas;
+
+    cvs.addEventListener('mousedown', (e) => {
+      const rect = cvs.getBoundingClientRect();
+      const scaleX = cvs.width / rect.width;
+      const scaleY = cvs.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+
+      this.isDrawing = true;
+      this.dragStart = { x, y };
+
+      if (this.currentTool === 'draw') {
+        this.drawPoints = [{ x, y }];
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+      } else if (this.currentTool === 'shape') {
+        this.shapePoints = [{ x, y }];
+      } else if (this.currentTool === 'text') {
+        this._placeText(x, y);
+        this.isDrawing = false;
+      } else if (this.currentTool === 'fill') {
+        this._floodFill(Math.round(x), Math.round(y));
+        this.isDrawing = false;
+      } else if (this.currentTool === 'eyedropper') {
+        const pixel = this.ctx.getImageData(x, y, 1, 1).data;
+        const hex = '#' + [pixel[0],pixel[1],pixel[2]].map(v => v.toString(16).padStart(2,'0')).join('');
+        document.getElementById('brushColor').value = hex;
+        this.currentColor = hex;
+        this.toast('Color picked: ' + hex);
+        this.isDrawing = false;
+      } else if (this.currentTool === 'eraser') {
+        this.drawPoints = [{ x, y }];
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'destination-out';
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+      }
+    });
+
+    cvs.addEventListener('mousemove', (e) => {
+      const rect = cvs.getBoundingClientRect();
+      const scaleX = cvs.width / rect.width;
+      const scaleY = cvs.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+
+      document.getElementById('canvasInfo').textContent = `${Math.round(x)}, ${Math.round(y)} | ${this.canvasWidth}×${this.canvasHeight}`;
+
+      if (!this.isDrawing) return;
+
+      if (this.currentTool === 'draw') {
+        this.drawPoints.push({ x, y });
+        const last = this.drawPoints[this.drawPoints.length - 2];
+        this.ctx.strokeStyle = this.currentColor;
+        this.ctx.lineWidth = this.brushSize;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        this.ctx.globalAlpha = this.brushOpacity;
+        this.ctx.beginPath();
+        this.ctx.moveTo(last.x, last.y);
+        this.ctx.lineTo(x, y);
+        this.ctx.stroke();
+        this.ctx.globalAlpha = 1;
+      } else if (this.currentTool === 'eraser') {
+        this.ctx.lineWidth = this.brushSize * 3;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineTo(x, y);
+        this.ctx.stroke();
+      } else if (this.currentTool === 'shape' && this.shapePoints.length === 1) {
+        // Live preview
+        this._redrawImage();
+        this._drawShapePreview(this.shapePoints[0], { x, y });
+      }
+    });
+
+    cvs.addEventListener('mouseup', (e) => {
+      if (!this.isDrawing) return;
+      this.isDrawing = false;
+
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+
+      if (this.currentTool === 'draw' || this.currentTool === 'eraser') {
+        this.ctx.globalCompositeOperation = 'source-over';
+        this.saveState();
+      } else if (this.currentTool === 'shape' && this.shapePoints.length >= 1) {
+        this._drawFinalShape(this.shapePoints[0], { x, y });
+        this.saveState();
+      }
+    });
+  },
+
+  _setupKeyboard() {
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); this.undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); this.redo(); }
+      if (e.key === 'Escape') {
+        this.isDrawing = false;
+        this._redrawImage();
+      }
+      // Crop: Enter to confirm, Escape to cancel
+      if (this.currentTool === 'crop' && e.key === 'Enter') {
+        this._applyCrop();
+      }
+    });
+  },
+
+  _redrawImage() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this._drawCheckerboard();
+    if (this.originalImage) {
+      this.ctx.drawImage(this.originalImage, 0, 0, this.canvas.width, this.canvas.height);
+    }
+  },
+
+  _drawShapePreview(start, end) {
+    this._redrawImage();
+    this.ctx.save();
+    this.ctx.strokeStyle = this.currentColor;
+    this.ctx.lineWidth = this.shapesStyle.strokeWidth;
+    this.ctx.setLineDash([5, 5]);
+    this._renderShape(start, end);
+    this.ctx.restore();
+  },
+
+  _drawFinalShape(start, end) {
+    this._redrawImage();
+    this.ctx.save();
+    this.ctx.strokeStyle = document.getElementById('shapeStroke').value;
+    this.ctx.fillStyle = document.getElementById('shapeFill').value;
+    this.ctx.lineWidth = parseInt(document.getElementById('shapeStrokeWidth').value);
+    this._renderShape(start, end, true);
+    this.ctx.restore();
+  },
+
+  _renderShape(start, end, fill) {
+    const w = end.x - start.x;
+    const h = end.y - start.y;
+    switch (this.selectedShape) {
+      case 'rect':
+        fill ? this.ctx.fillRect(start.x, start.y, w, h) : null;
+        this.ctx.strokeRect(start.x, start.y, w, h);
+        break;
+      case 'circle': {
+        const r = Math.sqrt(w*w + h*h) / 2;
+        const cx = start.x + w/2, cy = start.y + h/2;
+        this.ctx.beginPath(); this.ctx.arc(cx, cy, Math.abs(r), 0, Math.PI*2);
+        fill && this.ctx.fill(); this.ctx.stroke();
+        break;
+      }
+      case 'ellipse': {
+        const cx = start.x + w/2, cy = start.y + h/2;
+        this.ctx.beginPath(); this.ctx.ellipse(cx, cy, Math.abs(w/2), Math.abs(h/2), 0, 0, Math.PI*2);
+        fill && this.ctx.fill(); this.ctx.stroke();
+        break;
+      }
+      case 'line':
+        this.ctx.beginPath(); this.ctx.moveTo(start.x, start.y); this.ctx.lineTo(end.x, end.y);
+        this.ctx.stroke();
+        break;
+      case 'triangle':
+        this.ctx.beginPath();
+        this.ctx.moveTo(start.x, start.y);
+        this.ctx.lineTo(end.x, end.y);
+        this.ctx.lineTo(start.x - w/2, end.y);
+        this.ctx.closePath();
+        fill && this.ctx.fill(); this.ctx.stroke();
+        break;
+      case 'arrow':
+        this.ctx.beginPath(); this.ctx.moveTo(start.x, start.y); this.ctx.lineTo(end.x, end.y);
+        this.ctx.stroke();
+        // Arrow head
+        const angle = Math.atan2(h, w);
+        const headLen = 15;
+        this.ctx.beginPath();
+        this.ctx.moveTo(end.x, end.y);
+        this.ctx.lineTo(end.x - headLen * Math.cos(angle - 0.3), end.y - headLen * Math.sin(angle - 0.3));
+        this.ctx.moveTo(end.x, end.y);
+        this.ctx.lineTo(end.x - headLen * Math.cos(angle + 0.3), end.y - headLen * Math.sin(angle + 0.3));
+        this.ctx.stroke();
+        break;
+      case 'star': {
+        const cx = start.x + w/2, cy = start.y + h/2;
+        const r = Math.sqrt(w*w+h*h)/2;
+        this._drawStar(cx, cy, 5, r, r/2, fill);
+        break;
+      }
+      case 'heart':
+        this._drawHeart(start.x + w/2, start.y + h/3, Math.min(Math.abs(w), Math.abs(h))/2, fill);
+        break;
+    }
+  },
+
+  _drawStar(cx, cy, spikes, outerR, innerR, fill) {
+    let rot = -Math.PI/2;
+    const step = Math.PI / spikes;
+    this.ctx.beginPath();
+    for (let i = 0; i < spikes * 2; i++) {
+      const r = i % 2 === 0 ? outerR : innerR;
+      const x = cx + Math.cos(rot) * r;
+      const y = cy + Math.sin(rot) * r;
+      i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
+      rot += step;
+    }
+    this.ctx.closePath();
+    fill && this.ctx.fill(); this.ctx.stroke();
+  },
+
+  _drawHeart(cx, cy, size, fill) {
+    const topCurveHeight = size * 0.3;
+    this.ctx.beginPath();
+    this.ctx.moveTo(cx, cy + topCurveHeight);
+    // Left curve
+    this.ctx.bezierCurveTo(cx, cy, cx - size/2, cy, cx - size/2, cy + topCurveHeight);
+    // Left bottom
+    this.ctx.bezierCurveTo(cx - size/2, cy + (size+topCurveHeight)/2, cx, cy + (size+topCurveHeight*1.2), cx, cy + size);
+    // Right bottom
+    this.ctx.bezierCurveTo(cx, cy + (size+topCurveHeight*1.2), cx + size/2, cy + (size+topCurveHeight)/2, cx + size/2, cy + topCurveHeight);
+    // Right curve
+    this.ctx.bezierCurveTo(cx + size/2, cy, cx, cy, cx, cy + topCurveHeight);
+    this.ctx.closePath();
+    fill && this.ctx.fill(); this.ctx.stroke();
+  },
+
+  _floodFill(x, y) {
+    if (!this.originalImage) return;
+    const tolerance = 32;
+    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    const targetColor = this._getPixel(imageData, x, y);
+    const fillColor = this._hexToRgb(this.currentColor);
+    const stack = [[x, y]];
+    const visited = new Uint8Array(imageData.width * imageData.height);
+
+    while (stack.length) {
+      const [cx, cy] = stack.pop();
+      const idx = cy * imageData.width + cx;
+      if (cx < 0 || cx >= imageData.width || cy < 0 || cy >= imageData.height) continue;
+      if (visited[idx]) continue;
+      visited[idx] = 1;
+
+      const pixel = this._getPixel(imageData, cx, cy);
+      if (this._colorDistance(pixel, targetColor) > tolerance) continue;
+
+      imageData.data[idx*4] = fillColor.r;
+      imageData.data[idx*4+1] = fillColor.g;
+      imageData.data[idx*4+2] = fillColor.b;
+      imageData.data[idx*4+3] = 255;
+
+      stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+    }
+    this.ctx.putImageData(imageData, 0, 0);
+    this.saveState();
+  },
+
+  _getPixel(data, x, y) {
+    const i = (y * data.width + x) * 4;
+    return [data.data[i], data.data[i+1], data.data[i+2], data.data[i+3]];
+  },
+
+  _colorDistance(a, b) {
+    return Math.sqrt((a[0]-b.r)**2 + (a[1]-b.g)**2 + (a[2]-b.b)**2);
+  },
+
+  _hexToRgb(hex) {
+    hex = hex.replace('#','');
+    return { r: parseInt(hex.substr(0,2),16), g: parseInt(hex.substr(2,2),16), b: parseInt(hex.substr(4,2),16) };
+  },
+
+  _placeText(x, y) {
+    const text = document.getElementById('textInput').value || 'Your Text';
+    const fontSize = parseInt(document.getElementById('textSize').value) || 24;
+    const font = document.getElementById('textFont').value;
+    const color = document.getElementById('textColor').value;
+    const bgColor = document.getElementById('textBG').value;
+
+    this.ctx.save();
+    this.ctx.font = `${fontSize}px ${font}`;
+    this.ctx.fillStyle = color;
+    this.ctx.textBaseline = 'top';
+
+    if (bgColor && bgColor !== '#00000000') {
+      const metrics = this.ctx.measureText(text);
+      this.ctx.fillStyle = bgColor;
+      this.ctx.globalAlpha = 0.7;
+      this.ctx.fillRect(x - 2, y - 2, metrics.width + 4, fontSize + 4);
+    }
+
+    this.ctx.fillStyle = color;
+    this.ctx.globalAlpha = 1;
+    this.ctx.fillText(text, x, y);
+    this.ctx.restore();
+  },
+
+  // === FILE LOADING ===
+  loadImage() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          this.originalImage = img;
+          this.canvasWidth = img.width;
+          this.canvasHeight = img.height;
+          this.canvas.width = this.canvasWidth;
+          this.canvas.height = this.canvasHeight;
+          this._redrawImage();
+          this._updateInfo();
+          this.toast('Image loaded: ' + file.name);
+          this.saveState();
+          // Store in IndexedDB
+          this._storeImage(img.src);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  },
+
+  // === TOOL SELECTION ===
+  selectTool(tool, el) {
+    document.querySelectorAll('.photo-tool').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    this.currentTool = tool;
+    document.getElementById('infoTool').textContent = tool.charAt(0).toUpperCase() + tool.slice(1);
+
+    // Show/hide tool-specific options
+    document.getElementById('drawOptions').style.display = (tool === 'draw' || tool === 'eraser') ? 'block' : 'none';
+    document.getElementById('shapeOptions').style.display = tool === 'shape' ? 'block' : 'none';
+    document.getElementById('textOptions').style.display = tool === 'text' ? 'block' : 'none';
+
+    this.canvas.style.cursor = tool === 'fill' ? 'cell' : tool === 'text' ? 'text' : 'crosshair';
+  },
+
+  selectShape(shape, el) {
+    document.querySelectorAll('.shape-btn').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    this.selectedShape = shape;
+  },
+
+  // === BRUSH UPDATE ===
+  updateBrush() {
+    this.brushSize = document.getElementById('brushSize').value;
+    this.brushOpacity = document.getElementById('brushOpacity').value / 100;
+    this.currentColor = document.getElementById('brushColor').value;
+    document.getElementById('brushSizeVal').textContent = this.brushSize;
+    document.getElementById('brushOpacityVal').textContent = Math.round(this.brushOpacity * 100);
+    document.getElementById('brushColorVal').textContent = this.currentColor;
+  },
+
+  // === FILTERS ===
+  applyFilter(filter, el) {
+    if (!this.originalImage) return;
+    this._redrawImage();
+    document.querySelectorAll('.filter-card').forEach(c => c.classList.remove('active'));
+    if (el) el.classList.add('active');
+    if (filter !== 'none') {
+      this.ctx.filter = filter;
+      this.ctx.drawImage(this.originalImage, 0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.filter = 'none';
+    }
+    this.saveState();
+    this.toast('Filter applied: ' + filter.split('(')[0]);
+  },
+
+  // === ADJUSTMENTS ===
+  applyAdjustments() {
+    if (!this.originalImage) return;
+    const b = document.getElementById('brightness').value;
+    const c = document.getElementById('contrast').value;
+    const s = document.getElementById('saturation').value;
+    const h = document.getElementById('hueRotate').value;
+    const bl = document.getElementById('blurAmt').value;
+    const sh = document.getElementById('sharpenAmt').value;
+
+    document.getElementById('brightnessVal').textContent = b;
+    document.getElementById('contrastVal').textContent = c;
+    document.getElementById('saturationVal').textContent = s;
+    document.getElementById('hueRotateVal').textContent = h;
+    document.getElementById('blurVal').textContent = bl;
+    document.getElementById('sharpenVal').textContent = sh;
+
+    this._redrawImage();
+    let filterStr = `brightness(${b}%) contrast(${c}%) saturate(${s}%) hue-rotate(${h}deg)`;
+    if (parseFloat(bl) > 0) filterStr += ` blur(${bl}px)`;
+    if (parseFloat(sh) > 0) filterStr += ` contrast(${100 + parseFloat(sh)}%)`;
+    this.ctx.filter = filterStr;
+    this.ctx.drawImage(this.originalImage, 0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.filter = 'none';
+  },
+
+  commitAdjustments() {
+    if (!this.originalImage) return;
+    // Burn adjustments into original
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = this.canvas.width;
+    tempCanvas.height = this.canvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(this.canvas, 0, 0);
+    this.originalImage = tempCanvas;
+    this._redrawImage();
+    this.toast('Adjustments committed ✓');
+    this.saveState();
+  },
+
+  resetAdjustments() {
+    document.getElementById('brightness').value = 100;
+    document.getElementById('contrast').value = 100;
+    document.getElementById('saturation').value = 100;
+    document.getElementById('hueRotate').value = 0;
+    document.getElementById('blurAmt').value = 0;
+    document.getElementById('sharpenAmt').value = 0;
+    document.querySelectorAll('#tab-adjust .slider-group label span').forEach(s => s.textContent = s.parentElement.querySelector('label').textContent.split(' ')[0] === 'Brightness' ? '100' : s.parentElement.querySelector('label').textContent.split(' ')[0] === 'Contrast' ? '100' : s.parentElement.querySelector('label').textContent.split(' ')[0] === 'Saturation' ? '100' : s.parentElement.querySelector('label').textContent.split(' ')[0] === 'Hue' ? '0' : s.parentElement.querySelector('label').textContent.split(' ')[0] === 'Blur' ? '0' : '0');
+    if (this.originalImage) this._redrawImage();
+    this.toast('Adjustments reset');
+  },
+
+  resetAll() {
+    if (!this.originalImage) return;
+    this.originalImage = null;
+    this.canvas.width = 800;
+    this.canvas.height = 600;
+    this.canvasWidth = 800;
+    this.canvasHeight = 600;
+    this._drawCheckerboard();
+    this._updateInfo();
+    this.toast('Canvas reset');
+    this.saveState();
+  },
+
+  // === ROTATE / FLIP ===
+  rotate(deg) {
+    if (!this.originalImage) return;
+    const tempCanvas = document.createElement('canvas');
+    const ctx = tempCanvas.getContext('2d');
+    const w = this.canvas.width, h = this.canvas.height;
+    tempCanvas.width = h; tempCanvas.height = w;
+    ctx.translate(h/2, w/2);
+    ctx.rotate(deg * Math.PI / 180);
+    ctx.drawImage(this.canvas, -w/2, -h/2, w, h);
+    this._applyTransformed(tempCanvas);
+  },
+
+  flipH() {
+    if (!this.originalImage) return;
+    const tempCanvas = document.createElement('canvas');
+    const ctx = tempCanvas.getContext('2d');
+    tempCanvas.width = this.canvas.width;
+    tempCanvas.height = this.canvas.height;
+    ctx.translate(tempCanvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(this.canvas, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this._applyTransformed(tempCanvas);
+  },
+
+  flipV() {
+    if (!this.originalImage) return;
+    const tempCanvas = document.createElement('canvas');
+    const ctx = tempCanvas.getContext('2d');
+    tempCanvas.width = this.canvas.width;
+    tempCanvas.height = this.canvas.height;
+    ctx.translate(0, tempCanvas.height);
+    ctx.scale(1, -1);
+    ctx.drawImage(this.canvas, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this._applyTransformed(tempCanvas);
+  },
+
+  _applyTransformed(source) {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this._drawCheckerboard();
+    this.ctx.drawImage(source, 0, 0);
+    this.originalImage = source;
+    this.saveState();
+    this.toast('Transform applied ✓');
+  },
+
+  // === EXPORT ===
+  selectFormat(fmt, el) {
+    document.querySelectorAll('.export-fmt-btn').forEach(b => b.classList.remove('active'));
+    if (el) el.classList.add('active');
+    this.formatExt = fmt;
+    this.currentFormat = 'image/' + fmt;
+  },
+
+  getDataURL() {
+    if (this.formatExt === 'svg') {
+      // Simple SVG export from canvas
+      const data = this.canvas.toDataURL('image/png');
+      return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${this.canvas.width}" height="${this.canvas.height}"><image href="${data}" width="100%" height="100%"/></svg>`)}`;
+    }
+    return this.canvas.toDataURL(this.currentFormat, 0.95);
+  },
+
+  copyToClipboard() {
+    const data = this.getDataURL();
+    fetch(data).then(r => r.blob()).then(blob => {
+      navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]).then(() => {
+        this.toast('🖼️ Image copied to clipboard!');
+      }).catch(() => {
+        // Fallback: copy as base64
+        shadowStudio.get('utils')?.copy(data.split(',')[1]);
+        this.toast('📋 Base64 data copied to clipboard!');
+      });
+    });
+  },
+
+  downloadImage() {
+    const data = this.getDataURL();
+    shadowStudio.get('utils')?.download('photo-editor.' + this.formatExt, data, this.currentFormat);
+    this.toast('💾 Image downloaded!');
+  },
+
+  // === STATE HISTORY (Undo/Redo) ===
+  saveState() {
+    const data = this.canvas.toDataURL();
+    this.history = this.history.slice(0, this.historyIndex + 1);
+    this.history.push(data);
+    if (this.history.length > 30) this.history.shift();
+    this.historyIndex = this.history.length - 1;
+  },
+
+  undo() {
+    if (this.historyIndex <= 0) { this.toast('Nothing to undo'); return; }
+    this.historyIndex--;
+    this._loadState(this.history[this.historyIndex]);
+    this.toast('↩️ Undo');
+  },
+
+  redo() {
+    if (this.historyIndex >= this.history.length - 1) { this.toast('Nothing to redo'); return; }
+    this.historyIndex++;
+    this._loadState(this.history[this.historyIndex]);
+    this.toast('↪️ Redo');
+  },
+
+  _loadState(dataURL) {
+    const img = new Image();
+    img.onload = () => {
+      this.canvas.width = img.width;
+      this.canvas.height = img.height;
+      this.canvasWidth = img.width;
+      this.canvasHeight = img.height;
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(img, 0, 0);
+      this._updateInfo();
+    };
+    img.src = dataURL;
+  },
+
+  _storeImage(dataURL) {
+    try {
+      shadowStudio?.save('assets', {
+        type: 'photo_editor',
+        data: dataURL,
+        createdAt: new Date().toISOString()
+      });
+    } catch(e) { /* Silent fail */ }
+  },
+
+  _updateInfo() {
+    document.getElementById('infoWidth').textContent = this.canvasWidth;
+    document.getElementById('infoHeight').textContent = this.canvasHeight;
+    document.getElementById('infoScale').textContent = '100%';
+    document.getElementById('infoTool').textContent = this.currentTool.charAt(0).toUpperCase() + this.currentTool.slice(1);
+    document.getElementById('canvasInfo').textContent = `${this.canvasWidth}×${this.canvasHeight}px`;
+  },
+
+  tabSwitch: null,
+  switchTab(tab, el) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.getElementById('tab-' + tab)?.classList.add('active');
+  },
+
+  saveToStorage() {
+    const data = this.canvas.toDataURL();
+    localStorage.setItem('shadow-photo-editor', JSON.stringify({ data, tool: this.currentTool, timestamp: Date.now() }));
+  },
+
+  _loadFromStorage() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('shadow-photo-editor'));
+      if (saved?.data) {
+        const img = new Image();
+        img.onload = () => {
+          this.originalImage = img;
+          this.canvas.width = img.width;
+          this.canvasHeight = img.height;
+          this.canvas.height = img.height;
+          this.ctx.drawImage(img, 0, 0);
+          this._updateInfo();
+        };
+        img.src = saved.data;
+      }
+    } catch(e) {}
+  },
+
+  toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => PE.init());
+</script>
+</body>
+</html>

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⭐ Icon Designer — Shadow Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0b14;--surface:#15172a;--border:#2a2d4a;--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1400px;margin:0 auto;padding:32px}
+.header{text-align:center;margin-bottom:32px}
+.header h1{font-size:2.4rem;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,#f59e0b,#ff6b81,#7c4dff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--text-muted);font-size:1.05rem}
+
+.studio{display:grid;grid-template-columns:300px 1fr;gap:20px}
+.panel{background:var(--surface);border-radius:12px;padding:20px;border:1px solid var(--border)}
+.panel h2{font-size:.95rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* Icon Canvas */
+.canvas-section{display:flex;flex-direction:column;gap:16px}
+.canvas-main{background:#111;border-radius:12px;border:1px solid var(--border);padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;min-height:440px}
+.canvas-main canvas{image-rendering:pixelated;cursor:crosshair}
+.canvas-info{position:absolute;top:14px;right:14px;font-size:.7rem;color:var(--text-muted);background:rgba(0,0,0,.5);padding:4px 10px;border-radius:6px}
+
+/* Preview Grid */
+.preview-section{margin-top:16px}
+.preview-title{font-size:.82rem;color:var(--text-muted);margin-bottom:8px}
+.preview-row{display:flex;gap:10px;flex-wrap:wrap}
+.preview-cell{width:64px;height:64px;border:2px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .2s}
+.preview-cell:hover{border-color:var(--primary);transform:scale(1.1)}
+.preview-cell canvas{width:100%;height:100%}
+
+/* Left Panel */
+.toolbar{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px}
+.tbtn{padding:10px 6px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text-muted);cursor:pointer;font-size:.78rem;font-family:inherit;transition:all .2s;text-align:center}
+.tbtn:hover{border-color:var(--primary);color:var(--text);background:rgba(124,77,255,.08)}
+.tbtn.active{border-color:var(--primary);background:rgba(124,77,255,.15);color:var(--primary)}
+.tbtn .ticon{font-size:1.2rem;display:block;margin-bottom:3px}
+
+.control-group{margin-bottom:14px}
+.control-group label{display:block;font-size:.75rem;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.control-group input[type="range"]{width:100%;height:5px;-webkit-appearance:none;background:var(--border);border-radius:3px}
+.control-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--primary);border-radius:50%;cursor:pointer}
+.control-group input[type="color"]{width:100%;height:36px;border:none;border-radius:8px;cursor:pointer;background:var(--bg)}
+.control-group select{width:100%;padding:8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.8rem;outline:none}
+.control-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.val{text-align:right;font-size:.7rem;color:var(--accent);margin-top:2px;display:block}
+
+.palette-row{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}
+.pal-swatch{width:28px;height:28px;border-radius:6px;border:2px solid var(--border);cursor:pointer;transition:transform .15s}
+.pal-swatch:hover{transform:scale(1.15);border-color:var(--primary)}
+
+/* Buttons */
+.btn{padding:10px 18px;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .2s;border:none;font-size:.82rem;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,#7c4dff,#9c6bff);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(124,77,255,.3)}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary)}
+.btn-accent{background:linear-gradient(135deg,#00e5ff,#22d3ee);color:#0a0b14;font-weight:700}
+.btn-accent:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,229,255,.3)}
+.btn-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+
+/* Layers */
+.layers{margin-top:16px;max-height:200px;overflow-y:auto}
+.layer-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;margin-bottom:2px;cursor:pointer;font-size:.78rem;color:var(--text-muted);border:1px solid transparent;transition:all .15s}
+.layer-item:hover{background:rgba(255,255,255,.03)}
+.layer-item.active{background:rgba(124,77,255,.1);border-color:rgba(124,77,255,.2);color:var(--primary)}
+.layer-swatch{width:20px;height:20px;border-radius:4px;border:1px solid var(--border)}
+.layer-actions{margin-left:auto;display:flex;gap:4px}
+.layer-btn{width:20px;height:20px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:.65rem;display:flex;align-items:center;justify-content:center}
+.layer-btn:hover{border-color:var(--primary);color:var(--primary)}
+
+.export-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-top:20px}
+.export-card h3{font-size:.88rem;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.ex-btn{padding:8px 14px;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;border:none;font-size:.78rem;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.ex-btn-copy{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.ex-btn-copy:hover{border-color:var(--primary)}
+.ex-btn-dl{background:linear-gradient(135deg,#7c4dff,#9c6bff);color:#fff}
+.ex-btn-dl:hover{box-shadow:0 4px 12px rgba(124,77,255,.3)}
+
+.code-block{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Fira Code',monospace;font-size:.72rem;color:#a0a8c0;white-space:pre-wrap;overflow-x:auto;max-height:200px;overflow-y:auto;margin-top:12px}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.85rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+@media(max-width:768px){.studio{grid-template-columns:1fr}.container{padding:16px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>⭐ Icon Designer v5.0</h1>
+    <p>Pixel-perfect icon creation — draw, export as PNG/SVG/ICO with real-time previews</p>
+  </div>
+
+  <div class="studio">
+    <!-- Left Panel -->
+    <div class="panel">
+      <h2><span class="ico">🛠️</span> Tools</h2>
+
+      <div class="toolbar">
+        <button class="tbtn active" onclick="ID.setTool('pencil')" title="Pencil"><span class="ticon">✏️</span>Pencil</button>
+        <button class="tbtn" onclick="ID.setTool('eraser')" title="Eraser"><span class="ticon">🧹</span>Eraser</button>
+        <button class="tbtn" onclick="ID.setTool('line')" title="Line"><span class="ticon">📏</span>Line</button>
+        <button class="tbtn" onclick="ID.setTool('rect')" title="Rectangle"><span class="ticon">⬜</span>Rect</button>
+        <button class="tbtn" onclick="ID.setTool('circle')" title="Circle"><span class="ticon">⭕</span>Circle</button>
+        <button class="tbtn" onclick="ID.setTool('fill')" title="Fill"><span class="ticon">🪣</span>Fill</button>
+        <button class="tbtn" onclick="ID.setTool('picker')" title="Picker"><span class="ticon">🔍</span>Pick</button>
+        <button class="tbtn" onclick="ID.clearCanvas()" title="Clear All"><span class="ticon">🗑️</span>Clear</button>
+        <button class="tbtn" onclick="ID.undo()" title="Undo"><span class="ticon">↩️</span>Undo</button>
+      </div>
+
+      <h2 style="margin-top:16px"><span class="ico">🎨</span> Colors</h2>
+
+      <div class="control-group">
+        <label>Primary Color</label>
+        <input type="color" id="primaryColor" value="#7c4dff">
+      </div>
+      <div class="control-group">
+        <label>Background</label>
+        <input type="color" id="bgColor" value="#0a0b14">
+      </div>
+
+      <h3 style="font-size:.75rem;color:var(--text-muted);margin:12px 0 6px">Quick Palette</h3>
+      <div class="palette-row" id="quickPalette"></div>
+
+      <div class="control-row">
+        <div class="control-group">
+          <label>Brush Size: <span class="val" id="brushVal">2</span>px</label>
+          <input type="range" id="brushSize" min="1" max="16" value="2">
+        </div>
+        <div class="control-group">
+          <label>Opacity: <span class="val" id="opacityVal">100</span>%</label>
+          <input type="range" id="opacity" min="10" max="100" value="100">
+        </div>
+      </div>
+
+      <h2 style="margin-top:16px"><span class="ico">📐</span> Canvas</h2>
+      <div class="control-group">
+        <label>Size</label>
+        <select id="canvasSize">
+          <option value="16">16×16 (favicon)</option>
+          <option value="32">32×32</option>
+          <option value="48" selected>48×48</option>
+          <option value="64">64×64</option>
+          <option value="128">128×128</option>
+          <option value="256">256×256</option>
+          <option value="512">512×512</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Grid: <span class="val" id="gridVal">on</span></label>
+        <input type="range" id="gridToggle" min="0" max="1" value="1" step="1">
+      </div>
+
+      <h2 style="margin-top:16px"><span class="ico">📂</span> Layers</h2>
+      <div class="layers" id="layersList"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="ID.addLayer()" style="flex:1;font-size:.78rem;padding:6px">+ Layer</button>
+        <button class="btn btn-secondary" onclick="ID.mergeLayers()" style="flex:1;font-size:.78rem;padding:6px">⬇️ Merge</button>
+      </div>
+    </div>
+
+    <!-- Main Canvas + Export -->
+    <div>
+      <div class="canvas-main" id="canvasMain">
+        <canvas id="iconCanvas"></canvas>
+        <span class="canvas-info" id="canvasInfo">48×48</span>
+      </div>
+
+      <!-- Live Previews at different sizes -->
+      <div class="preview-section">
+        <div class="preview-title">🔍 Live Preview (click to copy)</div>
+        <div class="preview-row" id="previewRow"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="ID.exportPNG()">💾 PNG</button>
+        <button class="btn btn-primary" onclick="ID.exportSVG()">📐 SVG</button>
+        <button class="btn btn-primary" onclick="ID.exportFavicon()">🌐 Favicon.ico</button>
+        <button class="btn btn-accent" onclick="ID.copyToClipboard()">📋 Copy PNG</button>
+        <button class="btn btn-secondary" onclick="ID.exportCSS()">📋 CSS Background</button>
+        <button class="btn btn-secondary" onclick="ID.exportDataURL()">🔗 Data URL</button>
+        <button class="btn btn-secondary" onclick="ID.exportBase64()">📦 Base64</button>
+        <button class="btn btn-secondary" onclick="ID.exportJSON()">📋 JSON (AI-Ready)</button>
+      </div>
+
+      <!-- SVG Output -->
+      <div class="export-card">
+        <h3>📋 SVG Source</h3>
+        <div class="code-block" id="svgOutput">&lt;!-- Draw on the canvas to begin --&gt;</div>
+        <button class="ex-btn ex-btn-copy" onclick="ID.copySVG()" style="margin-top:8px">📋 Copy SVG</button>
+      </div>
+
+      <!-- AI-Ready Output -->
+      <div class="export-card">
+        <h3>🤖 AI Agent Format</h3>
+        <div class="code-block" id="aiOutput">{/* Draw to generate AI-ready output */}</div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="ex-btn ex-btn-copy" onclick="ID.copyAI()">📋 Copy AI Data</button>
+          <button class="ex-btn ex-btn-dl" onclick="ID.downloadAI()">💾 Download JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================
+   ICON DESIGNER v5.0 — MAX LEVEL
+   Pixel-perfect editor, layers, SVG export, AI-ready
+   ============================================ */
+
+const ID = {
+  canvas: null,
+  ctx: null,
+  size: 48,
+  tool: 'pencil',
+  primaryColor: '#7c4dff',
+  bgColor: '#0a0b14',
+  brushSize: 2,
+  opacity: 1,
+  showGrid: true,
+  layers: [],
+  currentLayer: 0,
+  history: [],
+  isDrawing: false,
+  lastPos: null,
+
+  init() {
+    this.canvas = document.getElementById('iconCanvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.resize();
+    this.initLayers();
+    this.bindEvents();
+    this.renderPreviews();
+    this.updateLayersUI();
+    this.updateSVG();
+    this.updateAIOutput();
+  },
+
+  resize() {
+    this.canvas.width = this.size;
+    this.canvas.height = this.size;
+    this.canvas.style.width = Math.min(this.size * 8, 400) + 'px';
+    this.canvas.style.height = Math.min(this.size * 8, 400) + 'px';
+
+    // Apply current layer
+    this.clearCanvas(true);
+    if (this.layers[this.currentLayer]) {
+      const img = new Image();
+      img.onload = () => this.ctx.drawImage(img, 0, 0, this.size, this.size);
+      img.src = this.layers[this.currentLayer].data;
+    } else {
+      this.ctx.fillStyle = this.bgColor;
+      this.ctx.fillRect(0, 0, this.size, this.size);
+    }
+    this.drawGrid();
+    document.getElementById('canvasInfo').textContent = `${this.size}×${this.size}`;
+  },
+
+  drawGrid() {
+    if (!this.showGrid || this.size > 128) return;
+    this.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    this.ctx.lineWidth = 0.5;
+    const step = Math.max(1, Math.floor(this.size / 16));
+    for (let i = 0; i <= this.size; i += step) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(i, 0); this.ctx.lineTo(i, this.size);
+      this.ctx.moveTo(0, i); this.ctx.lineTo(this.size, i);
+      this.ctx.stroke();
+    }
+  },
+
+  bindEvents() {
+    document.getElementById('primaryColor').addEventListener('input', e => this.primaryColor = e.target.value);
+    document.getElementById('bgColor').addEventListener('input', e => { this.bgColor = e.target.value; this.resize(); });
+    document.getElementById('brushSize').addEventListener('input', e => { this.brushSize = parseInt(e.target.value); document.getElementById('brushVal').textContent = e.target.value; });
+    document.getElementById('opacity').addEventListener('input', e => { this.opacity = parseInt(e.target.value) / 100; document.getElementById('opacityVal').textContent = e.target.value; });
+    document.getElementById('canvasSize').addEventListener('change', e => { this.size = parseInt(e.target.value); this.resize(); this.renderPreviews(); this.updateSVG(); });
+    document.getElementById('gridToggle').addEventListener('input', e => { this.showGrid = e.target.value === '1'; document.getElementById('gridVal').textContent = this.showGrid ? 'on' : 'off'; this.resize(); });
+
+    // Canvas mouse events
+    const getPos = (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.size / rect.width;
+      const scaleY = this.size / rect.height;
+      return { x: Math.floor((e.clientX - rect.left) * scaleX), y: Math.floor((e.clientY - rect.top) * scaleY) };
+    };
+
+    this.canvas.addEventListener('mousedown', e => {
+      this.isDrawing = true;
+      this.lastPos = getPos(e);
+      if (this.tool === 'fill') { this.floodFill(getPos(e).x, getPos(e).y); this.saveState(); return; }
+      this.drawPixel(getPos(e).x, getPos(e).y);
+    });
+
+    this.canvas.addEventListener('mousemove', e => {
+      if (!this.isDrawing) return;
+      const pos = getPos(e);
+      if (this.tool === 'pencil' || this.tool === 'eraser') {
+        // Bresenham line
+        this.drawLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y);
+      }
+      this.lastPos = pos;
+      this.updateSVG();
+    });
+
+    this.canvas.addEventListener('mouseup', () => { if (this.isDrawing) { this.isDrawing = false; this.saveState(); this.renderPreviews(); this.updateSVG(); this.updateAIOutput(); } });
+    this.canvas.addEventListener('mouseleave', () => this.isDrawing = false);
+
+    // Touch events
+    this.canvas.addEventListener('touchstart', e => { e.preventDefault(); this.canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+    this.canvas.addEventListener('touchmove', e => { e.preventDefault(); this.canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+    this.canvas.addEventListener('touchend', e => { e.preventDefault(); this.canvas.dispatchEvent(new MouseEvent('mouseup')); });
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); this.undo(); }
+    });
+
+    // Quick palette
+    this.renderQuickPalette();
+  },
+
+  setTool(tool) {
+    this.tool = tool;
+    document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('active'));
+    event.target.closest('.tbtn')?.classList.add('active');
+  },
+
+  drawPixel(x, y) {
+    if (x < 0 || x >= this.size || y < 0 || y >= this.size) return;
+    this.ctx.globalAlpha = this.opacity;
+    if (this.tool === 'eraser') {
+      this.ctx.globalCompositeOperation = 'destination-out';
+      this.ctx.fillStyle = 'rgba(0,0,0,1)';
+    } else {
+      this.ctx.globalCompositeOperation = 'source-over';
+      this.ctx.fillStyle = this.primaryColor;
+    }
+    this.ctx.fillRect(x, y, this.brushSize, this.brushSize);
+    if (this.tool === 'eraser') this.ctx.globalCompositeOperation = 'source-over';
+  },
+
+  drawLine(x0, y0, x1, y1) {
+    const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+    while (true) {
+      for (let bx = 0; bx < this.brushSize; bx++) {
+        for (let by = 0; by < this.brushSize; by++) {
+          this.drawPixel(x0 + bx - Math.floor(this.brushSize/2), y0 + by - Math.floor(this.brushSize/2));
+        }
+      }
+      if (x0 === x1 && y0 === y1) break;
+      const e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x0 += sx; }
+      if (e2 < dx) { err += dx; y0 += sy; }
+    }
+  },
+
+  floodFill(sx, sy) {
+    const data = this.ctx.getImageData(0, 0, this.size, this.size);
+    const target = { r: data.data[(sy*this.size+sx)*4], g: data.data[(sy*this.size+sx)*4+1], b: data.data[(sy*this.size+sx)*4+2], a: data.data[(sy*this.size+sx)*4+3] };
+    const fill = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(this.primaryColor);
+    const fr = parseInt(fill[1],16), fg = parseInt(fill[2],16), fb = parseInt(fill[3],16);
+    if (target.r===fr && target.g===fg && target.b===fb && target.a===Math.round(this.opacity*255)) return;
+
+    const stack = [[sx, sy]];
+    const visited = new Set();
+    while (stack.length) {
+      const [x, y] = stack.pop();
+      const key = `${x},${y}`;
+      if (x<0||x>=this.size||y<0||y>=this.size||visited.has(key)) continue;
+      visited.add(key);
+      const i = (y*this.size+x)*4;
+      if (Math.abs(data.data[i]-target.r)<10 && Math.abs(data.data[i+1]-target.g)<10 && Math.abs(data.data[i+2]-target.b)<10 && Math.abs(data.data[i+3]-target.a)<10) {
+        data.data[i]=fr; data.data[i+1]=fg; data.data[i+2]=fb;
+        data.data[i+3]=Math.round(this.opacity*255);
+        stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+      }
+    }
+    this.ctx.putImageData(data, 0, 0);
+    this.drawGrid();
+  },
+
+  clearCanvas(silent = false) {
+    const c = document.createElement('canvas');
+    c.width = this.size; c.height = this.size;
+    c.getContext('2d').fillStyle = this.bgColor;
+    c.getContext('2d').fillRect(0,0,this.size,this.size);
+    if (!silent) this.saveState();
+    this.ctx.fillStyle = this.bgColor;
+    this.ctx.fillRect(0, 0, this.size, this.size);
+    this.drawGrid();
+  },
+
+  // ===== LAYER SYSTEM =====
+  initLayers() {
+    this.layers = [{ name: 'Background', data: null, visible: true }];
+    this.currentLayer = 0;
+  },
+
+  saveState() {
+    const data = this.canvas.toDataURL();
+    this.layers[this.currentLayer].data = data;
+    // History (undo)
+    if (this.history.length > 30) this.history.shift();
+    this.history.push(data);
+  },
+
+  undo() {
+    if (this.history.length === 0) return;
+    const prev = this.history.pop();
+    const img = new Image();
+    img.onload = () => {
+      this.ctx.clearRect(0,0,this.size,this.size);
+      this.ctx.drawImage(img,0,0);
+      this.drawGrid();
+    };
+    img.src = prev;
+  },
+
+  addLayer() {
+    const name = `Layer ${this.layers.length}`;
+    this.layers.push({ name, data: null, visible: true });
+    this.currentLayer = this.layers.length - 1;
+    this.clearCanvas(true);
+    this.updateLayersUI();
+    this.toast(`Layer "${name}" added`);
+  },
+
+  mergeLayers() {
+    if (this.layers.length <= 1) return;
+    // Merge all visible layers onto first visible layer
+    const first = this.layers.findIndex(l => l.visible && l.data);
+    if (first === -1) return;
+
+    const c = document.createElement('canvas');
+    c.width = this.size; c.height = this.size;
+    const ctx = c.getContext('2d');
+
+    this.layers.forEach(layer => {
+      if (layer.visible && layer.data) {
+        const img = new Image();
+        img.src = layer.data;
+        ctx.drawImage(img, 0, 0);
+      }
+    });
+
+    this.layers[first].data = c.toDataURL();
+    // Remove merged layers except the first
+    this.layers = this.layers.filter((l, i) => i === first || !l.visible);
+    this.currentLayer = first;
+    this.updateLayersUI();
+    this.loadLayer(first);
+    this.toast('Layers merged!');
+  },
+
+  loadLayer(idx) {
+    this.currentLayer = idx;
+    this.ctx.clearRect(0, 0, this.size, this.size);
+    if (this.layers[idx].data) {
+      const img = new Image();
+      img.onload = () => { this.ctx.drawImage(img, 0, 0); this.drawGrid(); };
+      img.src = this.layers[idx].data;
+    } else {
+      this.ctx.fillStyle = this.bgColor;
+      this.ctx.fillRect(0, 0, this.size, this.size);
+      this.drawGrid();
+    }
+    this.updateLayersUI();
+  },
+
+  toggleLayerVisibility(idx) {
+    this.layers[idx].visible = !this.layers[idx].visible;
+    // Re-render all visible layers
+    this.ctx.clearRect(0, 0, this.size, this.size);
+    this.ctx.fillStyle = this.bgColor;
+    this.ctx.fillRect(0, 0, this.size, this.size);
+    this.layers.forEach(layer => {
+      if (layer.visible && layer.data) {
+        const img = new Image();
+        img.src = layer.data;
+        this.ctx.drawImage(img, 0, 0);
+      }
+    });
+    this.drawGrid();
+    this.updateLayersUI();
+  },
+
+  updateLayersUI() {
+    const list = document.getElementById('layersList');
+    list.innerHTML = '';
+    this.layers.forEach((layer, i) => {
+      const el = document.createElement('div');
+      el.className = 'layer-item' + (i === this.currentLayer ? ' active' : '');
+      el.innerHTML = `
+        <div class="layer-swatch" style="background:${layer.data ? 'url('+layer.data+') center/cover no-repeat' : 'transparent'};border:1px solid ${!layer.visible ? 'var(--error)' : 'var(--border)'}"></div>
+        <span style="flex:1;${!layer.visible ? 'opacity:.4' : ''}" onclick="ID.loadLayer(${i})">${layer.name}</span>
+        <div class="layer-actions">
+          <button class="layer-btn" onclick="ID.toggleLayerVisibility(${i})" title="Toggle">${layer.visible ? '👁️' : '🚫'}</button>
+          ${i > 0 ? `<button class="layer-btn" onclick="ID.layers.splice(${i},1);ID.updateLayersUI();ID.toast('Layer removed')" title="Delete">🗑️</button>` : ''}
+        </div>
+      `;
+      list.appendChild(el);
+    });
+  },
+
+  // ===== PREVIEWS =====
+  renderPreviews() {
+    const row = document.getElementById('previewRow');
+    row.innerHTML = '';
+    const sizes = [16, 24, 32, 48, 64];
+    sizes.forEach(s => {
+      const cell = document.createElement('div');
+      cell.className = 'preview-cell';
+      cell.title = `${s}×${s} — Click to copy`;
+      const c = document.createElement('canvas');
+      c.width = s; c.height = s;
+      cell.appendChild(c);
+      cell.onclick = () => { this._scaleAndCopy(s); };
+      // Draw scaled
+      const temp = document.createElement('canvas');
+      temp.width = this.size; temp.height = this.size;
+      const tctx = temp.getContext('2d');
+      if (this.layers.some(l => l.data)) {
+        this.layers.filter(l => l.visible && l.data).forEach(layer => {
+          const img = new Image();
+          img.src = layer.data;
+          tctx.drawImage(img, 0, 0);
+        });
+      }
+      c.getContext('2d').imageSmoothingEnabled = false;
+      c.getContext('2d').drawImage(temp, 0, 0, s, s);
+      row.appendChild(cell);
+    });
+  },
+
+  _scaleAndCopy(size) {
+    const temp = document.createElement('canvas');
+    temp.width = size; temp.height = size;
+    temp.getContext('2d').imageSmoothingEnabled = false;
+    // Composite all layers
+    this.layers.filter(l => l.visible && l.data).forEach(layer => {
+      const img = new Image();
+      img.src = layer.data;
+      temp.getContext('2d').drawImage(img, 0, 0, size, size);
+    });
+    temp.toBlob(blob => {
+      if (navigator.clipboard && navigator.clipboard.write) {
+        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        this.toast(`📋 ${size}×${size} copied!`);
+      }
+    }, 'image/png');
+  },
+
+  // ===== EXPORT FUNCTIONS =====
+
+  exportPNG() {
+    const blob = this._compositeToBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `icon-${this.size}x${this.size}.png`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.toast('💾 PNG exported!');
+    if (shadowStudio) shadowStudio.recordExport('png');
+  },
+
+  exportSVG() {
+    const paths = this._rasterToSvgPaths();
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${this.size}" height="${this.size}" viewBox="0 0 ${this.size} ${this.size}">
+  <rect width="${this.size}" height="${this.size}" fill="${this.bgColor}"/>
+  ${paths}
+</svg>`;
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `icon-${this.size}x${this.size}.svg`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.toast('📐 SVG exported!');
+    if (shadowStudio) shadowStudio.recordExport('svg');
+  },
+
+  exportFavicon() {
+    // ICO format (simplified - 16x16 and 32x32 PNG inside ICO container)
+    const c16 = this._renderToSize(16);
+    const c32 = this._renderToSize(32);
+    // Use a canvas to create a simple favicon
+    const fav = this._renderToSize(16);
+    const link = document.createElement('a');
+    link.download = 'favicon.ico';
+    link.href = fav.toDataURL('image/x-icon');
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    this.toast('🌐 Favicon downloaded!');
+  },
+
+  _renderToSize(s) {
+    const c = document.createElement('canvas');
+    c.width = s; c.height = s;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = this.bgColor;
+    ctx.fillRect(0, 0, s, s);
+    this.layers.filter(l => l.visible && l.data).forEach(layer => {
+      const img = new Image();
+      img.src = layer.data;
+      ctx.drawImage(img, 0, 0, s, s);
+    });
+    return c;
+  },
+
+  _compositeToBlob() {
+    const c = document.createElement('canvas');
+    c.width = this.size; c.height = this.size;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = this.bgColor;
+    ctx.fillRect(0, 0, this.size, this.size);
+    this.layers.filter(l => l.visible && l.data).forEach(layer => {
+      const img = new Image();
+      img.src = layer.data;
+      ctx.drawImage(img, 0, 0);
+    });
+    return new Promise(resolve => c.toBlob(resolve, 'image/png'));
+  },
+
+  copyToClipboard() {
+    this._compositeToBlob().then(blob => {
+      if (navigator.clipboard && navigator.clipboard.write) {
+        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        this.toast('📋 Icon copied to clipboard!');
+      } else {
+        this.exportPNG();
+      }
+    });
+  },
+
+  exportCSS() {
+    const url = this.canvas.toDataURL('image/png');
+    const css = `/* Icon — ${this.size}×${this.size} — Shadow Studio */
+.icon {
+  width: ${this.size}px;
+  height: ${this.size}px;
+  background-image: url("${url}");
+  background-size: cover;
+  display: inline-block;
+}`;
+    navigator.clipboard?.writeText(css) || this._fallbackCopy(css);
+    this.toast('📋 CSS copied!');
+  },
+
+  exportDataURL() {
+    const url = this.canvas.toDataURL('image/png');
+    navigator.clipboard?.writeText(url) || this._fallbackCopy(url);
+    this.toast('🔗 Data URL copied!');
+  },
+
+  exportBase64() {
+    const b64 = this.canvas.toDataURL('image/png').split(',')[1];
+    navigator.clipboard?.writeText(b64) || this._fallbackCopy(b64);
+    this.toast('📦 Base64 copied!');
+  },
+
+  updateSVG() {
+    if (!this.codeOutput) this.codeOutput = document.getElementById('svgOutput');
+    const url = this.canvas.toDataURL('image/png');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${this.size}" height="${this.size}" viewBox="0 0 ${this.size} ${this.size}">
+  <image href="${url}" width="${this.size}" height="${this.size}"/>
+</svg>`;
+    if (this.codeOutput) this.codeOutput.textContent = svg;
+  },
+
+  copySVG() {
+    const svg = document.getElementById('svgOutput').textContent;
+    navigator.clipboard?.writeText(svg) || this._fallbackCopy(svg);
+    this.toast('📋 SVG copied!');
+  },
+
+  exportJSON() {
+    const dataUrl = this.canvas.toDataURL('image/png');
+    const data = {
+      type: 'icon',
+      tool: 'shadow-studio/icon-designer',
+      version: '5.0.0',
+      size: this.size,
+      backgroundColor: this.bgColor,
+      layers: this.layers.map(l => ({ name: l.name, visible: l.visible, hasData: !!l.data })),
+      image: dataUrl,
+      generatedAt: new Date().toISOString()
+    };
+    const json = JSON.stringify(data, null, 2);
+    navigator.clipboard?.writeText(json) || this._fallbackCopy(json);
+    this.toast('📋 JSON copied (AI-ready)!');
+  },
+
+  updateAIOutput() {
+    if (!document.getElementById('aiOutput')) return;
+    const dataUrl = this.canvas.toDataURL('image/png');
+    const data = {
+      type: 'icon_design',
+      tool: 'shadow-studio/icon-designer',
+      version: '5.0.0',
+      size: this.size,
+      backgroundColor: this.bgColor,
+      data_url: dataUrl,
+      pixel_data: this._getPixelData(),
+      generated_at: new Date().toISOString()
+    };
+    document.getElementById('aiOutput').textContent = JSON.stringify(data, null, 2);
+  },
+
+  _getPixelData() {
+    const data = this.ctx.getImageData(0, 0, this.size, this.size).data;
+    const pixels = [];
+    for (let y = 0; y < this.size; y++) {
+      for (let x = 0; x < this.size; x++) {
+        const i = (y * this.size + x) * 4;
+        if (data[i + 3] > 0) {
+          pixels.push({
+            x, y,
+            r: data[i], g: data[i+1], b: data[i+2], a: data[i+3]
+          });
+        }
+      }
+    }
+    return pixels;
+  },
+
+  downloadAI() {
+    const json = document.getElementById('aiOutput').textContent;
+    shadowStudio.get('utils')?.download('icon-ai-data.json', json, 'application/json');
+    this.toast('💾 AI data downloaded!');
+  },
+
+  // Utilities
+  _fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  },
+
+  _rasterToSvgPaths() {
+    const data = this.ctx.getImageData(0, 0, this.size, this.size).data;
+    let paths = '';
+    // Group adjacent same-color pixels into rects (simplified)
+    const visited = new Set();
+    for (let y = 0; y < this.size; y++) {
+      for (let x = 0; x < this.size; x++) {
+        const key = `${x},${y}`;
+        if (visited.has(key)) continue;
+        const i = (y * this.size + x) * 4;
+        if (data[i + 3] === 0) { visited.add(key); continue; }
+        const color = `rgb(${data[i]},${data[i+1]},${data[i+2]})`;
+        // Simple rect expansion
+        let w = 1, h = 1;
+        while (x + w < this.size) {
+          const ni = (y * this.size + x + w) * 4;
+          if (data[ni] === data[i] && data[ni+1] === data[i+1] && data[ni+2] === data[i+2] && data[ni+3] === data[i+3]) w++;
+          else break;
+        }
+        paths += `<rect x="${x}" y="${y}" width="${w}" height="1" fill="${color}"/>`;
+        for (let dx = 0; dx < w; dx++) visited.add(`${x+dx},${y}`);
+      }
+    }
+    return paths;
+  },
+
+  renderQuickPalette() {
+    const container = document.getElementById('quickPalette');
+    container.innerHTML = '';
+    const colors = ['#7c4dff','#00e5ff','#ff6b81','#f59e0b','#22c55e','#ef4444','#ffffff','#000000','#a855f7','#ec4899','#f97316','#14b8a6','#6366f1','#84cc16'];
+    colors.forEach(c => {
+      const sw = document.createElement('div');
+      sw.className = 'pal-swatch';
+      sw.style.background = c;
+      sw.onclick = () => { document.getElementById('primaryColor').value = c; this.primaryColor = c; };
+      container.appendChild(sw);
+    });
+  },
+
+  toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => el.classList.remove('show'), 2000);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => ID.init());
+</script>
+</body>
+</html>

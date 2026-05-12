@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest",
+  "name": "Shadow Studio — Universal Asset Generator",
+  "short_name": "Shadow Studio",
+  "description": "Open source Canva for web dev. AI-ready creative tool platform for assets, animations, and designs.",
+  "version": "5.1.0",
+  "dir": "ltr",
+  "lang": "en",
+  "orientation": "any",
+  "id": "/?source=pwa",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "theme_color": "#0a0b14",
+  "background_color": "#0a0b14",
+  "categories": ["productivity", "utilities", "graphics", "design"],
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Visual Editor",
+      "short_name": "Editor",
+      "description": "Open visual editor",
+      "url": "#/editor",
+      "icons": [{ "src": "/icons/editor.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Photo Editor",
+      "short_name": "Photos",
+      "description": "Open photo editor",
+      "url": "/photo_editor.html",
+      "icons": [{ "src": "/icons/photo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "2.5D Playground",
+      "short_name": "2.5D",
+      "description": "Open 2.5D playground",
+      "url": "/2.5d_playground.html",
+      "icons": [{ "src": "/icons/playground.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Asset Exporter",
+      "short_name": "Export",
+      "description": "Export assets",
+      "url": "#/export",
+      "icons": [{ "src": "/icons/export.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dark.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+shadow",
+      "url": "/?tool=%s"
+    }
+  ],
+  "share_target": {
+    "action": "/share-target/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "media",
+          "accept": ["image/*", "video/*", "audio/*"]
+        }
+      ]
+    }
+  },
+  "edge_side_panel": {
+    "preferred_width": 480
+  },
+  "handle_links": "auto",
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  }
+}

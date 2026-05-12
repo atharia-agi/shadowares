@@ -1,332 +1,460 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shadow Mesh Gradient Generator</title>
-    <style>
-        :root{--bg:#07080f;--surface:#111827;--border:#1e293b;--text:#f1f5f9;--primary:#8b5cf6;}
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden;display:flex;}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌈 Mesh Gradient Generator v5.0 — Shadow Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0b14;--surface:#15172a;--border:#2a2d4a;--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1400px;margin:0 auto;padding:40px}
+.header{text-align:center;margin-bottom:32px}
+.header h1{font-size:2.5rem;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,#7c4dff,#9c6bff,#00e5ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--text-muted);font-size:1.05rem}
 
-        /* Sidebar Controls */
-        .controls{width:320px;background:var(--surface);border-right:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;z-index:10;}
-        .controls h2{font-size:1.5rem;font-weight:900;background:linear-gradient(135deg,#c084fc,#60a5fa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-        
-        .group{display:flex;flex-direction:column;gap:8px;}
-        .label{font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;justify-content:space-between;}
-        .label span{color:#a5f3fc;font-family:monospace;}
+/* Layout */
+.studio{display:grid;grid-template-columns:320px 1fr;gap:24px}
+.panel{background:var(--surface);border-radius:12px;padding:24px;border:1px solid var(--border)}
+.panel h2{font-size:1.05rem;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.panel h2 .ico{font-size:1.3rem}
 
-        input[type="range"]{width:100%;accent-color:var(--primary);height:6px;border-radius:3px;outline:none;-webkit-appearance:none;appearance:none;background:#1e293b;}
-        input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:var(--primary);cursor:pointer;}
+/* Controls */
+.control-group{margin-bottom:18px}
+.control-group label{display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.control-group input[type="range"]{width:100%;height:6px;-webkit-appearance:none;background:var(--border);border-radius:3px;outline:none}
+.control-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--primary);border-radius:50%;cursor:pointer;box-shadow:0 0 8px rgba(124,77,255,.5)}
+.control-group .val{text-align:right;font-size:.8rem;color:var(--accent);margin-top:3px}
+.control-group input[type="color"]{width:100%;height:38px;border:none;border-radius:8px;cursor:pointer;background:var(--bg)}
 
-        .point-list{display:flex;flex-direction:column;gap:8px;}
-        .point-item{display:flex;align-items:center;gap:10px;background:#0f172a;padding:10px;border-radius:10px;border:1px solid var(--border);}
-        .point-item input[type="color"]{width:30px;height:30px;border:none;border-radius:6px;cursor:pointer;background:transparent;}
-        .point-item .p-info{flex:1;font-size:.75rem;color:#94a3b8;}
-        .btn-del{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;padding:4px;opacity:.6;transition:.2s;}
-        .btn-del:hover{opacity:1;transform:scale(1.1);}
+.color-palette{display:flex;gap:8px;margin-bottom:16px}
+.color-swatch{width:40px;height:40px;border-radius:10px;border:2px solid var(--border);cursor:pointer;transition:transform .2s}
+.color-swatch:hover{transform:scale(1.12)}
 
-        .btn-add{width:100%;padding:12px;background:rgba(139,92,246,.1);color:var(--primary);border:1px dashed var(--primary);border-radius:10px;cursor:pointer;font-weight:700;transition:.2s;}
-        .btn-add:hover{background:rgba(139,92,246,.2);}
+/* Gradient Presets */
+.preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0}
+.preset-btn{padding:10px 8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);cursor:pointer;transition:all .2s;font-size:.72rem;font-family:inherit;text-align:center}
+.preset-btn:hover{border-color:var(--primary);background:rgba(124,77,255,.08)}
+.preset-btn.active{border-color:var(--primary);background:rgba(124,77,255,.15);box-shadow:0 0 10px rgba(124,77,255,.2)}
+.preset-btn .swatch{display:inline-block;width:16px;height:16px;border-radius:4px;margin-right:4px;vertical-align:middle}
 
-        /* Main Preview */
-        .preview-container{flex:1;position:relative;display:flex;flex-direction:column;background:#000;}
-        .canvas-wrap{flex:1;position:relative;overflow:hidden;cursor:crosshair;}
-        #mesh-canvas{position:absolute;inset:0;width:100%;height:100%;}
-        
-        /* Draggable Points on UI */
-        .ui-point{
-            position:absolute;width:24px;height:24px;border-radius:50%;border:3px solid #fff;
-            box-shadow:0 0 10px rgba(0,0,0,0.5);transform:translate(-50%,-50%);
-            cursor:grab;z-index:20;transition:transform .1s;
-        }
-        .ui-point:active{cursor:grabbing;transform:translate(-50%,-50%) scale(1.2);}
+/* Canvas Preview */
+.canvas-container{border-radius:12px;overflow:hidden;background:var(--surface);border:1px solid var(--border);position:relative}
+canvas{width:100%;height:100%;display:block}
+.canvas-hint{position:absolute;bottom:12px;right:14px;font-size:.68rem;color:var(--text-muted);opacity:.6}
 
-        /* Glass Overlay Toggle */
-        .glass-overlay{
-            position:absolute;inset:0;pointer-events:none;display:none;
-            backdrop-filter:blur(40px) saturate(150%);
-            background:rgba(255,255,255,0.05);
-            z-index:15;
-        }
-        .glass-overlay.active{display:block;}
+/* Action Buttons */
+.btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{padding:11px 18px;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .2s;border:none;font-size:.82rem;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,#7c4dff,#9c6bff);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,77,255,.3)}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary)}
+.btn-accent{background:linear-gradient(135deg,#00e5ff,#22d3ee);color:#0a0b14;font-weight:700}
+.btn-accent:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,229,255,.3)}
 
-        /* Code Output */
-        .code-panel{
-            background:var(--sidebar);border-top:1px solid var(--border);padding:20px;
-            display:flex;flex-direction:column;gap:10px;z-index:30;
-        }
-        .code-box{
-            background:#0f172a;border:1px solid var(--border);border-radius:12px;padding:16px;
-            font-family:'Cascadia Code',monospace;font-size:.8rem;color:#a5f3fc;
-            max-height:120px;overflow-y:auto;position:relative;
-        }
-        .cp-btn{position:absolute;top:8px;right:8px;background:#334155;color:#e2e8f0;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.7rem;}
+/* Code Block */
+.code-block{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Fira Code',monospace;font-size:.72rem;color:#a0a8c0;white-space:pre-wrap;overflow-x:auto;max-height:200px;overflow-y:auto;margin-top:16px}
+.code-block .cmt{color:#5c7a99}.code-block .key{color:#82aaff}.code-block .val{color:#c3e88d}
 
-        .toolbar{position:absolute;top:20px;right:20px;display:flex;gap:10px;z-index:40;}
-        .tool-btn{padding:10px 20px;background:rgba(15,23,42,0.8);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;transition:.2s;}
-        .tool-btn:hover{border-color:var(--primary);transform:translateY(-2px);}
-        .tool-btn.active{background:var(--primary);border-color:var(--primary);}
-    </style>
+/* Export Card */
+.export-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:20px}
+.export-card h3{font-size:.92rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.export-btns{display:flex;gap:8px;flex-wrap:wrap}
+.ex-btn{padding:8px 14px;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;border:none;font-size:.78rem;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.ex-btn-copy{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.ex-btn-copy:hover{border-color:var(--primary)}
+.ex-btn-dl{background:linear-gradient(135deg,#7c4dff,#9c6bff);color:#fff}
+.ex-btn-dl:hover{box-shadow:0 4px 12px rgba(124,77,255,.3)}
+
+/* Responsive */
+@media(max-width:768px){.studio{grid-template-columns:1fr}.container{padding:16px}}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.85rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4);pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
 </head>
 <body>
+<div class="container">
+  <div class="header">
+    <h1>🌈 Mesh Gradient Generator</h1>
+    <p>Real-time animated mesh gradients — export PNG, CSS, or copy canvas data</p>
+  </div>
 
-<div class="controls">
-    <h2>Mesh Gradient</h2>
-    
-    <div class="group">
-        <div class="label">Speed <span id="v-speed">1.0x</span></div>
-        <input type="range" id="speed" min="0" max="500" value="100" oninput="updateSpeed()">
-    </div>
+  <div class="studio">
+    <!-- Controls -->
+    <div class="panel">
+      <h2><span class="ico">🎨</span> Controls</h2>
 
-    <div class="group">
-        <div class="label">Blur / Spread <span id="v-blur">60%</span></div>
-        <input type="range" id="blur" min="10" max="100" value="60" oninput="draw()">
-    </div>
+      <div class="control-group">
+        <label>Animation Speed: <span class="val" id="speedVal">30%</span></label>
+        <input type="range" id="speedControl" min="0" max="100" value="30">
+      </div>
+      <div class="control-group">
+        <label>Noise Intensity: <span class="val" id="noiseVal">40%</span></label>
+        <input type="range" id="noiseControl" min="0" max="100" value="40">
+      </div>
+      <div class="control-group">
+        <label>Color Mix: <span class="val" id="mixVal">60%</span></label>
+        <input type="range" id="mixControl" min="0" max="100" value="60">
+      </div>
+      <div class="control-group">
+        <label>Resolution Scale: <span class="val" id="resVal">50%</span></label>
+        <input type="range" id="resControl" min="10" max="100" value="50">
+      </div>
 
-    <div class="group">
-        <div class="label">Background</div>
-        <input type="color" id="bg-color" value="#07080f" oninput="draw()">
-    </div>
-
-    <div class="group">
-        <div class="label">Mesh Points</div>
-        <div class="point-list" id="point-list"></div>
-        <button class="btn-add" onclick="addPoint()">+ Tambah Titik</button>
-    </div>
-
-    <p style="font-size:.7rem;color:#475569;margin-top:auto;">Drag titik di canvas untuk mengubah komposisi warna secara live.</p>
-</div>
-
-<div class="preview-container">
-    <div class="toolbar">
-        <button class="tool-btn" id="btn-animate" onclick="toggleAnimate()">Animate: ON</button>
-        <button class="tool-btn" id="btn-glass" onclick="toggleGlass()">Glass Overlay: OFF</button>
-        <button class="tool-btn" onclick="randomize()">🎲 Randomize</button>
-    </div>
-
-    <div class="canvas-wrap" id="canvas-wrap">
-        <canvas id="mesh-canvas"></canvas>
-        <div class="glass-overlay" id="glass-overlay"></div>
-        <div id="points-ui"></div>
-    </div>
-
-    <div class="code-panel">
-        <div class="label">CSS Output (Radial Layered)</div>
-        <div class="code-box">
-            <button class="cp-btn" onclick="copyCode()">Copy CSS</button>
-            <code id="code-text"></code>
+      <div class="control-group">
+        <label>Colors</label>
+        <div class="color-palette">
+          <input type="color" id="color1" value="#7c4dff" class="color-swatch">
+          <input type="color" id="color2" value="#00e5ff" class="color-swatch">
+          <input type="color" id="color3" value="#ff6b81" class="color-swatch">
+          <input type="color" id="color4" value="#f59e0b" class="color-swatch">
         </div>
+      </div>
+
+      <h3 style="font-size:.85rem;margin-bottom:10px;color:var(--text-muted)">Quick Presets</h3>
+      <div class="preset-grid">
+        <button class="preset-btn" onclick="MG.applyPreset('sunset')"><span class="swatch" style="background:linear-gradient(135deg,#ff6b81,#7c4dff,#00e5ff)"></span>Sunset</button>
+        <button class="preset-btn" onclick="MG.applyPreset('ocean')"><span class="swatch" style="background:linear-gradient(135deg,#0077b6,#00b4d8,#90e0ef)"></span>Ocean</button>
+        <button class="preset-btn" onclick="MG.applyPreset('forest')"><span class="swatch" style="background:linear-gradient(135deg,#2d6a4f,#40916c,#52b788)"></span>Forest</button>
+        <button class="preset-btn" onclick="MG.applyPreset('fire')"><span class="swatch" style="background:linear-gradient(135deg,#dc2626,#f59e0b,#fbbf24)"></span>Fire</button>
+        <button class="preset-btn" onclick="MG.applyPreset('cosmic')"><span class="swatch" style="background:linear-gradient(135deg,#7c4dff,#4a00e0,#8e24aa)"></span>Cosmic</button>
+        <button class="preset-btn" onclick="MG.applyPreset('candy')"><span class="swatch" style="background:linear-gradient(135deg,#ff6b9d,#c44dff,#4ade80)"></span>Candy</button>
+      </div>
+
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-primary" onclick="MG.exportPNG()">💾 Export PNG</button>
+        <button class="btn btn-primary" onclick="MG.exportCanvas()">🖼️ Copy Canvas to Clipboard</button>
+        <button class="btn btn-secondary" onclick="MG.exportCSS()">📋 Copy CSS Gradient</button>
+        <button class="btn btn-secondary" onclick="MG.randomizeColors()">🎲 Randomize Colors</button>
+        <button class="btn btn-secondary" onclick="MG.freezeAnimation()">❄️ Freeze / Resume</button>
+      </div>
     </div>
+
+    <!-- Main Canvas -->
+    <div>
+      <div class="canvas-container" id="canvasContainer">
+        <canvas id="gradientCanvas"></canvas>
+        <span class="canvas-hint" id="canvasHint">800 × 450</span>
+      </div>
+
+      <div class="export-card">
+        <h3>📋 CSS Output (copy & paste)</h3>
+        <div class="code-block" id="codeOutput">/* Adjust settings and click "Copy CSS Gradient" */</div>
+        <div class="export-btns">
+          <button class="ex-btn ex-btn-copy" onclick="MG.copyCSS()">📋 Copy CSS</button>
+          <button class="ex-btn ex-btn-dl" onclick="MG.downloadCSS()">💾 Download .css</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-    const canvas = document.getElementById('mesh-canvas');
-    const ctx = canvas.getContext('2d');
-    const wrap = document.getElementById('canvas-wrap');
-    const pointsUI = document.getElementById('points-ui');
-    const listUI = document.getElementById('point-list');
+/* ============================================
+   MESH GRADIENT GENERATOR v5.0 — MAX LEVEL
+   Real-time canvas animation + multi-export
+   ============================================ */
 
-    let points = [
-        { x: 0.2, y: 0.2, color: '#8b5cf6', vx: 0.001, vy: 0.0015 },
-        { x: 0.8, y: 0.3, color: '#06b6d4', vx: -0.0012, vy: 0.001 },
-        { x: 0.3, y: 0.8, color: '#ec4899', vx: 0.0015, vy: -0.0011 },
-        { x: 0.7, y: 0.7, color: '#f59e0b', vx: -0.001, vy: -0.0013 }
-    ];
+const MG = {
+  canvas: null,
+  ctx: null,
+  animationId: null,
+  time: 0,
+  frozen: false,
+  
+  speed: 0.003,
+  noiseAmount: 0.4,
+  mix: 0.6,
+  resScale: 0.5,
+  colors: ['#7c4dff', '#00e5ff', '#ff6b81'],
 
-    let isAnimating = true;
-    let isGlass = false;
-    let speedMult = 1.0;
-    let dragIdx = -1;
+  init() {
+    this.canvas = document.getElementById('gradientCanvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.resize();
+    this.bindEvents();
+    this.startAnimation();
+    window.addEventListener('resize', () => this.resize());
+  },
 
-    function init() {
-        resize();
-        window.addEventListener('resize', resize);
-        
-        wrap.addEventListener('mousedown', handleDown);
-        window.addEventListener('mousemove', handleMove);
-        window.addEventListener('mouseup', handleUp);
-        
-        renderList();
-        animate();
-    }
+  resize() {
+    const container = document.getElementById('canvasContainer');
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.floor(rect.width);
+    const h = Math.floor(rect.width * 9 / 16);
+    this.canvas.width = w;
+    this.canvas.height = h;
+    // Apply res scale
+    this.canvas.width = Math.floor(w * this.resScale);
+    this.canvas.height = Math.floor(h * this.resScale);
+    document.getElementById('canvasHint').textContent = `${w} × ${h}`;
+  },
 
-    function resize() {
-        canvas.width = wrap.offsetWidth;
-        canvas.height = wrap.offsetHeight;
-        draw();
-    }
+  bindEvents() {
+    const bind = (id, key, transform, displayId) => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', (e) => {
+        this[key] = transform ? transform(e.target.value) : e.target.value;
+        if (displayId) document.getElementById(displayId).textContent = e.target.value + '%';
+        if (!this.frozen) this.render();
+      });
+    };
+    bind('speedControl', 'speed', v => v / 10000, 'speedVal');
+    bind('noiseControl', 'noiseAmount', v => v / 100, 'noiseVal');
+    bind('mixControl', 'mix', v => v / 100, 'mixVal');
+    bind('resControl', 'resScale', v => v / 100, 'resVal');
 
-    function addPoint() {
-        if (points.length >= 8) return;
-        points.push({
-            x: Math.random(), y: Math.random(),
-            color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'),
-            vx: (Math.random() - 0.5) * 0.003,
-            vy: (Math.random() - 0.5) * 0.003
-        });
-        renderList();
-        draw();
-    }
+    ['color1','color2','color3','color4'].forEach((id, i) => {
+      document.getElementById(id).addEventListener('input', (e) => {
+        if (i < this.colors.length) this.colors[i] = e.target.value;
+      });
+    });
+  },
 
-    function deletePoint(idx) {
-        if (points.length <= 2) return;
-        points.splice(idx, 1);
-        renderList();
-        draw();
-    }
+  // Presets
+  presets: {
+    sunset: { colors: ['#ff6b81','#7c4dff','#00e5ff'], speed: 20, noise: 30, mix: 55 },
+    ocean: { colors: ['#0077b6','#00b4d8','#90e0ef'], speed: 15, noise: 50, mix: 40 },
+    forest: { colors: ['#2d6a4f','#40916c','#52b788'], speed: 25, noise: 25, mix: 60 },
+    fire: { colors: ['#dc2626','#f59e0b','#fbbf24'], speed: 40, noise: 60, mix: 50 },
+    cosmic: { colors: ['#7c4dff','#4a00e0','#8e24aa'], speed: 10, noise: 35, mix: 45 },
+    candy: { colors: ['#ff6b9d','#c44dff','#4ade80'], speed: 30, noise: 20, mix: 55 }
+  },
 
-    function renderList() {
-        listUI.innerHTML = '';
-        pointsUI.innerHTML = '';
-        
-        points.forEach((p, i) => {
-            // Sidebar item
-            const item = document.createElement('div');
-            item.className = 'point-item';
-            item.innerHTML = `
-                <input type="color" value="${p.color}" oninput="updateColor(${i}, this.value)">
-                <div class="p-info">Point ${i+1}</div>
-                <button class="btn-del" onclick="deletePoint(${i})">×</button>
-            `;
-            listUI.appendChild(item);
+  applyPreset(name) {
+    const p = this.presets[name];
+    if (!p) return;
+    this.colors = [...p.colors];
+    this.speed = p.speed / 10000;
+    this.noiseAmount = p.noise / 100;
+    this.mix = p.mix / 100;
 
-            // UI handle
-            const handle = document.createElement('div');
-            handle.className = 'ui-point';
-            handle.style.left = (p.x * 100) + '%';
-            handle.style.top = (p.y * 100) + '%';
-            handle.style.backgroundColor = p.color;
-            handle.dataset.index = i;
-            pointsUI.appendChild(handle);
-        });
-    }
+    document.getElementById('color1').value = this.colors[0];
+    document.getElementById('color2').value = this.colors[1];
+    document.getElementById('color3').value = this.colors[2];
+    document.getElementById('speedControl').value = p.speed;
+    document.getElementById('noiseControl').value = p.noise;
+    document.getElementById('mixControl').value = p.mix;
+    document.getElementById('speedVal').textContent = p.speed + '%';
+    document.getElementById('noiseVal').textContent = p.noise + '%';
+    document.getElementById('mixVal').textContent = p.mix + '%';
 
-    function updateColor(idx, val) {
-        points[idx].color = val;
-        renderList();
-        draw();
-    }
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
 
-    function updateSpeed() {
-        speedMult = document.getElementById('speed').value / 100;
-        document.getElementById('v-speed').textContent = speedMult.toFixed(1) + 'x';
-    }
+    this.updateCode();
+    this.toast(`Preset: ${name} applied!`);
+  },
 
-    function handleDown(e) {
-        if (e.target.classList.contains('ui-point')) {
-            dragIdx = parseInt(e.target.dataset.index);
+  hexToRgb(hex) {
+    const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return r ? { r: parseInt(r[1],16), g: parseInt(r[2],16), b: parseInt(r[3],16) } : { r:0, g:0, b:0 };
+  },
+
+  lerpColor(c1, c2, t) {
+    const a = this.hexToRgb(c1), b = this.hexToRgb(c2);
+    const r = Math.round(a.r + (b.r - a.r) * t);
+    const g = Math.round(a.g + (b.g - a.g) * t);
+    const bl = Math.round(a.b + (b.b - a.b) * t);
+    return `rgb(${r},${g},${bl})`;
+  },
+
+  render() {
+    const w = this.canvas.width, h = this.canvas.height;
+    if (w === 0 || h === 0) return;
+    const imageData = this.ctx.createImageData(w, h);
+    const data = imageData.data;
+
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 0; x < w; x += 2) {
+        const noise = Math.sin(x * this.noiseAmount + this.time) * Math.cos(y * this.noiseAmount + this.time * 0.5);
+        const noise2 = Math.sin(x * this.noiseAmount * 0.7 + this.time * 0.7) * Math.cos(y * this.noiseAmount * 1.3 + this.time * 0.3);
+        const t = (Math.sin(x / w * Math.PI + this.time) + Math.cos(y / h * Math.PI + this.time * 0.3)) / 2 * this.mix + (noise + noise2) / 2 * (1 - this.mix);
+
+        let idx = Math.floor(Math.abs(t * this.colors.length * 2)) % (this.colors.length * 2);
+        let c1, c2, lt;
+        if (idx < this.colors.length) {
+          c1 = this.colors[Math.max(0, idx)];
+          c2 = this.colors[Math.min(this.colors.length - 1, idx + 1)];
+          lt = idx - Math.floor(idx);
+        } else {
+          const ri = idx - this.colors.length;
+          c1 = this.colors[Math.min(this.colors.length - 1, ri + 1)];
+          c2 = this.colors[Math.max(0, ri)];
+          lt = ri - Math.floor(ri);
         }
-    }
+        const rgb = this.hexToRgb(this.lerpColor(c1, c2, lt));
 
-    function handleMove(e) {
-        if (dragIdx === -1) return;
-        const rect = wrap.getBoundingClientRect();
-        points[dragIdx].x = (e.clientX - rect.left) / rect.width;
-        points[dragIdx].y = (e.clientY - rect.top) / rect.height;
-        
-        // Clamp
-        points[dragIdx].x = Math.max(0, Math.min(1, points[dragIdx].x));
-        points[dragIdx].y = Math.max(0, Math.min(1, points[dragIdx].y));
-        
-        draw();
-        updateUIHandles();
-    }
-
-    function handleUp() { dragIdx = -1; }
-
-    function updateUIHandles() {
-        const handles = document.querySelectorAll('.ui-point');
-        handles.forEach((h, i) => {
-            h.style.left = (points[i].x * 100) + '%';
-            h.style.top = (points[i].y * 100) + '%';
-        });
-    }
-
-    function draw() {
-        const bg = document.getElementById('bg-color').value;
-        const blurPct = document.getElementById('blur').value;
-        
-        ctx.fillStyle = bg;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        points.forEach(p => {
-            const radial = ctx.createRadialGradient(
-                p.x * canvas.width, p.y * canvas.height, 0,
-                p.x * canvas.width, p.y * canvas.height, Math.max(canvas.width, canvas.height) * (blurPct/100)
-            );
-            radial.addColorStop(0, p.color);
-            radial.addColorStop(1, 'transparent');
-            
-            ctx.globalCompositeOperation = 'screen';
-            ctx.fillStyle = radial;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        });
-
-        updateCode();
-    }
-
-    function animate() {
-        if (isAnimating && dragIdx === -1) {
-            points.forEach(p => {
-                p.x += p.vx * speedMult;
-                p.y += p.vy * speedMult;
-
-                if (p.x <= 0 || p.x >= 1) p.vx *= -1;
-                if (p.y <= 0 || p.y >= 1) p.vy *= -1;
-            });
-            draw();
-            updateUIHandles();
+        for (let dy = 0; dy < 2; dy++) {
+          for (let dx = 0; dx < 2; dx++) {
+            const px = x + dx, py = y + dy;
+            if (px >= w || py >= h) continue;
+            const i = (py * w + px) * 4;
+            data[i] = rgb.r;
+            data[i + 1] = rgb.g;
+            data[i + 2] = rgb.b;
+            data[i + 3] = 255;
+          }
         }
-        requestAnimationFrame(animate);
+      }
     }
 
-    function toggleAnimate() {
-        isAnimating = !isAnimating;
-        document.getElementById('btn-animate').textContent = `Animate: ${isAnimating ? 'ON' : 'OFF'}`;
-        document.getElementById('btn-animate').classList.toggle('active', isAnimating);
-    }
+    // Upscale
+    const temp = document.createElement('canvas');
+    temp.width = w / 2; temp.height = h / 2;
+    temp.getContext('2d').putImageData(imageData, 0, 0);
+    this.ctx.imageSmoothingEnabled = false;
+    this.ctx.drawImage(temp, 0, 0, w, h);
+  },
 
-    function toggleGlass() {
-        isGlass = !isGlass;
-        document.getElementById('glass-overlay').classList.toggle('active', isGlass);
-        document.getElementById('btn-glass').textContent = `Glass Overlay: ${isGlass ? 'ON' : 'OFF'}`;
-        document.getElementById('btn-glass').classList.toggle('active', isGlass);
-    }
+  animate() {
+    if (this.frozen) return;
+    this.time += this.speed * 60;
+    this.render();
+    this.animationId = requestAnimationFrame(() => this.animate());
+  },
 
-    function randomize() {
-        points.forEach(p => {
-            p.color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
-            p.vx = (Math.random() - 0.5) * 0.003;
-            p.vy = (Math.random() - 0.5) * 0.003;
-        });
-        renderList();
-        draw();
-    }
+  startAnimation() { this.animate(); },
 
-    function updateCode() {
-        const bg = document.getElementById('bg-color').value;
-        const blur = document.getElementById('blur').value;
-        let css = `background-color: ${bg};\nbackground-image: \n`;
-        
-        points.forEach((p, i) => {
-            const x = Math.round(p.x * 100);
-            const y = Math.round(p.y * 100);
-            css += `  radial-gradient(at ${x}% ${y}%, ${p.color} 0%, transparent ${blur}%)`;
-            css += (i === points.length - 1) ? ';' : ',\n';
-        });
+  randomizeColors() {
+    this.colors = Array.from({length: 4}, () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'));
+    ['color1','color2','color3','color4'].forEach((id, i) => document.getElementById(id).value = this.colors[i]);
+    this.toast('🎲 Colors randomized!');
+  },
 
-        document.getElementById('code-text').textContent = css;
-    }
+  freezeAnimation() {
+    this.frozen = !this.frozen;
+    if (!this.frozen) this.startAnimation();
+    this.toast(this.frozen ? '❄️ Animation frozen' : '▶️ Animation resumed');
+  },
 
-    function copyCode() {
-        navigator.clipboard.writeText(document.getElementById('code-text').textContent);
-        alert('CSS Copied to clipboard!');
-    }
+  exportPNG() {
+    // Use full resolution
+    const container = document.getElementById('canvasContainer');
+    const rect = container.getBoundingClientRect();
+    const fullCanvas = document.createElement('canvas');
+    fullCanvas.width = Math.floor(rect.width);
+    fullCanvas.height = Math.floor(rect.width * 9 / 16);
+    const fctx = fullCanvas.getContext('2d');
 
-    init();
+    // Re-render at full res
+    const oldW = this.canvas.width, oldH = this.canvas.height;
+    this.canvas.width = fullCanvas.width;
+    this.canvas.height = fullCanvas.height;
+    this.render();
+
+    const link = document.createElement('a');
+    link.download = `mesh-gradient-${Date.now()}.png`;
+    link.href = this.canvas.toDataURL('image/png');
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+
+    this.canvas.width = oldW; this.canvas.height = oldH;
+    this.render();
+    this.toast('✅ PNG downloaded!');
+  },
+
+  exportCanvas() {
+    // Copy canvas to clipboard as blob
+    this.canvas.toBlob(blob => {
+      if (navigator.clipboard && navigator.clipboard.write) {
+        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        this.toast('✅ Canvas copied to clipboard!');
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'mesh-gradient.png';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.toast('✅ Downloaded (clipboard not supported)');
+      }
+    }, 'image/png');
+  },
+
+  generateCSS() {
+    const colors = this.colors.map(c => c).join(', ');
+    return `/* Mesh Gradient — Generated by Shadow Studio */
+@keyframes meshShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.mesh-gradient {
+  background: linear-gradient(135deg, ${colors});
+  background-size: 400% 400%;
+  animation: meshShift ${this.speed * 10000 / 60}s ease infinite;
+  border-radius: 12px;
+}`;
+  },
+
+  generateCSSAdvanced() {
+    return `/* Mesh Gradient — Full CSS with noise overlay */
+.mesh-gradient-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, ${this.colors[0]}, ${this.colors[1]}, ${this.colors[2] || this.colors[0]});
+  background-size: 400% 400%;
+  animation: meshShift ${this.speed * 10000 / 60}s ease infinite;
+}
+
+.mesh-gradient-noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: ${this.noiseAmount * 0.3};
+  mix-blend-mode: overlay;
+  // Consider using an SVG noise filter for pure CSS noise
+}
+
+@keyframes meshShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}`;
+  },
+
+  copyCSS() {
+    const css = this.generateCSSAdvanced();
+    navigator.clipboard?.writeText(css) || this._fallbackCopy(css);
+    this.toast('📋 CSS copied! Paste into your stylesheet.');
+  },
+
+  downloadCSS() {
+    const css = this.generateCSSAdvanced();
+    shadowStudio.get('utils').download('mesh-gradient.css', css, 'text/css');
+    this.toast('💾 CSS file downloaded!');
+  },
+
+  updateCode() {
+    if (!this.codeOutput) this.codeOutput = document.getElementById('codeOutput');
+    if (this.codeOutput) this.codeOutput.textContent = this.generateCSSAdvanced();
+  },
+
+  _fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  },
+
+  toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => MG.init());
 </script>
-
 </body>
 </html>

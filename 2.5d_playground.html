@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 2.5D Playground — Shadow Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0b14;--surface:#15172a;--surface-2:#1c1f36;--border:#2a2d4a;--border-light:rgba(255,255,255,.06);--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff;--success:#34d399;--warning:#f59e0b;--error:#ef4444;--gradient:linear-gradient(135deg,#7c4dff,#9c6bff,#00e5ff)}
+html{font-size:15px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+.topbar{height:52px;min-height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:8px}
+.topbar-section{display:flex;gap:4px;align-items:center}
+.top-icon{width:34px;height:34px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .2s}
+.top-icon:hover{background:rgba(255,255,255,.05);color:var(--text);border-color:var(--primary)}
+.topbar-title{flex:1;font-size:.9rem;font-weight:600}
+.topbar-actions{display:flex;gap:6px}
+.btn-sm{padding:5px 10px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s;display:inline-flex;align-items:center;gap:3px}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#6c3dee}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--primary)}
+.btn-success{background:var(--success);color:#000}
+
+.main-area{flex:1;display:flex;overflow:hidden}
+
+/* Left: Scene Builder */
+.sidebar-left{width:280px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sidebar-header{padding:14px;border-bottom:1px solid var(--border)}
+.sidebar-header h2{font-size:.85rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.scene-items{flex:1;overflow-y:auto;padding:8px}
+.scene-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:grab;transition:all .15s;user-select:none}
+.scene-item:hover{border-color:var(--primary)}
+.scene-item .icon{font-size:1.1rem}
+.scene-item .label{font-size:.8rem;flex:1}
+.scene-item .remove{color:var(--error);cursor:pointer;font-size:.7rem;opacity:.5;transition:opacity .15s}
+.scene-item .remove:hover{opacity:1}
+.scene-controls{padding:10px;border-top:1px solid var(--border)}
+.scene-controls label{display:block;font-size:.72rem;color:var(--text-muted);margin-bottom:4px}
+.scene-controls input[type=range]{width:100%;accent-color:var(--primary)}
+.scene-controls select,.scene-controls input[type=text]{width:100%;padding:5px 8px;border-radius:4px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.78rem;font-family:inherit}
+.prop-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+
+/* Canvas */
+.canvas-area{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle,#1a1d2e 1px,transparent 1px);background-size:24px 24px}
+#physicsCanvas{border-radius:8px;box-shadow:0 0 40px rgba(124,77,255,.08)}
+
+/* Right: Properties */
+.sidebar-right{width:260px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.props-section{padding:12px 14px;border-bottom:1px solid var(--border)}
+.props-section h3{font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+
+/* Presets */
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.preset-card{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center;cursor:pointer;transition:all .15s;font-size:.72rem}
+.preset-card:hover{border-color:var(--primary);color:var(--text)}
+.preset-card.active{border-color:var(--primary);background:rgba(124,77,255,.1);color:var(--primary)}
+.preset-card .p-icon{font-size:1.3rem;margin-bottom:2px}
+
+.obj-stats{font-size:.75rem;color:var(--text-muted);line-height:1.8;margin-top:4px}
+.obj-stats span{color:var(--text)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.82rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+.export-section{padding:12px 14px;border-top:1px solid var(--border)}
+.export-section .export-btns{display:flex;gap:6px}
+
+@media(max-width:768px){
+  .sidebar-left{width:200px}.sidebar-right{width:200px}
+}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-section">
+    <button class="top-icon" onclick="P2D.resetScene()" title="Reset Scene">🔄</button>
+    <button class="top-icon" onclick="P2D.undo()" title="Undo">↩️</button>
+    <button class="top-icon" onclick="P2D.redo()" title="Redo">↪️</button>
+    <div class="topbar-divider" style="width:1px;height:24px;background:var(--border);margin:0 6px"></div>
+    <button class="top-icon" onclick="P2D.togglePhysics()" id="togglePhysics" title="Toggle Physics">⚡</button>
+    <button class="top-icon" onclick="P2D.toggleGravity()" id="toggleGravity" title="Toggle Gravity">🪨</button>
+  </div>
+  <span class="topbar-title">🎮 2.5D Playground</span>
+  <div class="topbar-actions">
+    <button class="btn-sm btn-secondary" onclick="P2D.exportScene()">📦 Export</button>
+    <button class="btn-sm btn-success" onclick="P2D.downloadScene()">💾 Save</button>
+  </div>
+</div>
+
+<div class="main-area">
+  <!-- Left: Scene Builder -->
+  <aside class="sidebar-left">
+    <div class="sidebar-header">
+      <h2>🧩 Objects</h2>
+    </div>
+    <div class="scene-items" id="objectPalette">
+      <div class="scene-item" draggable="true" data-type="box" onclick="P2D.addObject('box')">
+        <span class="icon">📦</span><span class="label">Cube</span>
+        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
+      </div>
+      <div class="scene-item" draggable="true" data-type="sphere" onclick="P2D.addObject('sphere')">
+        <span class="icon">⚽</span><span class="label">Sphere</span>
+        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
+      </div>
+      <div class="scene-item" draggable="true" data-type="cylinder" onclick="P2D.addObject('cylinder')">
+        <span class="icon">🧱</span><span class="label">Cylinder</span>
+        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
+      </div>
+      <div class="scene-item" draggable="true" data-type="plane" onclick="P2D.addObject('plane')">
+        <span class="icon">🛬</span><span class="label">Plane</span>
+        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
+      </div>
+      <div class="scene-item" draggable="true" data-type="cone" onclick="P2D.addObject('cone')">
+        <span class="icon">🍦</span><span class="label">Cone</span>
+        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
+      </div>
+      <div class="scene-item" draggable="true" data-type="torus" onclick="P2D.addObject('torus')">
+        <span class="icon">🍩</span><span class="label">Torus</span>
+        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
+      </div>
+      <div class="scene-item" draggable="true" data-type="text3d" onclick="P2D.addObject('text3d')">
+        <span class="icon">🔤</span><span class="label">3D Text</span>
+        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
+      </div>
+      <div class="scene-item" draggable="true" data-type="light" onclick="P2D.addObject('light')">
+        <span class="icon">💡</span><span class="label">Light Source</span>
+        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
+      </div>
+    </div>
+    <div class="scene-controls">
+      <div class="props-section" style="border:none;padding:0">
+        <h3>🎨 Properties</h3>
+        <label>Object Color</label>
+        <input type="color" id="objColor" value="#7c4dff" onchange="P2D.updatePreview()">
+        <div class="prop-row" style="margin-top:8px">
+          <div>
+            <label>Size X</label>
+            <input type="range" id="sizeX" min="1" max="10" value="1" step="0.5" oninput="P2D.updatePreview()">
+          </div>
+          <div>
+            <label>Size Y</label>
+            <input type="range" id="sizeY" min="1" max="10" value="1" step="0.5" oninput="P2D.updatePreview()">
+          </div>
+        </div>
+        <div class="prop-row">
+          <div>
+            <label>Size Z</label>
+            <input type="range" id="sizeZ" min="1" max="10" value="1" step="0.5" oninput="P2D.updatePreview()">
+          </div>
+          <div>
+            <label>Rotation</label>
+            <input type="range" id="objRotation" min="0" max="360" value="0" oninput="P2D.updatePreview()">
+          </div>
+        </div>
+        <label style="margin-top:8px">Material</label>
+        <select id="objMaterial" onchange="P2D.updatePreview()">
+          <option value="standard">Standard</option>
+          <option value="metal">Metal</option>
+          <option value="glass">Glass</option>
+          <option value="wireframe">Wireframe</option>
+          <option value="glow">Glow</option>
+        </select>
+        <label style="margin-top:8px">Animation</label>
+        <select id="objAnimation" onchange="P2D.updatePreview()">
+          <option value="none">None</option>
+          <option value="spin">Spin</option>
+          <option value="bounce">Bounce</option>
+          <option value="pulse">Pulse</option>
+          <option value="float">Float</option>
+        </select>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Center: Canvas -->
+  <div class="canvas-area">
+    <div id="physicsCanvas"></div>
+  </div>
+
+  <!-- Right: Presets & Properties -->
+  <aside class="sidebar-right">
+    <div class="props-section">
+      <h3>🏷️ Presets</h3>
+      <div class="preset-grid">
+        <div class="preset-card active" data-preset="empty" onclick="P2D.loadPreset('empty',this)">
+          <div class="p-icon">🗑️</div>Empty
+        </div>
+        <div class="preset-card" data-preset="stack" onclick="P2D.loadPreset('stack',this)">
+          <div class="p-icon">🏗️</div>Stack
+        </div>
+        <div class="preset-card" data-preset="solar" onclick="P2D.loadPreset('solar',this)">
+          <div class="p-icon">☀️</div>Solar System
+        </div>
+        <div class="preset-card" data-preset="tower" onclick="P2D.loadPreset('tower',this)">
+          <div class="p-icon">🏰</div>Tower
+        </div>
+        <div class="preset-card" data-preset="maze" onclick="P2D.loadPreset('maze',this)">
+          <div class="p-icon">🔲</div>Maze
+        </div>
+        <div class="preset-card" data-preset="ballpit" onclick="P2D.loadPreset('ballpit',this)">
+          <div class="p-icon">🎱</div>Ball Pit
+        </div>
+      </div>
+    </div>
+
+    <div class="props-section">
+      <h3>📊 Scene Stats</h3>
+      <div class="obj-stats">
+        Objects: <span id="objCount">0</span><br>
+        Lights: <span id="lightCount">0</span><br>
+        Physics: <span id="physicsStatus">⚡ Off</span><br>
+        Gravity: <span id="gravityStatus">🪨 Off</span><br>
+        FPS: <span id="fpsCounter">0</span>
+      </div>
+    </div>
+
+    <div class="props-section">
+      <h3>🎯 Camera</h3>
+      <div class="prop-row">
+        <div>
+          <label>Angle X</label>
+          <input type="range" id="camX" min="-180" max="180" value="30" oninput="P2D.updateCamera()">
+        </div>
+        <div>
+          <label>Angle Y</label>
+          <input type="range" id="camY" min="-180" max="180" value="-30" oninput="P2D.updateCamera()">
+        </div>
+      </div>
+      <div>
+        <label>Zoom</label>
+        <input type="range" id="camZoom" min="100" max="1000" value="500" oninput="P2D.updateCamera()">
+      </div>
+    </div>
+
+    <div class="props-section">
+      <h3>🌈 Background</h3>
+      <input type="color" id="bgColor" value="#0a0b14" onchange="P2D.updateBackground()">
+      <div class="prop-row" style="margin-top:8px">
+        <select id="bgStyle" onchange="P2D.updateBackground()" style="margin-top:4px">
+          <option value="solid">Solid</option>
+          <option value="gradient">Gradient</option>
+          <option value="grid">Grid</option>
+          <option value="dark">Dark Space</option>
+        </select>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-backdrop" id="exportModal" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('exportModal').classList.remove('show')">&times;</button>
+    <h3>📦 Export Scene</h3>
+    <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:12px">Choose export format:</p>
+    <div class="export-formats" style="justify-content:center">
+      <button class="export-fmt-btn active" onclick="P2D.exportAs('css')">CSS 3D</button>
+      <button class="export-fmt-btn" onclick="P2D.exportAs('html')">Full HTML</button>
+      <button class="export-fmt-btn" onclick="P2D.exportAs('json')">JSON</button>
+      <button class="export-fmt-btn" onclick="P2D.exportAs('code')">Code</button>
+    </div>
+    <div class="code-block" id="exportCode" style="max-height:40vh"></div>
+    <div class="modal-actions">
+      <button class="btn-sm btn-primary" onclick="P2D.copyExport()">📋 Copy</button>
+      <button class="btn-sm btn-success" onclick="P2D.downloadExport()">💾 Download</button>
+      <button class="btn-sm btn-secondary" onclick="document.getElementById('exportModal').classList.remove('show')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="shadow-core-v5.js"></script>
+<script>
+const P2D = {
+  scene: [],
+  history: [],
+  historyIndex: -1,
+  physicsEnabled: false,
+  gravityEnabled: false,
+  animationFrame: null,
+  objects: new Map(),
+  nextId: 1,
+  presets: {},
+  canvasEl: null,
+  renderer: 'css', // 'css' or 'canvas'
+
+  init() {
+    this.canvasEl = document.getElementById('physicsCanvas');
+    this._setupPresets();
+    this._setupDragDrop();
+    this.loadPreset('empty');
+    this._render();
+    this._setupKeyboard();
+    this._animate();
+    this.toast('2.5D Playground ready! Drag objects from the left panel.');
+  },
+
+  // === PRESETS ===
+  _setupPresets() {
+    this.presets = {
+      empty: { objects: [] },
+      stack: { objects: [
+        { type:'box', x:0, y:-100, z:0, sizeX:2, sizeY:2, sizeZ:2, color:'#7c4dff', material:'metal' },
+        { type:'box', x:0, y:-60, z:0, sizeX:1.8, sizeY:2, sizeZ:1.8, color:'#00e5ff', material:'glass' },
+        { type:'box', x:0, y:-20, z:0, sizeX:1.6, sizeY:2, sizeZ:1.6, color:'#ff6b81', material:'glow' },
+        { type:'sphere', x:80, y:0, z:0, sizeX:1, sizeY:1, sizeZ:1, color:'#f59e0b', material:'metal', animation:'float' },
+      ]},
+      solar: { objects: [
+        { type:'sphere', x:0, y:0, z:0, sizeX:3, sizeY:3, sizeZ:3, color:'#ff6b00', material:'glow', animation:'spin' },
+        { type:'sphere', x:150, y:0, z:0, sizeX:0.5, sizeY:0.5, sizeZ:0.5, color:'#aaa', material:'standard', animation:'spin' },
+        { type:'sphere', x:250, y:0, z:0, sizeX:0.8, sizeY:0.8, sizeZ:0.8, color:'#c1440e', material:'standard', animation:'spin' },
+        { type:'sphere', x:340, y:0, z:0, sizeX:0.9, sizeY:0.9, sizeZ:0.9, color:'#4a90d9', material:'glass', animation:'spin' },
+      ]},
+      tower: { objects: [
+        { type:'box', x:0,y:-150,z:0, sizeX:4,sizeY:2,sizeZ:4, color:'#7c4dff', material:'metal' },
+        { type:'box', x:0,y:-100,z:0, sizeX:3.5,sizeY:2,sizeZ:3.5, color:'#9c6bff', material:'metal' },
+        { type:'box', x:0,y:-50,z:0, sizeX:3,sizeY:2,sizeZ:3, color:'#b08dff', material:'metal' },
+        { type:'box', x:0,y:0,z:0, sizeX:2.5,sizeY:2,sizeZ:2.5, color:'#c7abff', material:'glass' },
+        { type:'cone', x:0,y:60,z:0, sizeX:1.5,sizeY:3,sizeZ:1.5, color:'#00e5ff', material:'glow', animation:'spin' },
+      ]},
+      maze: { objects: [
+        { type:'box', x:-200,y:0,z:0, sizeX:2,sizeY:20,sizeZ:20, color:'#333', material:'metal' },
+        { type:'box', x:200,y:0,z:0, sizeX:2,sizeY:20,sizeZ:20, color:'#333', material:'metal' },
+        { type:'box', x:0,y:0,z:-200, sizeX:40,sizeY:20,sizeZ:2, color:'#333', material:'metal' },
+        { type:'box', x:0,y:0,z:200, sizeX:40,sizeY:20,sizeZ:2, color:'#333', material:'metal' },
+        { type:'box', x:0,y:0,z:0, sizeX:2,sizeY:20,sizeZ:30, color:'#555', material:'metal' },
+        { type:'box', x:50,y:-20,z:-50, sizeX:1,sizeY:2,sizeZ:1, color:'#7c4dff', material:'glass', animation:'bounce' },
+        { type:'sphere', x:100,y:20,z:100, sizeX:1,sizeY:1,sizeZ:1, color:'#ff6b81', material:'glow', animation:'float' },
+      ]},
+      ballpit: { objects: [
+        { type:'plane', x:0,y:-100,z:0, sizeX:20,sizeY:1,sizeZ:20, color:'#222', material:'standard' },
+        { type:'sphere', x:-30,y:-70,z:-30, sizeX:3,sizeY:3,sizeZ:3, color:'#7c4dff', material:'glass', animation:'bounce' },
+        { type:'sphere', x:0,y:-70,z:-10, sizeX:3,sizeY:3,sizeZ:3, color:'#00e5ff', material:'glass', animation:'bounce' },
+        { type:'sphere', x:30,y:-70,z:-30, sizeX:3,sizeY:3,sizeZ:3, color:'#ff6b81', material:'glass', animation:'bounce' },
+        { type:'sphere', x:-15,y:-70,z:20, sizeX:3,sizeY:3,sizeZ:3, color:'#f59e0b', material:'glass', animation:'bounce' },
+        { type:'sphere', x:15,y:-70,z:20, sizeX:3,sizeY:3,sizeZ:3, color:'#34d399', material:'glass', animation:'bounce' },
+      ]}
+    };
+  },
+
+  loadPreset(name, el) {
+    document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const preset = this.presets[name];
+    if (!preset) return;
+    this.scene = JSON.parse(JSON.stringify(preset.objects));
+    this.objects.clear();
+    this.nextId = 1;
+    this.scene.forEach(obj => { obj.id = this.nextId++; this.objects.set(obj.id, obj); });
+    this._render();
+    this.toast(`Loaded preset: ${name}`);
+  },
+
+  // === OBJECT MANAGEMENT ===
+  addObject(type) {
+    const obj = {
+      id: this.nextId++,
+      type,
+      x: Math.round((Math.random() - 0.5) * 200),
+      y: type === 'plane' ? -100 : Math.round(-(Math.random() * 100 + 20)),
+      z: Math.round((Math.random() - 0.5) * 200),
+      sizeX: 1, sizeY: 1, sizeZ: 1,
+      color: document.getElementById('objColor').value,
+      material: document.getElementById('objMaterial').value,
+      rotation: parseInt(document.getElementById('objRotation').value) || 0,
+      animation: document.getElementById('objAnimation').value || 'none',
+      visible: true
+    };
+
+    if (type === 'plane') {
+      obj.sizeX = 20; obj.sizeZ = 20; obj.sizeY = 0.2;
+      obj.y = -100; obj.color = '#2a2d4a'; obj.material = 'standard';
+    } else if (type === 'light') {
+      obj.sizeX = 0.5; obj.sizeY = 0.5; obj.sizeZ = 0.5;
+      obj.y = 100; obj.color = '#ffee55'; obj.material = 'glow';
+      obj.intensity = 1.5;
+    } else if (type === 'text3d') {
+      obj.text = 'HELLO'; obj.sizeX = 2; obj.sizeY = 1; obj.sizeZ = 0.2;
+      obj.color = '#7c4dff'; obj.material = 'glow';
+    }
+
+    this.scene.push(obj);
+    this.objects.set(obj.id, obj);
+    this.saveState();
+    this._render();
+    this.toast(`Added: ${type}`);
+  },
+
+  removeObject(el) {
+    const item = el.closest('.scene-item');
+    if (!item) return;
+    // Just hide from palette demo
+    item.style.display = 'none';
+    this.toast('Object removed from scene');
+  },
+
+  deleteObject(id) {
+    this.scene = this.scene.filter(o => o.id !== id);
+    this.objects.delete(id);
+    this.saveState();
+    this._render();
+  },
+
+  // === PHYSICS ===
+  togglePhysics() {
+    this.physicsEnabled = !this.physicsEnabled;
+    const btn = document.getElementById('togglePhysics');
+    btn.style.background = this.physicsEnabled ? 'rgba(0,229,255,.2)' : 'transparent';
+    btn.style.borderColor = this.physicsEnabled ? 'var(--accent)' : 'var(--border)';
+    btn.style.color = this.physicsEnabled ? 'var(--accent)' : 'var(--text-muted)';
+    document.getElementById('physicsStatus').textContent = this.physicsEnabled ? '⚡ On' : '⚡ Off';
+    this.toast(this.physicsEnabled ? 'Physics enabled' : 'Physics disabled');
+  },
+
+  toggleGravity() {
+    this.gravityEnabled = !this.gravityEnabled;
+    const btn = document.getElementById('toggleGravity');
+    btn.style.background = this.gravityEnabled ? 'rgba(245,158,11,.2)' : 'transparent';
+    btn.style.borderColor = this.gravityEnabled ? 'var(--warning)' : 'var(--border)';
+    btn.style.color = this.gravityEnabled ? 'var(--warning)' : 'var(--text-muted)';
+    document.getElementById('gravityStatus').textContent = this.gravityEnabled ? '🪨 On' : '🪨 Off';
+    this.toast(this.gravityEnabled ? 'Gravity enabled' : 'Gravity disabled');
+  },
+
+  // === CAMERA ===
+  updateCamera() {
+    const angleX = document.getElementById('camX').value;
+    const angleY = document.getElementById('camY').value;
+    const zoom = document.getElementById('camZoom').value;
+    this._render();
+  },
+
+  updateBackground() {
+    const color = document.getElementById('bgColor').value;
+    const style = document.getElementById('bgStyle').value;
+    const canvas = this.canvasEl;
+    if (style === 'solid') {
+      canvas.style.background = color;
+      canvas.style.backgroundImage = 'none';
+    } else if (style === 'gradient') {
+      canvas.style.background = `radial-gradient(ellipse at 50% 50%, ${color}, #000)`;
+    } else if (style === 'grid') {
+      canvas.style.background = color;
+      canvas.style.backgroundImage = 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)';
+      canvas.style.backgroundSize = '40px 40px';
+    } else {
+      canvas.style.background = 'radial-gradient(ellipse at center, #0a0b14 0%, #000 70%)';
+    }
+  },
+
+  // === RENDERING (CSS 3D Engine) ===
+  _render() {
+    const canvas = this.canvasEl;
+    const angleX = parseInt(document.getElementById('camX').value) || 30;
+    const angleY = parseInt(document.getElementById('camY').value) || -30;
+    const zoom = parseInt(document.getElementById('camZoom').value) || 500;
+
+    let html = '';
+    const time = Date.now() / 1000;
+
+    this.scene.forEach((obj, idx) => {
+      if (!obj.visible) return;
+      const id = `obj-${obj.id}`;
+      let transform = `translateX(${obj.x}px) translateY(${obj.y}px) translateZ(${obj.z}px)`;
+      transform += ` rotateX(${obj.rotation || 0}deg) rotateY(${obj.rotation || 0}deg) rotateZ(${obj.rotation || 0}deg)`;
+
+      // Animation
+      if (obj.animation === 'spin') {
+        transform += ` rotateY(${time * 60 * idx}deg)`;
+      } else if (obj.animation === 'bounce') {
+        const bounce = Math.sin(time * 3 + idx) * 20;
+        transform += ` translateY(${bounce}px)`;
+      } else if (obj.animation === 'float') {
+        const floatY = Math.sin(time * 2 + idx) * 10;
+        transform += ` translateY(${floatY}px)`;
+      } else if (obj.animation === 'pulse') {
+        const scale = 1 + Math.sin(time * 4 + idx) * 0.2;
+        transform += ` scale(${scale})`;
+      }
+
+      const sizeX = (obj.sizeX || 1) * 40;
+      const sizeY = (obj.sizeY || 1) * 40;
+      const sizeZ = (obj.sizeZ || 1) * 40;
+
+      let style = `position:absolute;width:${sizeX}px;height:${sizeY}px;`;
+      style += `transform:${transform};`;
+      style += `transform-style:preserve-3d;`;
+
+      let inner = '';
+      let faceStyle = `background:${obj.color};`;
+      if (obj.material === 'metal') faceStyle += `background:linear-gradient(135deg,${obj.color},${this._darken(obj.color, 30)});`;
+      if (obj.material === 'glass') faceStyle += `background:${obj.color}88;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.2);`;
+      if (obj.material === 'wireframe') faceStyle += `background:none;border:2px solid ${obj.color};`;
+      if (obj.material === 'glow') faceStyle += `background:${obj.color};box-shadow:0 0 20px ${obj.color}88, 0 0 40px ${obj.color}44;`;
+
+      const faces = this._generateFaces(obj.type, sizeX, sizeY, sizeZ, faceStyle, obj.text || '');
+
+      html += `<div id="${id}" class="p2d-obj" style="${style}">${faces}</div>`;
+    });
+
+    canvas.innerHTML = html;
+    canvas.style.perspective = `${zoom}px`;
+    canvas.style.transform = `rotateX(${angleX}deg) rotateY(${angleY}deg)`;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.position = 'relative';
+    canvas.style.transformStyle = 'preserve-3d';
+
+    // Update stats
+    document.getElementById('objCount').textContent = this.scene.filter(o => o.type !== 'light').length;
+    document.getElementById('lightCount').textContent = this.scene.filter(o => o.type === 'light').length;
+  },
+
+  _generateFaces(type, w, h, d, style, text) {
+    let faces = '';
+    const hw = w/2, hh = h/2, hd = d/2;
+
+    const face = (transform, w2, h2) => {
+      return `<div style="position:absolute;width:${w2}px;height:${h2}px;transform:${transform};${style}display:flex;align-items:center;justify-content:center;font-size:${Math.min(w2,h2)/5}px;color:#fff;pointer-events:none;user-select:none">${text}</div>`;
+    };
+
+    switch(type) {
+      case 'box':
+        faces += face(`translateZ(${hd}px)`, w, h); // front
+        faces += face(`translateZ(${-hd}px) rotateY(180deg)`, w, h); // back
+        faces += face(`rotateY(90deg) translateZ(${hw}px)`, d, h); // right
+        faces += face(`rotateY(-90deg) translateZ(${hw}px)`, d, h); // left
+        faces += face(`rotateX(90deg) translateZ(${hh}px)`, w, d); // top
+        faces += face(`rotateX(-90deg) translateZ(${hh}px)`, w, d); // bottom
+        break;
+      case 'sphere':
+        faces += `<div style="position:absolute;width:${w}px;height:${h}px;border-radius:50%;${style}"></div>`;
+        break;
+      case 'cylinder':
+        faces += face(`translateZ(${hd}px)`, w, h);
+        faces += face(`translateZ(${-hd}px) rotateY(180deg)`, w, h);
+        faces += `<div style="position:absolute;width:${w}px;height:${d}px;transform:rotateX(90deg) translateZ(${hh}px);${style}border-radius:50%"></div>`;
+        faces += `<div style="position:absolute;width:${w}px;height:${d}px;transform:rotateX(-90deg) translateZ(${hh}px);${style}border-radius:50%"></div>`;
+        break;
+      case 'cone':
+        faces += `<div style="position:absolute;width:${w}px;height:${w}px;transform:translateZ(${-hd}px);border-radius:50%;${style}"></div>`;
+        faces += `<div style="position:absolute;width:0;height:0;border-left:${w/2}px solid transparent;border-right:${w/2}px solid transparent;border-bottom:${h}px solid ${this._extractColor(style)};transform:translateZ(${hd/2}px)"></div>`;
+        break;
+      case 'plane':
+        faces += `<div style="position:absolute;width:${w}px;height:${d}px;transform:rotateX(90deg);${style}"></div>`;
+        break;
+      case 'text3d':
+        for (let i = 0; i < 6; i++) {
+          faces += face(`translateZ(${hd}px)`, w*2, h, text);
+          break;
+        }
+        faces += face(`translateZ(0)`, w*2, h, text);
+        break;
+      case 'light':
+        faces += `<div style="position:absolute;width:${w}px;height:${w}px;border-radius:50%;${style};animation:pulseLight 1s infinite alternate"></div>`;
+        break;
+    }
+    return faces;
+  },
+
+  _extractColor(style) {
+    const m = style.match(/background:([^;]+)/);
+    return m ? m[1].split(' ')[0] : '#7c4dff';
+  },
+
+  _darken(hex, pct) {
+    hex = hex.replace('#','');
+    const r = Math.max(0, parseInt(hex.substr(0,2),16) - pct);
+    const g = Math.max(0, parseInt(hex.substr(2,2),16) - pct);
+    const b = Math.max(0, parseInt(hex.substr(4,2),16) - pct);
+    return `#${[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}`;
+  },
+
+  // === ANIMATION LOOP ===
+  _animate() {
+    let lastTime = performance.now();
+    let frames = 0;
+    let fps = 0;
+
+    const loop = (time) => {
+      this.animationFrame = requestAnimationFrame(loop);
+      frames++;
+      if (time - lastTime >= 1000) {
+        fps = frames;
+        frames = 0;
+        lastTime = time;
+        document.getElementById('fpsCounter').textContent = fps;
+      }
+
+      if (this.physicsEnabled) {
+        // Simple gravity simulation
+        const dt = 0.016;
+        this.scene.forEach(obj => {
+          if (obj.type === 'plane') return;
+          if (this.gravityEnabled) {
+            obj._vy = (obj._vy || 0) + 9.8 * dt * 10;
+            obj.y += obj._vy * dt * 50;
+
+            // Floor collision (plane at y=-100)
+            const minY = -100 + (obj.sizeY || 1) * 20;
+            if (obj.y > minY) {
+              obj.y = minY;
+              obj._vy = (obj._vy || 0) * -0.5; // Bounce
+            }
+          }
+
+          // Auto-spin
+          if (obj.type !== 'light' && !obj.animation) {
+            obj.rotation = ((obj.rotation || 0) + 1) % 360;
+          }
+        });
+        this._render();
+      }
+    };
+    this.animationFrame = requestAnimationFrame(loop);
+  },
+
+  // === UNDO/REDO ===
+  saveState() {
+    this.history = this.history.slice(0, this.historyIndex + 1);
+    this.history.push(JSON.stringify(this.scene));
+    if (this.history.length > 30) this.history.shift();
+    this.historyIndex = this.history.length - 1;
+  },
+
+  undo() {
+    if (this.historyIndex <= 0) { this.toast('Nothing to undo'); return; }
+    this.historyIndex--;
+    this._loadState();
+    this.toast('↩️ Undo');
+  },
+
+  redo() {
+    if (this.historyIndex >= this.history.length - 1) { this.toast('Nothing to redo'); return; }
+    this.historyIndex++;
+    this._loadState();
+    this.toast('↪️ Redo');
+  },
+
+  _loadState() {
+    this.scene = JSON.parse(this.history[this.historyIndex]);
+    this.objects.clear();
+    this.scene.forEach(o => this.objects.set(o.id, o));
+    this._render();
+  },
+
+  // === UPDATE PREVIEW ===
+  updatePreview() {
+    const color = document.getElementById('objColor').value;
+    document.getElementById('sizeX').dispatchEvent(new Event('input'));
+    document.getElementById('sizeY').dispatchEvent(new Event('input'));
+    document.getElementById('sizeZ').dispatchEvent(new Event('input'));
+  },
+
+  // === KEYBOARD ===
+  _setupKeyboard() {
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); this.undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); this.redo(); }
+      if (e.key === 'Delete') {
+        const selected = document.querySelector('.p2d-obj.selected');
+        if (selected) {
+          const id = parseInt(selected.id.replace('obj-',''));
+          this.deleteObject(id);
+        }
+      }
+    });
+  },
+
+  // === DRAG & DROP ===
+  _setupDragDrop() {
+    const canvas = this.canvasEl;
+
+    canvas.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      canvas.style.outline = '2px dashed var(--primary)';
+    });
+    canvas.addEventListener('dragleave', () => {
+      canvas.style.outline = 'none';
+    });
+    canvas.addEventListener('drop', (e) => {
+      e.preventDefault();
+      canvas.style.outline = 'none';
+      const type = e.dataTransfer.getData('text/plain');
+      if (type) {
+        const rect = canvas.getBoundingClientRect();
+        // Add to scene
+        this.addObject(type);
+      }
+    });
+
+    document.querySelectorAll('.scene-item').forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', item.dataset.type);
+      });
+    });
+  },
+
+  // === EXPORT ===
+  exportAs(format) {
+    this._render();
+    let output = '';
+    switch(format) {
+      case 'css':
+        output = this._exportCSS();
+        break;
+      case 'html':
+        output = this._exportHTML();
+        break;
+      case 'json':
+        output = JSON.stringify({
+          tool: '2.5d-playground',
+          version: '5.1.0',
+          scene: this.scene,
+          exportedAt: new Date().toISOString()
+        }, null, 2);
+        break;
+      case 'code':
+        output = this._exportCode();
+        break;
+    }
+    document.getElementById('exportCode').textContent = output;
+    document.getElementById('exportModal').classList.add('show');
+  },
+
+  _exportCSS() {
+    let css = ['/* Shadow Studio 2.5D Scene — CSS Export */', '.scene-3d { perspective: 800px; transform-style: preserve-3d; }'];
+    this.scene.forEach((obj, i) => {
+      let s = `.obj-${i} { width:${obj.sizeX*40}px; height:${obj.sizeY*40}px; background:${obj.color}; `;
+      if (obj.type === 'box') s += 'transform-style:preserve-3d; }';
+      else if (obj.type === 'sphere') s += 'border-radius:50%; }';
+      else s += '}';
+      css.push(s);
+    });
+    return css.join('\n');
+  },
+
+  _exportHTML() {
+    let html = '<!DOCTYPE html><html><head><title>2.5D Scene</title>';
+    html += '<style>.scene{perspective:800px;transform-style:preserve-3d;height:100vh;display:flex;align-items:center;justify-content:center}';
+    html += '.face{position:absolute;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.3);display:flex;align-items:center;justify-content:center;color:#fff}</style></head>';
+    html += '<body><div class="scene">';
+    this.scene.forEach(obj => {
+      html += `<div style="transform:translate3d(${obj.x}px,${obj.y}px,${obj.z}px);width:${obj.sizeX*40}px;height:${obj.sizeY*40}px;background:${obj.color};border-radius:${obj.type==='sphere'?'50%':'0'}"></div>`;
+    });
+    html += '</div></body></html>';
+    return html;
+  },
+
+  _exportCode() {
+    return `// Shadow Studio 2.5D Scene Data
+// Paste into your project to recreate this scene
+const scene = ${JSON.stringify(this.scene, null, 2)};
+
+// Use with Three.js, CSS 3D Transforms, or WebGL
+// Scene contains ${this.scene.length} objects`;
+  },
+
+  exportScene() {
+    this.exportAs('html');
+    this.toast('📦 Scene exported!');
+  },
+
+  copyExport() {
+    shadowStudio.get('utils')?.copy(document.getElementById('exportCode').textContent);
+    this.toast('📋 Copied to clipboard!');
+  },
+
+  downloadExport() {
+    const code = document.getElementById('exportCode').textContent;
+    shadowStudio.get('utils')?.download('scene-2.5d.html', code, 'text/html');
+    this.toast('💾 Downloaded!');
+  },
+
+  saveScene() {
+    localStorage.setItem('shadow-2.5d-scene', JSON.stringify(this.scene));
+    this.toast('💾 Scene saved!');
+  },
+
+  resetScene() {
+    if (!confirm('Reset the entire scene?')) return;
+    this.scene = [];
+    this.objects.clear();
+    this.saveState();
+    this._render();
+    this.toast('🔄 Scene reset');
+  },
+
+  toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => P2D.init());
+</script>
+</body>
+</html>

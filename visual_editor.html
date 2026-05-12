@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎨 Visual Editor — Shadow Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0b14;--surface:#15172a;--border:#2a2d4a;--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff;--success:#34d399;--warning:#f59e0b;--error:#ef4444}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+.container{display:flex;height:100vh}
+
+/* Left Sidebar - Components */
+.sidebar-left{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border)}
+.sidebar-header h2{font-size:.9rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.sidebar-search{width:100%;padding:8px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.82rem;font-family:inherit;outline:none;margin-bottom:8px}
+.sidebar-search:focus{border-color:var(--primary)}
+
+.component-list{flex:1;overflow-y:auto;padding:8px}
+.component-list::-webkit-scrollbar{width:4px}
+.component-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.component-cat{font-size:.68rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:1.5px;padding:8px 8px 4px;font-weight:700}
+.comp-item{padding:10px 12px;margin:2px 0;border-radius:8px;cursor:grab;transition:all .2s;display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text-muted);border:1px solid transparent;user-select:none}
+.comp-item:hover{background:rgba(124,77,255,.08);color:var(--text);border-color:rgba(124,77,255,.2)}
+.comp-item:active{cursor:grabbing}
+.comp-item .comp-icon{font-size:1.1rem;width:24px;text-align:center}
+
+/* Top Bar */
+.topbar{height:52px;min-height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
+.topbar-section{display:flex;gap:4px;align-items:center}
+.topbar-divider{width:1px;height:24px;background:var(--border);margin:0 8px}
+.top-icon{width:32px;height:32px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .2s}
+.top-icon:hover{background:rgba(255,255,255,.05);color:var(--text);border-color:var(--primary)}
+.top-icon.active{background:rgba(124,77,255,.15);color:var(--primary);border-color:var(--primary)}
+.topbar-title{flex:1;font-size:.9rem;font-weight:600;color:var(--text)}
+.topbar-actions{display:flex;gap:6px}
+
+.btn-sm{padding:6px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s;display:inline-flex;align-items:center;gap:4px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#6c3dee}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary)}
+.btn-success{background:var(--success);color:#000}
+
+/* Canvas Area */
+.canvas-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.canvas-viewport{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;background:var(--bg);position:relative;background-image:radial-gradient(circle,#1a1d2e 1px,transparent 1px);background-size:20px 20px}
+.canvas-frame{width:100%;min-height:100%;position:relative;background:#fff}
+.canvas-frame.focused{outline:2px solid var(--primary);outline-offset:-2px}
+
+/* Properties Panel */
+.sidebar-right{width:280px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.props-section{padding:14px;border-bottom:1px solid var(--border)}
+.props-section h3{font-size:.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.prop-group{margin-bottom:12px}
+.prop-group label{display:block;font-size:.75rem;color:var(--text-muted);margin-bottom:4px}
+.prop-group input[type="text"],.prop-group input[type="number"],.prop-group input[type="color"],.prop-group select,.prop-group textarea{
+  width:100%;padding:7px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.8rem;font-family:inherit;outline:none
+}
+.prop-group input:focus,.prop-group select:focus{border-color:var(--primary)}
+.prop-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Layers Panel */
+.layers-list{flex:1;overflow-y:auto;padding:8px}
+.layer-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;margin-bottom:2px;cursor:pointer;transition:all .2s;font-size:.82rem}
+.layer-item:hover{background:rgba(255,255,255,.04)}
+.layer-item.active{background:rgba(124,77,255,.12)}
+.layer-preview{width:28px;height:22px;border-radius:4px;border:1px solid var(--border);overflow:hidden;flex-shrink:0}
+.layer-info{flex:1;min-width:0}
+.layer-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layer-type{font-size:.65rem;color:var(--text-muted)}
+.layer-actions{display:flex;gap:4px}
+.layer-btn{width:22px;height:22px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:.65rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.layer-btn:hover{border-color:var(--primary);color:var(--primary)}
+
+/* Resize handle */
+.resize-handle{position:absolute;width:12px;height:12px;bottom:0;right:0;cursor:nwse-resize;background:var(--primary);border-radius:2px;opacity:0;transition:opacity .2s}
+.element:hover .resize-handle{opacity:.6}
+.resize-handle:hover{opacity:1!important}
+
+/* Component styles inside canvas */
+.element{position:absolute;cursor:move;padding:2px;transition:box-shadow .2s}
+.element:hover{outline:1.5px dashed var(--accent);outline-offset:2px}
+.element.selected{outline:2px solid var(--primary)!important;outline-offset:2px}
+.element.dragging{opacity:.7;z-index:999!important}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.85rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* Context menu */
+.context-menu{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 0;z-index:500;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:180px;display:none}
+.context-menu.show{display:block}
+.ctx-item{padding:8px 16px;font-size:.82rem;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--text-muted);transition:all .15s}
+.ctx-item:hover{background:rgba(124,77,255,.1);color:var(--text)}
+.ctx-item.danger{color:var(--error)}
+.ctx-item.danger:hover{background:rgba(239,68,68,.1)}
+.ctx-divider{height:1px;background:var(--border);margin:4px 0}
+
+/* Export Modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;justify-content:center;align-items:center}
+.modal-backdrop.show{display:flex}
+.modal{background:var(--surface);border-radius:12px;padding:28px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--border)}
+.modal h3{margin-bottom:16px;font-size:1.1rem}
+.modal-close{float:right;background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer}
+.code-block{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Fira Code',monospace;font-size:.72rem;color:#a0a8c0;white-space:pre-wrap;max-height:300px;overflow-y:auto;margin-top:12px}
+
+@media(max-width:768px){
+  .sidebar-left{width:200px}
+  .sidebar-right{width:220px}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Left: Components -->
+  <aside class="sidebar-left">
+    <div class="sidebar-header">
+      <h2>🧩 Components</h2>
+      <input class="sidebar-search" placeholder="Search components..." oninput="VE.filterComp(this.value)">
+    </div>
+    <div class="component-list" id="componentList"></div>
+  </aside>
+
+  <!-- Center: Canvas -->
+  <div class="canvas-area">
+    <div class="topbar">
+      <div class="topbar-section">
+        <button class="top-icon" onclick="VE.addComponent('text')" title="Add Text">🔤</button>
+        <button class="top-icon" onclick="VE.addComponent('button')" title="Add Button">🟥</button>
+        <button class="top-icon" onclick="VE.addComponent('image')" title="Add Image">🖼️</button>
+        <button class="top-icon" onclick="VE.addComponent('card')" title="Add Card">📋</button>
+        <button class="top-icon" onclick="VE.addComponent('divider')" title="Add Divider">—</button>
+        <button class="top-icon" onclick="VE.addComponent('nav')" title="Add Navbar">☰</button>
+        <button class="top-icon" onclick="VE.addComponent('gradient')" title="Add Gradient Box">🌈</button>
+        <button class="top-icon" onclick="VE.addComponent('container')" title="Add Container">📦</button>
+      </div>
+      <div class="topbar-divider"></div>
+      <div class="topbar-section">
+        <button class="top-icon" onclick="VE.undo()" title="Undo">↩️</button>
+        <button class="top-icon" onclick="VE.redo()" title="Redo">↪️</button>
+      </div>
+      <div class="topbar-divider"></div>
+      <span class="topbar-title" id="pageTitle">New Page</span>
+      <div class="topbar-actions">
+        <select onchange="VE.setPreset(this.value)" style="padding:4px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.75rem">
+          <option value="">Template</option>
+          <option value="landing">Landing Page</option>
+          <option value="portfolio">Portfolio</option>
+          <option value="dashboard">Dashboard</option>
+          <option value="blog">Blog Post</option>
+          <option value="ecommerce">E-Commerce</option>
+          <option value="app-ui">App UI</option>
+        </select>
+        <button class="btn-sm btn-secondary" onclick="VE.createProject()">🆕 Project</button>
+        <button class="btn-sm btn-success" onclick="VE.exportHTML()">📥 Export HTML</button>
+        <button class="btn-sm btn-primary" onclick="VE.saveProject()">💾 Save</button>
+      </div>
+    </div>
+
+    <div class="canvas-viewport" id="canvasViewport">
+      <div class="canvas-frame" id="canvasFrame" onclick="VE.deselectAll(event)">
+        <!-- Elements placed here -->
+      </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu">
+      <div class="ctx-item" onclick="VE.duplicateSelected()">📋 Duplicate</div>
+      <div class="ctx-item" onclick="VE.bringForward()">⬆️ Bring Forward</div>
+      <div class="ctx-item" onclick="VE.sendBackward()">⬇️ Send Backward</div>
+      <div class="ctx-divider"></div>
+      <div class="ctx-item" onclick="VE.copyStyles()">📋 Copy Styles</div>
+      <div class="ctx-item" onclick="VE.pasteStyles()">🎨 Paste Styles</div>
+      <div class="ctx-divider"></div>
+      <div class="ctx-item danger" onclick="VE.deleteSelected()">🗑️ Delete</div>
+    </div>
+  </div>
+
+  <!-- Right: Properties -->
+  <aside class="sidebar-right">
+    <div class="props-section">
+      <h3>📎 Layers</h3>
+      <div class="layers-list" id="layersList"></div>
+    </div>
+    <div class="props-section">
+      <h3>⚙️ Properties</h3>
+      <div id="propsPanel">
+        <p style="color:var(--text-muted);font-size:.82rem">Select an element to edit its properties</p>
+      </div>
+    </div>
+    <div class="props-section">
+      <h3>📊 Export</h3>
+      <p style="color:var(--text-muted);font-size:.78rem;margin-bottom:10px">Export your page as clean HTML + CSS</p>
+      <button class="btn-sm btn-primary" onclick="VE.exportHTML()" style="width:100%;margin-bottom:6px">📥 Export HTML</button>
+      <button class="btn-sm btn-secondary" onclick="VE.copyHTML()" style="width:100%;margin-bottom:6px">📋 Copy HTML</button>
+      <button class="btn-sm btn-secondary" onclick="VE.copyCSS()" style="width:100%;margin-bottom:6px">📋 Copy CSS</button>
+      <button class="btn-sm btn-secondary" onclick="VE.exportJSON()" style="width:100%">📦 Export JSON</button>
+    </div>
+  </aside>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-backdrop" id="exportModal" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('exportModal').classList.remove('show')">&times;</button>
+    <h3>📥 Exported HTML</h3>
+    <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:12px">Copy the code below or download as a file</p>
+    <div class="code-block" id="exportCode"></div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn-sm btn-primary" onclick="VE.copyExportCode()">📋 Copy</button>
+      <button class="btn-sm btn-success" onclick="VE.downloadExport()">💾 Download .html</button>
+      <button class="btn-sm btn-secondary" onclick="document.getElementById('exportModal').classList.remove('show')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================
+   VISUAL EDITOR v5.0 — WYSIWYG Page Builder
+   Drag & Drop, Real-time Properties, Export
+   ============================================ */
+
+const VE = {
+  elements: [],
+  selectedId: null,
+  currentZIndex: 1,
+  clipboardStyles: null,
+  undoStack: [],
+  redoStack: [],
+  isDragging: false,
+  isResizing: false,
+  dragOffset: { x: 0, y: 0 },
+  selectedEl: null,
+
+  // Component definitions
+  components: {
+    text: { name: 'Text Block', icon: '🔤', category: 'Basic', defaults: { type: 'text', content: 'Hello World', fontSize: 18, fontWeight: '400', color: '#333', bgColor: 'transparent', x: 20, y: 20, width: 200, height: 30 } },
+    heading: { name: 'Heading', icon: '📰', category: 'Basic', defaults: { type: 'heading', content: 'Heading', fontSize: 32, fontWeight: '700', color: '#111', bgColor: 'transparent', x: 20, y: 20, width: 300, height: 45 } },
+    button: { name: 'Button', icon: '🟥', category: 'Basic', defaults: { type: 'button', content: 'Click Me', fontSize: 14, color: '#fff', bgColor: '#7c4dff', borderRadius: 8, x: 20, y: 20, width: 140, height: 40 } },
+    image: { name: 'Image', icon: '🖼️', category: 'Basic', defaults: { type: 'image', src: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150"><rect fill="%23e2e8f0" width="200" height="150"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23718096" font-size="14">Image</text></svg>', x: 20, y: 20, width: 200, height: 150, borderRadius: 0 } },
+    card: { name: 'Card', icon: '📋', category: 'Layout', defaults: { type: 'card', content: 'Card Content', fontSize: 14, color: '#333', bgColor: '#fff', borderColor: '#e2e8f0', shadow: '0 4px 12px rgba(0,0,0,.1)', borderRadius: 12, padding: 20, x: 20, y: 20, width: 280, height: 200 } },
+    nav: { name: 'Navbar', icon: '☰', category: 'Layout', defaults: { type: 'nav', items: 'Home,About,Services,Contact', fontSize: 14, bgColor: '#1a202c', textColor: '#fff', height: 56, x: 0, y: 0, width: 800 } },
+    divider: { name: 'Divider', icon: '—', category: 'Basic', defaults: { type: 'divider', color: '#e2e8f0', thickness: 1, x: 20, y: 20, width: 400, height: 1 } },
+    gradient: { name: 'Gradient', icon: '🌈', category: 'Visual', defaults: { type: 'gradient', grad1: '#7c4dff', grad2: '#00e5ff', grad3: '#ff6b81', angle: 135, x: 20, y: 20, width: 300, height: 200, borderRadius: 12 } },
+    container: { name: 'Container', icon: '📦', category: 'Layout', defaults: { type: 'container', bgColor: '#f7f8fa', borderColor: '#e2e8f0', borderRadius: 12, padding: 20, x: 20, y: 20, width: 500, height: 300 } },
+    input: { name: 'Input Field', icon: '📝', category: 'Forms', defaults: { type: 'input', placeholder: 'Enter text...', fontSize: 14, color: '#333', bgColor: '#fff', borderColor: '#cbd5e0', borderRadius: 8, x: 20, y: 20, width: 280, height: 40 } },
+    textarea: { name: 'Textarea', icon: '📄', category: 'Forms', defaults: { type: 'textarea', placeholder: 'Type here...', fontSize: 14, color: '#333', bgColor: '#fff', borderColor: '#cbd5e0', borderRadius: 8, x: 20, y: 20, width: 320, height: 120 } },
+    icon: { name: 'Icon', icon: '⭐', category: 'Visual', defaults: { type: 'icon', iconContent: '★', fontSize: 36, color: '#f59e0b', bgColor: 'transparent', x: 20, y: 20, width: 50, height: 50 } },
+    badge: { name: 'Badge', icon: '🏷️', category: 'Basic', defaults: { type: 'badge', content: 'NEW', fontSize: 11, color: '#fff', bgColor: '#ef4444', borderRadius: 20, x: 20, y: 20, width: 60, height: 24 } },
+  },
+
+  init() {
+    this.renderComponentList();
+    this.setupCanvasInteraction();
+    // Handle URL params for templates and projects
+    this.handleURLParams();
+    // Load from localStorage as fallback if no project specified
+    if (!this._projectLoaded) {
+      const saved = localStorage.getItem('shadow-visual-editor');
+      if (saved) {
+        try { this.elements = JSON.parse(saved); this.renderAll(); } catch(e) {}
+      }
+    }
+    this.updateLayers();
+  },
+
+  handleURLParams() {
+    const params = new URLSearchParams(window.location.search);
+    const template = params.get('template');
+    const projectName = params.get('project');
+
+    if (template && this.setPreset(template)) {
+      this._projectLoaded = true;
+    } else if (projectName) {
+      this.loadFromIndexedDB(projectName);
+    }
+  },
+
+  renderComponentList() {
+    const list = document.getElementById('componentList');
+    list.innerHTML = '';
+    // Group by category
+    const cats = {};
+    Object.entries(this.components).forEach(([id, comp]) => {
+      if (!cats[comp.category]) cats[comp.category] = [];
+      cats[comp.category].push({ id, ...comp });
+    });
+    Object.entries(cats).forEach(([cat, items]) => {
+      list.innerHTML += `<div class="component-cat">${cat}</div>`;
+      items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'comp-item';
+        el.draggable = true;
+        el.innerHTML = `<span class="comp-icon">${item.icon}</span>${item.name}`;
+        el.onclick = () => this.addComponent(item.id);
+        el.ondragstart = (e) => {
+          e.dataTransfer.setData('componentType', item.id);
+          e.dataTransfer.effectAllowed = 'copy';
+        };
+        list.appendChild(el);
+      });
+    });
+  },
+
+  filterComp(query) {
+    query = query.toLowerCase();
+    document.querySelectorAll('.comp-item').forEach(el => {
+      el.style.display = el.textContent.toLowerCase().includes(query) ? '' : 'none';
+    });
+    document.querySelectorAll('.component-cat').forEach(el => {
+      const next = el.nextElementSibling;
+      if (next && next.style.display === 'none') el.style.display = 'none';
+      else el.style.display = '';
+    });
+  },
+
+  setupCanvasInteraction() {
+    const frame = document.getElementById('canvasFrame');
+
+    // Drop handler
+    frame.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+    frame.addEventListener('drop', e => {
+      e.preventDefault();
+      const type = e.dataTransfer.getData('componentType');
+      if (type) {
+        const rect = frame.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        this.spawnElement(type, x, y);
+      }
+    });
+
+    // Click to select/deselect
+    frame.addEventListener('click', (e) => {
+      const el = e.target.closest('.element');
+      if (el) {
+        this.selectElement(el.id);
+      } else if (!e.target.closest('.resize-handle')) {
+        // Don't deselect if clicking context menu
+        if (!e.target.closest('.context-menu')) this.deselectAll();
+      }
+    });
+
+    // Drag to move
+    frame.addEventListener('mousedown', (e) => {
+      const el = e.target.closest('.element');
+      if (el && !e.target.closest('.resize-handle')) {
+        this.startDrag(e, el);
+      }
+    });
+
+    // Resize handle
+    frame.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('resize-handle')) {
+        this.startResize(e, e.target.parentElement);
+      }
+    });
+
+    // Global mouse move/up
+    document.addEventListener('mousemove', (e) => {
+      if (this.isDragging) this.doDrag(e);
+      if (this.isResizing) this.doResize(e);
+    });
+    document.addEventListener('mouseup', () => {
+      if (this.isDragging || this.isResizing) {
+        this.saveState();
+      }
+      this.isDragging = false;
+      this.isResizing = false;
+    });
+
+    // Context menu
+    frame.addEventListener('contextmenu', (e) => {
+      const el = e.target.closest('.element');
+      if (el) {
+        e.preventDefault();
+        this.selectElement(el.id);
+        this.showContextMenu(e.clientX, e.clientY);
+      }
+    });
+
+    document.addEventListener('click', () => {
+      document.getElementById('contextMenu').classList.remove('show');
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Delete' && this.selectedId) this.deleteSelected();
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); this.undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); this.redo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && this.selectedId) { e.preventDefault(); this.duplicateSelected(); }
+    });
+  },
+
+  spawnElement(type, x, y) {
+    const comp = this.components[type];
+    if (!comp) return;
+    const defaults = JSON.parse(JSON.stringify(comp.defaults));
+    defaults.id = 'el_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+    defaults.x = Math.max(0, x - (defaults.width / 2));
+    defaults.y = Math.max(0, y - (defaults.height / 2));
+    defaults.zIndex = this.currentZIndex++;
+    
+    this.elements.push(defaults);
+    this.renderElement(defaults);
+    this.selectElement(defaults.id);
+    this.saveState();
+    this.updateLayers();
+    this.toast(`Added: ${comp.name}`);
+  },
+
+  renderElement(data) {
+    const frame = document.getElementById('canvasFrame');
+    // Remove existing
+    const existing = document.getElementById(data.id);
+    if (existing) existing.remove();
+
+    const el = document.createElement('div');
+    el.id = data.id;
+    el.className = 'element';
+    el.style.position = 'absolute';
+    el.style.left = data.x + 'px';
+    el.style.top = data.y + 'px';
+    el.style.width = data.width + 'px';
+    el.style.height = data.height + 'px';
+    el.style.zIndex = data.zIndex || 1;
+    el.style.borderRadius = (data.borderRadius || 0) + 'px';
+
+    // Render based on type
+    const style = el.style;
+    switch(data.type) {
+      case 'text':
+        el.innerHTML = `<span>${data.content || 'Text'}</span>`;
+        style.fontSize = (data.fontSize || 16) + 'px';
+        style.fontWeight = data.fontWeight || '400';
+        style.color = data.color || '#333';
+        style.background = data.bgColor || 'transparent';
+        style.lineHeight = '1.4';
+        style.padding = '4px 8px';
+        el.style.minHeight = 'auto';
+        break;
+      case 'heading':
+        el.innerHTML = `<h2 style="margin:0;font-family:inherit">${data.content || 'Heading'}</h2>`;
+        style.fontSize = (data.fontSize || 32) + 'px';
+        style.fontWeight = data.fontWeight || '700';
+        style.color = data.color || '#111';
+        style.background = data.bgColor || 'transparent';
+        el.style.minHeight = 'auto';
+        break;
+      case 'button':
+        el.innerHTML = `<span style="pointer-events:none">${data.content || 'Button'}</span>`;
+        style.fontSize = (data.fontSize || 14) + 'px';
+        style.color = data.color || '#fff';
+        style.background = data.bgColor || '#7c4dff';
+        style.borderRadius = (data.borderRadius || 8) + 'px';
+        style.display = 'flex';
+        style.alignItems = 'center';
+        style.justifyContent = 'center';
+        style.cursor = 'default';
+        el.style.minHeight = 'auto';
+        break;
+      case 'image':
+        el.innerHTML = `<img src="${data.src}" style="width:100%;height:100%;object-fit:cover;border-radius:${data.borderRadius||0}px;pointer-events:none">`;
+        break;
+      case 'card':
+        el.innerHTML = `<div style="padding:${data.padding||20}px;pointer-events:none">
+          <h3 style="font-size:16px;margin:0 0 8px;font-family:inherit">Card Title</h3>
+          <p style="font-size:${data.fontSize||14}px;margin:0;color:${data.color||'#666'};font-family:inherit">${data.content||'Card content goes here. Add your own text. This is a preview.'}</p>
+        </div>`;
+        style.background = data.bgColor || '#fff';
+        style.border = `1px solid ${data.borderColor || '#e2e8f0'}`;
+        style.boxShadow = data.shadow || '0 4px 12px rgba(0,0,0,.1)';
+        style.borderRadius = (data.borderRadius || 12) + 'px';
+        el.style.minHeight = 'auto';
+        break;
+      case 'nav':
+        const items = (data.items || 'Home,About,Contact').split(',');
+        el.innerHTML = `<nav style="display:flex;align-items:center;justify-content:space-between;padding:0 24px;pointer-events:none;height:100%">
+          <span style="font-weight:700;color:#fff;font-size:18px">Brand</span>
+          <div style="display:flex;gap:20px">${items.map(i => `<span style="color:${data.textColor||'#fff'};font-size:${data.fontSize||14}px;opacity:.8">${i.trim()}</span>`).join('')}</div>
+        </nav>`;
+        style.background = data.bgColor || '#1a202c';
+        style.borderRadius = (data.borderRadius || 0) + 'px';
+        el.style.minHeight = 'auto';
+        break;
+      case 'divider':
+        el.innerHTML = '';
+        style.background = data.color || '#e2e8f0';
+        style.height = (data.thickness || 1) + 'px';
+        el.style.minHeight = (data.thickness || 1) + 'px';
+        break;
+      case 'gradient':
+        const dir = data.angle !== undefined ? `${data.angle}deg` : '135deg';
+        const stops = [data.grad1 || '#7c4dff', data.grad2 || '#00e5ff'];
+        if (data.grad3) stops.push(data.grad3);
+        el.innerHTML = `<div style="width:100%;height:100%;border-radius:${data.borderRadius||0}px;background:linear-gradient(${dir}, ${stops.join(',')});display:flex;align-items:center;justify-content:center;pointer-events:none">
+          <span style="color:#fff;font-size:16px;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.3)">Gradient Preview</span>
+        </div>`;
+        break;
+      case 'container':
+        el.innerHTML = `<div style="width:100%;height:100%;background:${data.bgColor||'#f7f8fa'};border:1px solid ${data.borderColor||'#e2e8f0'};border-radius:${data.borderRadius||8}px;padding:${data.padding||20}px;pointer-events:none">&nbsp;</div>`;
+        break;
+      case 'input':
+        el.innerHTML = `<div style="pointer-events:none"><input type="text" placeholder="${data.placeholder||'Enter text...'}" style="width:100%;padding:8px 12px;font-size:${data.fontSize||14}px;color:${data.color||'#333'};background:${data.bgColor||'#fff'};border:1px solid ${data.borderColor||'#cbd5e0'};border-radius:${data.borderRadius||8}px;font-family:inherit;outline:none"></div>`;
+        el.style.minHeight = 'auto';
+        break;
+      case 'textarea':
+        el.innerHTML = `<div style="pointer-events:none"><textarea placeholder="${data.placeholder||'Type here...'}" style="width:100%;height:100%;padding:8px 12px;font-size:${data.fontSize||14}px;color:${data.color||'#333'};background:${data.bgColor||'#fff'};border:1px solid ${data.borderColor||'#cbd5e0'};border-radius:${data.borderRadius||8}px;font-family:inherit;outline:none;resize:none"></div>`;
+        break;
+      case 'icon':
+        el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;pointer-events:none;width:100%;height:100%">${data.iconContent || '★'}</div>`;
+        style.fontSize = (data.fontSize || 36) + 'px';
+        style.color = data.color || '#333';
+        break;
+      case 'badge':
+        el.innerHTML = `<span style="pointer-events:none">${data.content || 'NEW'}</span>`;
+        style.fontSize = (data.fontSize || 11) + 'px';
+        style.fontWeight = '700';
+        style.color = data.color || '#fff';
+        style.background = data.bgColor || '#ef4444';
+        style.borderRadius = (data.borderRadius || 20) + 'px';
+        style.display = 'flex';
+        style.alignItems = 'center';
+        style.justifyContent = 'center';
+        el.style.minHeight = 'auto';
+        break;
+    }
+
+    // Selection highlight
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.selectElement(data.id);
+    });
+
+    // Resize handle
+    const handle = document.createElement('div');
+    handle.className = 'resize-handle';
+    el.appendChild(handle);
+
+    frame.appendChild(el);
+  },
+
+  renderAll() {
+    document.getElementById('canvasFrame').innerHTML = '';
+    this.elements.forEach(el => this.renderElement(el));
+  },
+
+  // Selection
+  selectElement(id) {
+    this.selectedId = id;
+    this.selectedEl = this.elements.find(e => e.id === id);
+    // Update visual selection
+    document.querySelectorAll('.element').forEach(el => el.classList.remove('selected'));
+    const dom = document.getElementById(id);
+    if (dom) dom.classList.add('selected');
+    this.renderProperties();
+    this.updateLayers();
+  },
+
+  deselectAll(e) {
+    if (!e || !e.target.closest('.element')) {
+      this.selectedId = null;
+      this.selectedEl = null;
+      document.querySelectorAll('.element').forEach(el => el.classList.remove('selected'));
+      this.renderProperties();
+      this.updateLayers();
+    }
+  },
+
+  // Drag
+  startDrag(e, el) {
+    const id = el.id;
+    const data = this.elements.find(e => e.id === id);
+    if (!data || e.target.closest('.resize-handle')) return;
+    this.isDragging = true;
+    const rect = el.getBoundingClientRect();
+    this.dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    el.classList.add('dragging');
+    e.preventDefault();
+  },
+
+  doDrag(e) {
+    if (!this.isDragging || !this.selectedId) return;
+    const el = document.getElementById(this.selectedId);
+    const frame = document.getElementById('canvasFrame');
+    const frameRect = frame.getBoundingClientRect();
+    let newX = e.clientX - frameRect.left - this.dragOffset.x;
+    let newY = e.clientY - frameRect.top - this.dragOffset.y;
+    newX = Math.max(0, newX);
+    newY = Math.max(0, newY);
+    el.style.left = newX + 'px';
+    el.style.top = newY + 'px';
+    const data = this.elements.find(e => e.id === this.selectedId);
+    if (data) { data.x = Math.round(newX); data.y = Math.round(newY); }
+    this.updatePropertiesField('x', Math.round(newX));
+    this.updatePropertiesField('y', Math.round(newY));
+  },
+
+  // Resize
+  startResize(e, el) {
+    this.isResizing = true;
+    this.resizeEl = el;
+    this.resizeStart = { x: e.clientX, y: e.clientY };
+    const data = this.elements.find(e => e.id === el.id);
+    if (data) this.resizeStartSize = { w: data.width, h: data.height };
+    e.preventDefault();
+    e.stopPropagation();
+  },
+
+  doResize(e) {
+    if (!this.isResizing || !this.resizeEl || !this.resizeStartSize) return;
+    const dx = e.clientX - this.resizeStart.x;
+    const dy = e.clientY - this.resizeStart.y;
+    const newW = Math.max(30, this.resizeStartSize.w + dx);
+    const newH = Math.max(20, this.resizeStartSize.h + dy);
+    this.resizeEl.style.width = newW + 'px';
+    this.resizeEl.style.height = newH + 'px';
+    const data = this.elements.find(e => e.id === this.resizeEl.id);
+    if (data) { data.width = Math.round(newW); data.height = Math.round(newH); }
+    this.updatePropertiesField('width', Math.round(newW));
+    this.updatePropertiesField('height', Math.round(newH));
+  },
+
+  // Properties Panel
+  renderProperties() {
+    const panel = document.getElementById('propsPanel');
+    if (!this.selectedEl) {
+      panel.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem">Select an element to edit its properties</p>';
+      return;
+    }
+    const d = this.selectedEl;
+    let html = `<div class="prop-group"><label>Element ID</label><input type="text" value="${d.id}" onchange="VE.updateProp('id',this.value)"></div>`;
+
+    if (d.type === 'text' || d.type === 'heading' || d.type === 'button' || d.type === 'card' || d.type === 'badge' || d.type === 'nav') {
+      html += `<div class="prop-group"><label>Content / Text</label><textarea rows="3" onchange="VE.updateProp('content',this.value)">${d.content||''}</textarea></div>`;
+    }
+    if (d.type === 'nav') {
+      html += `<div class="prop-group"><label>Nav Items (comma sep)</label><input type="text" value="${d.items||''}" onchange="VE.updateProp('items',this.value)"></div>`;
+    }
+    if (d.type === 'input' || d.type === 'textarea') {
+      html += `<div class="prop-group"><label>Placeholder</label><input type="text" value="${d.placeholder||''}" onchange="VE.updateProp('placeholder',this.value)"></div>`;
+    }
+    if (d.type === 'icon') {
+      html += `<div class="prop-group"><label>Icon Character</label><input type="text" value="${d.iconContent||'★'}" onchange="VE.updateProp('iconContent',this.value)"></div>`;
+    }
+
+    html += `<div class="prop-group"><label>Position X</label><input type="number" value="${d.x}" onchange="VE.updateProp('x',parseInt(this.value))"></div>`;
+    html += `<div class="prop-group"><label>Position Y</label><input type="number" value="${d.y}" onchange="VE.updateProp('y',parseInt(this.value))"></div>`;
+    if (d.type !== 'divider' && d.type !== 'nav') {
+      html += `<div class="prop-row"><div class="prop-group"><label>Width</label><input type="number" value="${d.width}" onchange="VE.updateProp('width',parseInt(this.value))"></div>`;
+      html += `<div class="prop-group"><label>Height</label><input type="number" value="${d.height}" onchange="VE.updateProp('height',parseInt(this.value))"></div></div>`;
+    }
+    if (d.borderRadius !== undefined) {
+      html += `<div class="prop-group"><label>Border Radius</label><input type="number" value="${d.borderRadius}" onchange="VE.updateProp('borderRadius',parseInt(this.value))"></div>`;
+    }
+    if (d.fontSize) html += `<div class="prop-group"><label>Font Size</label><input type="number" value="${d.fontSize}" onchange="VE.updateProp('fontSize',parseInt(this.value))"></div>`;
+    if (d.fontWeight) html += `<div class="prop-group"><label>Font Weight</label><input type="number" value="${d.fontWeight}" min="100" max="900" step="100" onchange="VE.updateProp('fontWeight',this.value)"></div>`;
+    if (d.color !== undefined) html += `<div class="prop-group"><label>Text Color</label><input type="color" value="${d.color}" onchange="VE.updateProp('color',this.value)"></div>`;
+    if (d.bgColor !== undefined) html += `<div class="prop-group"><label>Background</label><input type="color" value="${d.bgColor}" onchange="VE.updateProp('bgColor',this.value)"></div>`;
+    if (d.borderColor !== undefined) html += `<div class="prop-group"><label>Border Color</label><input type="color" value="${d.borderColor}" onchange="VE.updateProp('borderColor',this.value)"></div>`;
+    if (d.grad1 !== undefined) {
+      html += `<div class="prop-row"><div class="prop-group"><label>Color 1</label><input type="color" value="${d.grad1}" onchange="VE.updateProp('grad1',this.value)"></div>`;
+      html += `<div class="prop-group"><label>Color 2</label><input type="color" value="${d.grad2}" onchange="VE.updateProp('grad2',this.value)"></div></div>`;
+      if (d.grad3) html += `<div class="prop-group"><label>Color 3</label><input type="color" value="${d.grad3}" onchange="VE.updateProp('grad3',this.value)"></div>`;
+      html += `<div class="prop-group"><label>Angle</label><input type="number" value="${d.angle||135}" min="0" max="360" onchange="VE.updateProp('angle',parseInt(this.value))"></div>`;
+    }
+    if (d.thickness !== undefined) html += `<div class="prop-group"><label>Thickness (px)</label><input type="number" value="${d.thickness}" onchange="VE.updateProp('thickness',parseInt(this.value))"></div>`;
+    if (d.shadow !== undefined) html += `<div class="prop-group"><label>Box Shadow</label><input type="text" value="${d.shadow||''}" onchange="VE.updateProp('shadow',this.value)"></div>`;
+    if (d.opacity !== undefined) html += `<div class="prop-group"><label>Opacity</label><input type="range" min="0" max="100" value="${d.opacity*100||100}" onchange="VE.updateProp('opacity',this.value/100)"><span>${Math.round((d.opacity||1)*100)}%</span></div>`;
+
+    html += `<div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn-sm btn-secondary" onclick="VE.bringForward()" style="flex:1">⬆️ Forward</button>
+      <button class="btn-sm btn-secondary" onclick="VE.sendBackward()" style="flex:1">⬇️ Backward</button>
+    </div>
+    <div style="margin-top:8px">
+      <button class="btn-sm btn-danger" onclick="VE.deleteSelected()" style="width:100%">🗑️ Delete Element</button>
+    </div>`;
+
+    panel.innerHTML = html;
+  },
+
+  updateProp(key, value) {
+    if (!this.selectedId) return;
+    const el = this.elements.find(e => e.id === this.selectedId);
+    if (!el) return;
+    el[key] = value;
+    this.renderElement(el);
+    this.saveState();
+  },
+
+  updatePropertiesField(key, value) {
+    const panel = document.getElementById('propsPanel');
+    const inp = panel.querySelector(`input[onchange*="${key}"]`);
+    if (inp) inp.value = value;
+  },
+
+  // Layers
+  updateLayers() {
+    const list = document.getElementById('layersList');
+    list.innerHTML = '';
+    const sorted = [...this.elements].reverse(); // Top = last
+    sorted.forEach((el, i) => {
+      const layer = document.createElement('div');
+      layer.className = 'layer-item' + (el.id === this.selectedId ? ' active' : '');
+      layer.onclick = () => this.selectElement(el.id);
+      const icons = { text:'🔤', heading:'📰', button:'🟥', image:'🖼️', card:'📋', nav:'☰', divider:'—', gradient:'🌈', container:'📦', input:'📝', textarea:'📄', icon:'⭐', badge:'🏷️' };
+      layer.innerHTML = `
+        <div class="layer-preview" style="background:${el.bgColor||'transparent'};border:1px solid ${el.borderColor||'transparent'};display:flex;align-items:center;justify-content:center;font-size:8px;color:${el.color||'#999'}">${icons[el.type]||'□'}</div>
+        <div class="layer-info">
+          <div class="layer-name">${el.content || el.type}</div>
+          <div class="layer-type">${el.type} · ${el.width}×${el.height}</div>
+        </div>
+        <div class="layer-actions">
+          <button class="layer-btn" onclick="event.stopPropagation();VE.toggleVisibility('${el.id}')">👁️</button>
+        </div>
+      `;
+      list.appendChild(layer);
+    });
+  },
+
+  toggleVisibility(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+  },
+
+  // Undo/Redo
+  saveState() {
+    this.undoStack.push(JSON.stringify(this.elements));
+    if (this.undoStack.length > 30) this.undoStack.shift();
+    this.redoStack = [];
+    localStorage.setItem('shadow-visual-editor', JSON.stringify(this.elements));
+  },
+
+  undo() {
+    if (!this.undoStack.length) return;
+    this.redoStack.push(JSON.stringify(this.elements));
+    this.elements = JSON.parse(this.undoStack.pop());
+    this.renderAll(); this.updateLayers(); this.renderProperties();
+  },
+
+  redo() {
+    if (!this.redoStack.length) return;
+    this.undoStack.push(JSON.stringify(this.elements));
+    this.elements = JSON.parse(this.redoStack.pop());
+    this.renderAll(); this.updateLayers(); this.renderProperties();
+  },
+
+  // Actions
+  deleteSelected() {
+    if (!this.selectedId) return;
+    this.elements = this.elements.filter(e => e.id !== this.selectedId);
+    const el = document.getElementById(this.selectedId);
+    if (el) el.remove();
+    this.selectedId = null; this.selectedEl = null;
+    this.saveState(); this.updateLayers(); this.renderProperties();
+    this.toast('Element deleted');
+  },
+
+  duplicateSelected() {
+    if (!this.selectedEl) return;
+    const copy = JSON.parse(JSON.stringify(this.selectedEl));
+    copy.id = 'el_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+    copy.x += 20; copy.y += 20;
+    copy.zIndex = this.currentZIndex++;
+    this.elements.push(copy);
+    this.renderElement(copy);
+    this.selectElement(copy.id);
+    this.saveState(); this.updateLayers();
+    this.toast('Element duplicated');
+  },
+
+  bringForward() {
+    if (!this.selectedId || !this.selectedEl) return;
+    this.selectedEl.zIndex = this.currentZIndex++;
+    document.getElementById(this.selectedId).style.zIndex = this.selectedEl.zIndex;
+    this.saveState();
+  },
+
+  sendBackward() {
+    if (!this.selectedId || !this.selectedEl) return;
+    this.selectedEl.zIndex = Math.max(1, this.selectedEl.zIndex - 1);
+    document.getElementById(this.selectedId).style.zIndex = this.selectedEl.zIndex;
+    this.saveState();
+  },
+
+  copyStyles() {
+    if (!this.selectedEl) return;
+    this.clipboardStyles = JSON.parse(JSON.stringify(this.selectedEl));
+    this.toast('Styles copied');
+  },
+
+  pasteStyles() {
+    if (!this.selectedEl || !this.clipboardStyles) return;
+    const styleKeys = ['fontSize','fontWeight','color','bgColor','borderColor','borderRadius','shadow','opacity','grad1','grad2','grad3','angle','iconContent'];
+    styleKeys.forEach(k => {
+      if (this.clipboardStyles[k] !== undefined && this.selectedEl.type === this.clipboardStyles.type) {
+        this.selectedEl[k] = this.clipboardStyles[k];
+      }
+    });
+    this.renderElement(this.selectedEl);
+    this.renderProperties();
+    this.saveState();
+    this.toast('Styles pasted');
+  },
+
+  showContextMenu(x, y) {
+    const menu = document.getElementById('contextMenu');
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.classList.add('show');
+  },
+
+  // Templates
+  setPreset(name) {
+    if (!name) return false;
+    this.elements = [];
+    document.getElementById('canvasFrame').innerHTML = '';
+
+    const templates = {
+      landing: () => {
+        const colors = { primary: '#7c4dff', accent: '#00e5ff', dark: '#0a0b14', light: '#f7f8fa', text: '#1a1a2e' };
+        this.elements = [
+          { id:'nav1',type:'nav',items:'Home,Features,Pricing,Contact',bgColor:colors.dark,textColor:'#fff',fontSize:14,height:56,x:0,y:0,width:800 },
+          { id:'hero',type:'gradient',grad1:colors.primary,grad2:colors.accent,grad3:'#ff6b81',angle:135,width:800,height:450,x:0,y:56,borderRadius:0 },
+          { id:'hero-title',type:'heading',content:'Build Something Amazing',fontSize:48,fontWeight:'800',color:'#fff',bgColor:'transparent',x:100,y:150,width:600,height:80 },
+          { id:'hero-sub',type:'text',content:'The universal asset generator — zero dependencies, fully offline.',fontSize:18,color:'rgba(255,255, 255, 0.8)',bgColor:'transparent',x:100,y:250,width:600,height:40 },
+          { id:'hero-btn',type:'button',content:'Get Started',bgColor:colors.accent,color:'#000',fontSize:16,borderRadius:12,x:300,y:330,width:200,height:50 },
+          { id:'card1',type:'card',content:'Lightning fast — No build step, open and go.',bgColor:colors.light,shadow:'0 4px 12px rgba(0,0,0,.1)',x:50,y:540,width:220,height:180,fontSize:14 },
+          { id:'card2',type:'card',content:'Zero AI — Everything runs locally in your browser.',bgColor:colors.light,shadow:'0 4px 12px rgba(0,0,0,.1)',x:290,y:540,width:220,height:180,fontSize:14 },
+          { id:'card3',type:'card',content:'Export anything — PNG, CSS, JSON, WAV, SVG.',bgColor:colors.light,shadow:'0 4px 12px rgba(0,0,0,.1)',x:530,y:540,width:220,height:180,fontSize:14 },
+        ];
+      },
+      portfolio: () => {
+        this.elements = [
+          { id:'nav',type:'nav',items:'About,Projects,Skills,Contact',bgColor:'#1a1a2e',textColor:'#fff',fontSize:14,height:56,x:0,y:0,width:800 },
+          { id:'hero',type:'heading',content:'John Doe',fontSize:56,fontWeight:'800',color:'#1a1a2e',bgColor:'transparent',x:200,y:120,width:400,height:80 },
+          { id:'tagline',type:'text',content:'Full-Stack Developer & Creative Engineer',fontSize:18,color:'#666',bgColor:'transparent',x:220,y:210,width:360,height:30 },
+          { id:'div1',type:'divider',color:'#e2e8f0',thickness:2,x:200,y:260,width:400,height:2 },
+          { id:'proj1',type:'card',content:'Project Alpha — AI toolkit',bgColor:'#fff',shadow:'0 4px 16px rgba(0,0,0,.1)',x:50,y:300,width:220,height:200,fontSize:13 },
+          { id:'proj2',type:'card',content:'Project Beta — Real-time audio visualizer',bgColor:'#fff',shadow:'0 4px 16px rgba(0,0,0,.1)',x:290,y:300,width:220,height:200,fontSize:13 },
+          { id:'proj3',type:'card',content:'Project Gamma — Pixel art editor',bgColor:'#fff',shadow:'0 4px 16px rgba(0,0,0,.1)',x:530,y:300,width:220,height:200,fontSize:13 },
+          { id:'btm',type:'gradient',grad1:'#7c4dff',grad2:'#00e5ff',angle:90,width:800,height:120,x:0,y:800,borderRadius:0 },
+        ];
+      },
+      dashboard: () => {
+        this.elements = [
+          { id:'sidebar',type:'container',bgColor:'#1a1a2e',width:240,height:700,x:0,y:0,borderRadius:0 },
+          { id:'sidebar-title',type:'text',content:'📊 Dashboard',fontSize:20,fontWeight:'700',color:'#fff',bgColor:'transparent',x:20,y:20,width:200,height:30 },
+          { id:'main',type:'container',bgColor:'#f7f8fa',width:560,height:700,x:240,y:0,borderRadius:0 },
+          { id:'header',type:'heading',content:'Analytics Overview',fontSize:24,fontWeight:'700',color:'#1a1a2e',bgColor:'transparent',x:270,y:30,width:500,height:40 },
+          { id:'metric1',type:'card',bgColor:'#fff',shadow:'0 2px 8px rgba(0,0,0,.08)',x:270,y:90,width:250,height:120,fontSize:14,content:'Users: 12,847' },
+          { id:'metric2',type:'card',bgColor:'#fff',shadow:'0 2px 8px rgba(0,0,0,.08)',x:540,y:90,width:250,height:120,fontSize:14,content:'Revenue: $4.2K' },
+          { id:'chart',type:'gradient',grad1:'#7c4dff',grad2:'#00e5ff',angle:45,x:270,y:240,width:520,height:250,borderRadius:12 },
+          { id:'chart-label',type:'text',content:'↑ +42% this month',color:'#fff',fontSize:16,fontWeight:'600',bgColor:'transparent',x:360,y:340,width:300,height:30 },
+        ];
+      },
+      blog: () => {
+        this.elements = [
+          { id:'nav',type:'nav',items:'Home,Articles,About,Newsletter',bgColor:'#fff',textColor:'#333',fontSize:14,height:56,x:0,y:0,width:800 },
+          { id:'post',type:'heading',content:'Building Offline-First Web Apps',fontSize:36,fontWeight:'800',color:'#1a1a2e',bgColor:'transparent',x:80,y:100,width:640,height:60 },
+          { id:'meta',type:'text',content:'Published May 12, 2026 · 8 min read',fontSize:14,color:'#888',bgColor:'transparent',x:80,y:170,width:640,height:25 },
+          { id:'hero-img',type:'gradient',grad1:'#7c4dff',grad2:'#ff6b81',angle:135,width:640,height:300,x:80,y:220,borderRadius:16 },
+          { id:'img-text',type:'text',content:'[Featured Image Placeholder]',fontSize:16,color:'rgba(255,255,255,0.7)',bgColor:'transparent',x:280,y:350,width:280,height:30 },
+          { id:'p1',type:'text',content:'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua...',fontSize:16,color:'#444',bgColor:'transparent',x:80,y:400,width:640,height:80 },
+          { id:'div1',type:'divider',color:'#e2e8f0',thickness:1,x:80,y:500,width:640,height:1 },
+          { id:'tags',type:'text',content:'#offline-first #webdev #progressive-web-apps',fontSize:13,color:'#7c4dff',bgColor:'transparent',x:80,y:520,width:640,height:25 },
+        ];
+      },
+      ecommerce: () => {
+        this.elements = [
+          { id:'nav',type:'nav',items:'Shop,Cart,Account',bgColor:'#1a1a2e',textColor:'#fff',fontSize:14,height:56,x:0,y:0,width:800 },
+          { id:'hero',type:'gradient',grad1:'#ff6b81',grad2:'#7c4dff',angle:135,width:800,height:350,x:0,y:56,borderRadius:0 },
+          { id:'hero-text',type:'heading',content:'Summer Collection',fontSize:42,fontWeight:'800',color:'#fff',bgColor:'transparent',x:100,y:150,width:600,height:60 },
+          { id:'hero-btn',type:'button',content:'Shop Now',bgColor:'#fff',color:'#7c4dff',fontSize:16,borderRadius:12,x:320,y:240,width:160,height:50 },
+          { id:'products-title',type:'heading',content:'Featured Products',fontSize:28,fontWeight:'700',color:'#1a1a2e',bgColor:'transparent',x:40,y:430,width:720,height:40 },
+          { id:'prod1',type:'card',bgColor:'#fff',shadow:'0 4px 12px rgba(0,0,0,.1)',x:50,y:490,width:200,height:260,fontSize:13,content:'Product 1 — $29.99' },
+          { id:'prod2',type:'card',bgColor:'#fff',shadow:'0 4px 12px rgba(0,0,0,.1)',x:280,y:490,width:200,height:260,fontSize:13,content:'Product 2 — $49.99' },
+          { id:'prod3',type:'card',bgColor:'#fff',shadow:'0 4px 12px rgba(0,0,0,.1)',x:510,y:490,width:200,height:260,fontSize:13,content:'Product 3 — $19.99' },
+        ];
+      },
+      'app-ui': () => {
+        this.elements = [
+          { id:'top-bar',type:'nav',items:'File,Edit,View,Help',bgColor:'#1e1e2e',textColor:'#cdd6f4',fontSize:13,height:40,x:0,y:0,width:800 },
+          { id:'sidebar',type:'container',bgColor:'#181825',width:200,height:600,x:0,y:40,borderRadius:0 },
+          { id:'sidebar-title',type:'text',content:'Explorer',fontSize:12,fontWeight:'700',color:'#cdd6f4',bgColor:'transparent',x:12,y:50,width:180,height:20 },
+          { id:'main-area',type:'container',bgColor:'#1e1e2e',width:600,height:600,x:200,y:40,borderRadius:0 },
+          { id:'editor-title',type:'heading',content:'App Interface',fontSize:20,fontWeight:'700',color:'#cdd6f4',bgColor:'transparent',x:220,y:50,width:560,height:30 },
+          { id:'editor-sub',type:'text',content:'A typical application UI layout with sidebar and main content area.',fontSize:14,color:'#a6adc8',bgColor:'transparent',x:220,y:90,width:560,height:20 },
+          { id:'status-bar',type:'container',bgColor:'#181825',width:800,height:30,x:0,y:610,borderRadius:0 },
+          { id:'status-text',type:'text',content:'Ready',fontSize:11,color:'#a6adc8',bgColor:'transparent',x:12,y:615,width:400,height:20 },
+        ];
+      },
+    };
+
+    if (templates[name]) {
+      templates[name]();
+      this.renderAll();
+      this.updateLayers();
+      this.saveState();
+      this.toast(`Template: ${name} loaded!`);
+      return true;
+    }
+    return false;
+  },
+
+  // ===== EXPORT =====
+
+  generateHTML() {
+    const frame = document.getElementById('canvasFrame');
+    const frameW = frame.offsetWidth || 800;
+    
+    let html = '';
+    let css = `body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }\n`;
+    css += `.container { max-width: ${frameW}px; margin: 0 auto; position: relative; min-height: 100vh; }\n`;
+
+    this.elements.forEach(el => {
+      const style = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.width}px;height:${el.height}px;z-index:${el.zIndex}`;
+      let inner = '';
+      let extraCSS = '';
+      const classes = [];
+
+      switch(el.type) {
+        case 'text':
+          inner = `${el.content||'Text'}`;
+          extraCSS = `font-size:${el.fontSize||16}px;font-weight:${el.fontWeight||400};color:${el.color||'#333'};background:${el.bgColor||'transparent'};`;
+          break;
+        case 'heading':
+          inner = `<h2 style="margin:0">${el.content||'Heading'}</h2>`;
+          extraCSS = `font-size:${el.fontSize||32}px;font-weight:${el.fontWeight||700};color:${el.color||'#111'};`;
+          break;
+        case 'button':
+          inner = `<span>${el.content||'Button'}</span>`;
+          extraCSS = `display:flex;align-items:center;justify-content:center;background:${el.bgColor||'#7c4dff'};color:${el.color||'#fff'};border-radius:${el.borderRadius||8}px;font-size:${el.fontSize||14}px;cursor:pointer;border:none;`;
+          break;
+        case 'image':
+          inner = `<img src="${el.src||''}" style="width:100%;height:100%;object-fit:cover;border-radius:${el.borderRadius||0}px">`;
+          break;
+        case 'card':
+          inner = `<div style="padding:${el.padding||20}px"><h3 style="font-size:16px;margin:0 0 8px">Card Title</h3><p style="font-size:${el.fontSize||14}px;margin:0;color:${el.color||'#666'}">${el.content||'Card content'}</p></div>`;
+          extraCSS = `background:${el.bgColor||'#fff'};border:1px solid ${el.borderColor||'#e2e8f0'};box-shadow:${el.shadow||'0 4px 12px rgba(0,0,0,.1)'};border-radius:${el.borderRadius||12}px;`;
+          break;
+        case 'nav':
+          const items = (el.items||'Home,About,Contact').split(',').map(i=>`<span>${i.trim()}</span>`).join('');
+          inner = `<div style="display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:100%"><strong>Brand</strong><div style="display:flex;gap:20px">${items}</div></div>`;
+          extraCSS = `background:${el.bgColor||'#1a202c'};color:${el.textColor||'#fff'};`;
+          break;
+        case 'divider':
+          inner = '';
+          extraCSS = `background:${el.color||'#e2e8f0'};height:${el.thickness||1}px;border:none;`;
+          break;
+        case 'gradient':
+          const stops = [el.grad1||'#7c4dff',el.grad2||'#00e5ff'];
+          if(el.grad3) stops.push(el.grad3);
+          inner = `<div style="width:100%;height:100%;border-radius:${el.borderRadius||0}px;background:linear-gradient(${(el.angle||135)}deg,${stops.join(',')});display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-weight:600">Content</span></div>`;
+          break;
+        case 'container':
+          inner = `<div style="width:100%;height:100%;background:${el.bgColor||'#f7f8fa'};border:1px solid ${el.borderColor||'#e2e8f0'};border-radius:${el.borderRadius||8}px;padding:${el.padding||20}px"></div>`;
+          break;
+        case 'input':
+          inner = `<input type="text" placeholder="${el.placeholder||'Enter text...'}" style="width:100%;padding:8px 12px;font-size:${el.fontSize||14}px;color:${el.color||'#333'};background:${el.bgColor||'#fff'};border:1px solid ${el.borderColor||'#cbd5e0'};border-radius:${el.borderRadius||8}px;outline:none">`;
+          break;
+        case 'textarea':
+          inner = `<textarea placeholder="${el.placeholder||'Type here...'}" style="width:100%;height:100%;padding:8px 12px;font-size:${el.fontSize||14}px;color:${el.color||'#333'};background:${el.bgColor||'#fff'};border:1px solid ${el.borderColor||'#cbd5e0'};border-radius:${el.borderRadius||8}px;outline:none;resize:none"></textarea>`;
+          break;
+        case 'icon':
+          inner = `${el.iconContent||'★'}`;
+          extraCSS = `font-size:${el.fontSize||36}px;color:${el.color||'#333'};display:flex;align-items:center;justify-content:center;`;
+          break;
+        case 'badge':
+          inner = `${el.content||'NEW'}`;
+          extraCSS = `background:${el.bgColor||'#ef4444'};color:${el.color||'#fff'};border-radius:${el.borderRadius||20}px;font-size:${el.fontSize||11}px;font-weight:700;display:flex;align-items:center;justify-content:center;`;
+          break;
+      }
+
+      html += `<div class="ss-el" style="${style}${extraCSS}border-radius:${el.borderRadius||0}px${el.type==='divider'?' border:none':''}">${inner}</div>\n`;
+    });
+
+    return this.core?.get('export')?.html({
+      title: 'Shadow Studio Page',
+      html: `<div class="container" style="position:relative;min-height:100vh">\n${html}</div>`,
+      css: css,
+      js: '// Generated by Shadow Studio Visual Editor v5.1.0'
+    }) || `<!DOCTYPE html><html><head><title>Shadow Studio Export</title><style>${css}</style></head><body><div class="container">${html}</div></body></html>`;
+  },
+
+  exportHTML() {
+    const html = this.generateHTML();
+    this.core?.get('utils')?.download('shadow-page.html', html, 'text/html');
+    document.getElementById('exportCode').textContent = html;
+    document.getElementById('exportModal').classList.add('show');
+    this.toast('📥 HTML exported!');
+    this.core?.recordExport('html');
+  },
+
+  copyHTML() {
+    const html = this.generateHTML();
+    shadowStudio.get('utils').copy(html);
+    this.toast('📋 HTML copied to clipboard!');
+  },
+
+  copyCSS() {
+    let css = '/* Shadow Studio Visual Editor — CSS */\n';
+    this.elements.forEach((el, i) => {
+      css += `.ss-el-${i} {\n`;
+      css += `  position: absolute;\n`;
+      css += `  left: ${el.x}px; top: ${el.y}px;\n`;
+      css += `  width: ${el.width}px; height: ${el.height}px;\n`;
+      css += `  z-index: ${el.zIndex};\n`;
+      if (el.bgColor) css += `  background: ${el.bgColor};\n`;
+      if (el.color) css += `  color: ${el.color};\n`;
+      if (el.borderRadius) css += `  border-radius: ${el.borderRadius}px;\n`;
+      if (el.shadow) css += `  box-shadow: ${el.shadow};\n`;
+      if (el.fontSize) css += `  font-size: ${el.fontSize}px;\n`;
+      if (el.fontWeight) css += `  font-weight: ${el.fontWeight};\n`;
+      css += `}\n`;
+    });
+    shadowStudio.get('utils').copy(css);
+    this.toast('📋 CSS copied!');
+  },
+
+  exportJSON() {
+    const data = {
+      type: 'visual_editor_project',
+      tool: 'shadow-studio/visual-editor',
+      version: '5.1.0',
+      elementCount: this.elements.length,
+      elements: this.elements,
+      exportedAt: new Date().toISOString()
+    };
+    shadowStudio.get('utils').download('visual-editor.json', JSON.stringify(data, null, 2), 'application/json');
+    this.toast('📦 JSON exported!');
+  },
+
+  copyExportCode() {
+    const code = document.getElementById('exportCode').textContent;
+    this._copyAndToast(code, '📋 Code copied!');
+  },
+
+  downloadExport() {
+    const code = document.getElementById('exportCode').textContent;
+    shadowStudio.get('utils').download('shadow-page.html', code, 'text/html');
+    this.toast('💾 Downloaded!');
+  },
+
+  saveProject() {
+    localStorage.setItem('shadow-visual-editor', JSON.stringify(this.elements));
+    // Also save to IndexedDB via ShadowProjectManager
+    this._saveToIndexedDB();
+    this.toast('💾 Project saved (localStorage + IndexedDB)!');
+  },
+
+  // IndexedDB Project Integration
+  _saveToIndexedDB() {
+    try {
+      const projectName = this._currentProjectName || 'Untitled';
+      const projectData = {
+        name: projectName,
+        elements: this.elements,
+        updatedAt: new Date().toISOString(),
+        tool: 'visual-editor',
+        version: '5.1.0'
+      };
+      // Try using ShadowProjectManager if available
+      const pm = shadowStudio?.get('projects');
+      if (pm && pm.save) {
+        // Find existing project by currentProject state
+        const currentId = shadowStudio?.getState('currentProject');
+        if (currentId) {
+          pm.get(currentId).then(existing => {
+            if (existing) {
+              existing.elements = this.elements;
+              existing.updatedAt = new Date().toISOString();
+              pm.save(existing);
+            }
+          });
+        }
+      }
+      // Fallback: save to localStorage-based projects
+      this._saveToLocalProjects(projectName);
+    } catch(e) { console.warn('IndexedDB save failed, using localStorage fallback:', e); }
+  },
+
+  _saveToLocalProjects(name) {
+    try {
+      const projects = JSON.parse(localStorage.getItem('shadow-studio-projects') || '[]');
+      const existing = projects.find(p => p.id === this._projectId);
+      if (existing) {
+        existing.elements = this.elements;
+        existing.updatedAt = new Date().toISOString();
+      } else {
+        this._projectId = this._projectId || 'proj_' + Date.now();
+        projects.push({
+          id: this._projectId,
+          name: name || 'Untitled',
+          elements: this.elements,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      localStorage.setItem('shadow-studio-projects', JSON.stringify(projects));
+      // Update dashboard project count if possible
+      if (window.dash && dash.updateProjectCount) dash.updateProjectCount();
+    } catch(e) { console.warn('Local projects save failed:', e); }
+  },
+
+  loadFromIndexedDB(projectName) {
+    return new Promise((resolve) => {
+      // First try localStorage-based projects
+      const projects = JSON.parse(localStorage.getItem('shadow-studio-projects') || '[]');
+      const project = projects.find(p => p.name === projectName);
+      if (project) {
+        this._projectId = project.id;
+        this._currentProjectName = project.name;
+        if (project.elements) {
+          this.elements = project.elements;
+          this.renderAll();
+          this.updateLayers();
+          this._projectLoaded = true;
+          this.toast(`Project "${project.name}" loaded (${project.elements.length} elements)`);
+          // Save back to update timestamp
+          this._saveToLocalProjects(project.name);
+          resolve(true);
+          return;
+        }
+      }
+
+      // Try ShadowProjectManager
+      const pm = shadowStudio?.get('projects');
+      if (pm && pm.list) {
+        pm.list().then(projects => {
+          const match = projects.find(p => p.name === projectName);
+          if (match) {
+            this._projectId = match.id;
+            this._currentProjectName = match.name;
+            if (match.elements && Array.isArray(match.elements)) {
+              this.elements = match.elements;
+              this.renderAll();
+              this.updateLayers();
+              this._projectLoaded = true;
+              this.toast(`Project "${match.name}" loaded from IndexedDB (${match.elements.length} elements)`);
+              resolve(true);
+              return;
+            }
+          }
+          resolve(false);
+        }).catch(() => resolve(false));
+      } else {
+        resolve(false);
+      }
+    });
+  },
+
+  // Load project by ID (used by dashboard)
+  loadProjectById(id) {
+    return new Promise((resolve) => {
+      const projects = JSON.parse(localStorage.getItem('shadow-studio-projects') || '[]');
+      const project = projects.find(p => p.id === id);
+      if (project) {
+        this._projectId = project.id;
+        this._currentProjectName = project.name;
+        this.elements = project.elements || [];
+        if (this.elements.length) { this.renderAll(); this.updateLayers(); }
+        this._projectLoaded = true;
+        this.toast(`Project "${project.name}" loaded (${project.elements.length} elements)`);
+        // Update project timestamp in dashboard
+        project.updatedAt = new Date().toISOString();
+        this._saveToLocalProjects(project.name);
+        resolve(true);
+        return;
+      }
+
+      // Fallback: try IndexedDB
+      const pm = shadowStudio?.get('projects');
+      if (pm && pm.get) {
+        pm.get(id).then(match => {
+          if (match && match.elements) {
+            this._projectId = match.id;
+            this._currentProjectName = match.name;
+            this.elements = match.elements;
+            this.renderAll();
+            this.updateLayers();
+            this._projectLoaded = true;
+            this.toast(`Project "${match.name}" loaded from IndexedDB`);
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        }).catch(() => resolve(false));
+      } else {
+        resolve(false);
+      }
+    });
+  },
+
+  // Create new project (called from topbar)
+  createProject() {
+    const name = prompt('Project name:', 'My New Project');
+    if (!name) return;
+    this._projectId = 'proj_' + Date.now();
+    this._currentProjectName = name;
+    this.elements = [];
+    document.getElementById('canvasFrame').innerHTML = '';
+    this._saveToLocalProjects(name);
+    this.toast(`Project "${name}" created!`);
+  },
+
+  // Utilities
+  _copyAndToast(text, msg) {
+    navigator.clipboard?.writeText(text).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }).then(() => this.toast(msg));
+  },
+
+  toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => VE.init());
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://shadowares.vercel.app/agent/ai-tools.json",
+  "title": "Shadow Studio AI Tool Registry",
+  "description": "AI-discoverable tool registry for the Shadow Studio platform. All tools here can be discovered and executed by AI agents.",
+  "version": "3.1.0",
+  "license": "MIT",
+  "type": "object",
+  "required": ["studio", "tools", "schemas"],
+  "properties": {
+    "studio": {
+      "type": "object",
+      "description": "Platform metadata for AI agents",
+      "required": ["name", "version", "description", "api", "interfaces"],
+      "properties": {
+        "name": { "type": "string", "const": "Shadow Studio" },
+        "version": { "type": "string", "const": "3.1.0" },
+        "description": { "type": "string", "const": "Open source Canva for web dev. AI-ready creative tool platform for assets, animations, and designs." },
+        "url": { "type": "string", "format": "uri", "const": "https://shadow-studio-xi.vercel.app" },
+        "license": { "type": "string", "const": "MIT" },
+        "author": { "type": "string", "const": "Shadow Toolkit Team" },
+        "api": {
+          "type": "object",
+          "required": ["version", "endpoints", "transports"],
+          "properties": {
+            "version": { "type": "string", "const": "v3.1" },
+            "endpoints": {
+              "type": "object",
+              "properties": {
+                "discover": { "type": "string", "const": "/ai/discover.json" },
+                "execute": { "type": "string", "const": "/api/execute" },
+                "stream": { "type": "string", "const": "/api/stream" },
+                "mcp": { "type": "string", "const": "/mcp" }
+              }
+            },
+            "transports": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["http", "websocket", "postMessage", "broadcastChannel"]
+            },
+            "formats": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["json", "svg", "png", "webp", "webm", "css", "html", "zip"]
+            }
+          }
+        },
+        "interfaces": {
+          "type": "object",
+          "properties": {
+            "mcp": { "type": "boolean", "const": true, "description": "Model Context Protocol (Anthropic standard)" },
+            "openai": { "type": "boolean", "const": true, "description": "OpenAI-compatible /v1/chat/completions" },
+            "anthropic": { "type": "boolean", "const": true, "description": "Anthropic Messages API" }
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "description": "List of all discoverable tools",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "category", "level", "inputSchema", "outputSchema", "examples", "meta"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique tool identifier (kebab-case)" },
+          "name": { "type": "string", "description": "Human-readable tool name" },
+          "description": { "type": "string", "description": "What this tool does" },
+          "category": { "type": "string", "enum": ["visual", "assets", "audio", "animation", "export", "utility", "ai", "productivity"] },
+          "level": { "type": "string", "enum": ["beginner", "intermediate", "pro", "all"], "description": "Skill level required" },
+          "icon": { "type": "string", "description": "Emoji icon for the tool" },
+          "version": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "inputSchema": { "$ref": "#/definitions/jsonSchema", "description": "JSON Schema for input parameters" },
+          "outputSchema": { "$ref": "#/definitions/jsonSchema", "description": "JSON Schema for output format" },
+          "examples": { "type": "array", "items": { "type": "object" }, "description": "Example inputs/outputs" },
+          "handlers": {
+            "type": "object",
+            "properties": {
+              "http": { "type": "string", "description": "HTTP endpoint (e.g., POST /api/tools/{id})" },
+              "websocket": { "type": "string" },
+              "postMessage": { "type": "string" },
+              "broadcastChannel": { "type": "string" }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "offline": { "type": "boolean", "description": "Works offline" },
+              "progressive": { "type": "boolean", "description": "Supports progressive loading" },
+              "streaming": { "type": "boolean", "description": "Supports streaming output" },
+              "retry": { "type": "boolean", "description": "Safe to retry" },
+              "multiStep": { "type": "boolean", "description": "May require multiple steps" },
+              "requiresUserConfirmation": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "description": "Shared JSON schema definitions",
+      "additionalProperties": { "type": "object" }
+    }
+  },
+  "definitions": {
+    "jsonSchema": {
+      "type": "object",
+      "description": "JSON Schema 2020-12 object"
+    }
+  }
+}
