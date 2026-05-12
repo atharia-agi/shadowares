@@ -231,6 +231,30 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
         <div class="preset-card" data-preset="pyramid" onclick="P2D.loadPreset('pyramid',this)">
           <div class="p-icon">🔺</div>Pyramid Stack
         </div>
+        <div class="preset-card" data-preset="dungeon" onclick="P2D.loadPreset('dungeon',this)">
+          <div class="p-icon">🏚️</div>Dark Dungeon
+        </div>
+        <div class="preset-card" data-preset="space" onclick="P2D.loadPreset('space',this)">
+          <div class="p-icon">🚀</div>Space Station
+        </div>
+        <div class="preset-card" data-preset="forest" onclick="P2D.loadPreset('forest',this)">
+          <div class="p-icon">🌲</div>Enchanted Forest
+        </div>
+        <div class="preset-card" data-preset="temple" onclick="P2D.loadPreset('temple',this)">
+          <div class="p-icon">🏛️</div>Ancient Temple
+        </div>
+        <div class="preset-card" data-preset="castle" onclick="P2D.loadPreset('castle',this)">
+          <div class="p-icon">🏰</div>Medieval Castle
+        </div>
+        <div class="preset-card" data-preset="platformer" onclick="P2D.loadPreset('platformer',this)">
+          <div class="p-icon">🎯</div>Platformer
+        </div>
+        <div class="preset-card" data-preset="underwater" onclick="P2D.loadPreset('underwater',this)">
+          <div class="p-icon">🌊</div>Underwater
+        </div>
+        <div class="preset-card" data-preset="circuit" onclick="P2D.loadPreset('circuit',this)">
+          <div class="p-icon">🔌</div>Circuit Board
+        </div>
       </div>
     </div>
 
@@ -393,6 +417,87 @@ const P2D = {
         { type:'box', x:0,y:-12,z:0, sizeX:4,sizeY:4,sizeZ:4, color:'#CD853F', material:'glass', rotation:0, animation:'none', visible:true },
         { type:'cone', x:0,y:20,z:0, sizeX:1,sizeY:4,sizeZ:1, color:'#D2691E', material:'glow', rotation:0, animation:'spin', visible:true },
         { type:'plane', x:0,y:-80,z:0, sizeX:30,sizeY:0.2,sizeZ:30, color:'#2a2d4a', material:'standard', rotation:0, animation:'none', visible:true },
+      ]},
+      dungeon: { objects: [
+        { type:'box', x:-120,y:-50,z:-120, sizeX:3,sizeY:40,sizeZ:80, color:'#1a1a2e', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:120,y:-50,z:-120, sizeX:3,sizeY:40,sizeZ:80, color:'#1a1a2e', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-50,z:-200, sizeX:80,sizeY:40,sizeZ:3, color:'#1a1a2e', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'plane', x:0,y:-100,z:-120, sizeX:80,sizeY:0.2,sizeZ:80, color:'#16213e', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'sphere', x:-60,y:-80,z:-150, sizeX:1,sizeY:1,sizeZ:1, color:'#ff4444', material:'glow', rotation:0, animation:'float', visible:true },
+        { type:'sphere', x:30,y:-70,z:-80, sizeX:1,sizeY:1,sizeZ:1, color:'#ffaa00', material:'glow', rotation:0, animation:'float', visible:true },
+        { type:'box', x:-30,y:-70,z:-100, sizeX:6,sizeY:8,sizeZ:2, color:'#0f3460', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'cone', x:40,y:-85,z:-160, sizeX:1.5,sizeY:5,sizeZ:1.5, color:'#533483', material:'glow', rotation:0, animation:'spin', visible:true },
+      ]},
+      space: { objects: [
+        { type:'sphere', x:0,y:0,z:0, sizeX:8,sizeY:8,sizeZ:8, color:'#1a1a3e', material:'glass', rotation:0, animation:'spin', visible:true },
+        { type:'plane', x:0,y:-120,z:0, sizeX:60,sizeY:0.2,sizeZ:60, color:'#0a0a2e', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'box', x:80,y:-40,z:60, sizeX:4,sizeY:8,sizeZ:4, color:'#4a90d9', material:'metal', rotation:0, animation:'float', visible:true },
+        { type:'sphere', x:-100,y:-20,z:-50, sizeX:2,sizeY:2,sizeZ:2, color:'#ff6b35', material:'glow', rotation:0, animation:'float', visible:true },
+        { type:'box', x:-60,y:-60,z:100, sizeX:6,sizeY:4,sizeZ:6, color:'#7c4dff', material:'glass', rotation:0, animation:'bounce', visible:true },
+        { type:'cone', x:120,y:-50,z:-80, sizeX:2,sizeY:6,sizeZ:2, color:'#00e5ff', material:'glow', rotation:0, animation:'spin', visible:true },
+        { type:'light', x:0,y:150,z:0, sizeX:1,sizeY:1,sizeZ:1, color:'#ffffff', material:'glow', rotation:0, animation:'none', visible:true },
+      ]},
+      forest: { objects: [
+        { type:'plane', x:0,y:-100,z:0, sizeX:60,sizeY:0.2,sizeZ:60, color:'#0d2818', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-60,y:-70,z:-40, sizeX:3,sizeY:15,sizeZ:3, color:'#5c4033', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'cone', x:-60,y:-20,z:-40, sizeX:6,sizeY:12,sizeZ:6, color:'#166534', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'box', x:50,y:-80,z:30, sizeX:2,sizeY:12,sizeZ:2, color:'#6b4423', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'cone', x:50,y:-30,z:30, sizeX:5,sizeY:10,sizeZ:5, color:'#15803d', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'sphere', x:-20,y:-70,z:60, sizeX:3,sizeY:3,sizeZ:3, color:'#22c55e', material:'standard', rotation:0, animation:'float', visible:true },
+        { type:'box', x:0,y:-70,z:-80, sizeX:4,sizeY:10,sizeZ:4, color:'#4a3f2b', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'cone', x:0,y:-20,z:-80, sizeX:7,sizeY:14,sizeZ:7, color:'#166534', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'light', x:-60,y:80,z:-40, sizeX:0.5,sizeY:0.5,sizeZ:0.5, color:'#ffee88', material:'glow', rotation:0, animation:'none', visible:true },
+      ]},
+      temple: { objects: [
+        { type:'plane', x:0,y:-100,z:0, sizeX:80,sizeY:0.2,sizeZ:60, color:'#d4a373', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-40,y:-60,z:0, sizeX:2,sizeY:20,sizeZ:2, color:'#e9c46a', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:40,y:-60,z:0, sizeX:2,sizeY:20,sizeZ:2, color:'#e9c46a', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-40,y:-60,z:40, sizeX:2,sizeY:20,sizeZ:2, color:'#e9c46a', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:40,y:-60,z:40, sizeX:2,sizeY:20,sizeZ:2, color:'#e9c46a', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-30,z:20, sizeX:30,sizeY:2,sizeZ:16, color:'#d4a373', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'sphere', x:0,y:0,z:20, sizeX:2,sizeY:2,sizeZ:2, color:'#f4a261', material:'glow', rotation:0, animation:'spin', visible:true },
+        { type:'box', x:-80,y:-60,z:0, sizeX:2,sizeY:15,sizeZ:2, color:'#e9c46a', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:80,y:-60,z:0, sizeX:2,sizeY:15,sizeZ:2, color:'#e9c46a', material:'metal', rotation:0, animation:'none', visible:true },
+      ]},
+      castle: { objects: [
+        { type:'plane', x:0,y:-100,z:0, sizeX:80,sizeY:0.2,sizeZ:80, color:'#3d3d3d', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-50,z:0, sizeX:20,sizeY:20,sizeZ:16, color:'#525252', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-30,y:-20,z:0, sizeX:8,sizeY:8,sizeZ:8, color:'#737373', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:30,y:-20,z:0, sizeX:8,sizeY:8,sizeZ:8, color:'#737373', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'cone', x:-30,y:20,z:0, sizeX:3,sizeY:8,sizeZ:3, color:'#dc2626', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'cone', x:30,y:20,z:0, sizeX:3,sizeY:8,sizeZ:3, color:'#dc2626', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-50,y:-80,z:40, sizeX:10,sizeY:15,sizeZ:10, color:'#525252', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:50,y:-80,z:40, sizeX:10,sizeY:15,sizeZ:10, color:'#525252', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'light', x:0,y:150,z:0, sizeX:1,sizeY:1,sizeZ:1, color:'#ffee55', material:'glow', rotation:0, animation:'none', visible:true },
+      ]},
+      platformer: { objects: [
+        { type:'plane', x:0,y:-100,z:0, sizeX:40,sizeY:0.2,sizeZ:20, color:'#1a1a2e', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-80,y:-60,z:0, sizeX:8,sizeY:1,sizeZ:4, color:'#7c4dff', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'box', x:60,y:-40,z:0, sizeX:6,sizeY:1,sizeZ:3, color:'#00e5ff', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-20,z:0, sizeX:10,sizeY:1,sizeZ:4, color:'#ff6b81', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-30,y:0,z:0, sizeX:4,sizeY:1,sizeZ:3, color:'#f59e0b', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'sphere', x:-80,y:-80,z:0, sizeX:2,sizeY:2,sizeZ:2, color:'#34d399', material:'glow', rotation:0, animation:'bounce', visible:true },
+        { type:'light', x:0,y:150,z:0, sizeX:0.5,sizeY:0.5,sizeZ:0.5, color:'#ffee55', material:'glow', rotation:0, animation:'none', visible:true },
+      ]},
+      underwater: { objects: [
+        { type:'plane', x:0,y:-100,z:0, sizeX:60,sizeY:0.2,sizeZ:60, color:'#0a1a4a', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'sphere', x:0,y:30,z:0, sizeX:12,sizeY:8,sizeZ:8, color:'#1d4ed8', material:'glass', rotation:0, animation:'float', visible:true },
+        { type:'box', x:-60,y:-80,z:-40, sizeX:4,sizeY:10,sizeZ:3, color:'#065f46', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:50,y:-70,z:50, sizeX:3,sizeY:8,sizeZ:2, color:'#0d9488', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'sphere', x:40,y:-30,z:-50, sizeX:1,sizeY:1,sizeZ:1, color:'#22d3ee', material:'glow', rotation:0, animation:'float', visible:true },
+        { type:'sphere', x:-30,y:-20,z:50, sizeX:0.8,sizeY:0.8,sizeZ:0.8, color:'#c084fc', material:'glow', rotation:0, animation:'float', visible:true },
+        { type:'light', x:0,y:150,z:0, sizeX:1,sizeY:1,sizeZ:1, color:'#60a5fa', material:'glow', rotation:0, animation:'none', visible:true },
+        { type:'cone', x:-40,y:-90,z:30, sizeX:2,sizeY:5,sizeZ:2, color:'#166534', material:'metal', rotation:0, animation:'none', visible:true },
+      ]},
+      circuit: { objects: [
+        { type:'plane', x:0,y:-100,z:0, sizeX:60,sizeY:0.2,sizeZ:60, color:'#0c0a1a', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-80,y:-60,z:-60, sizeX:12,sizeY:0.5,sizeZ:2, color:'#00e5ff', material:'glow', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-80,y:-60,z:0, sizeX:12,sizeY:0.5,sizeZ:2, color:'#7c4dff', material:'glow', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-60,z:-30, sizeX:2,sizeY:0.5,sizeZ:15, color:'#ff6b81', material:'glow', rotation:0, animation:'none', visible:true },
+        { type:'box', x:60,y:-60,z:40, sizeX:15,sizeY:0.5,sizeZ:2, color:'#34d399', material:'glow', rotation:0, animation:'none', visible:true },
+        { type:'sphere', x:-80,y:-40,z:-60, sizeX:1,sizeY:1,sizeZ:1, color:'#00e5ff', material:'glow', rotation:0, animation:'spin', visible:true },
+        { type:'sphere', x:60,y:-40,z:40, sizeX:1,sizeY:1,sizeZ:1, color:'#34d399', material:'glow', rotation:0, animation:'spin', visible:true },
+        { type:'light', x:0,y:0,z:0, sizeX:3,sizeY:3,sizeZ:3, color:'#7c4dff', material:'glow', rotation:0, animation:'spin', visible:true },
       ]},
     };
   },

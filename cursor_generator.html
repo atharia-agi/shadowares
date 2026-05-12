@@ -228,6 +228,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         <button class="btn btn-outline" onclick="studio.downloadCursorSvg()" style="padding:8px 14px;font-size:.75rem">SVG</button>
         <button class="btn btn-outline" onclick="studio.downloadCursorPNG()" style="padding:8px 14px;font-size:.75rem">PNG</button>
         <button class="btn btn-outline" onclick="studio.copyAgentConfig()" style="padding:8px 14px;font-size:.75rem">🤖 Agent</button>
+        <button class="btn btn-outline" onclick="studio.exportMultiStateCSS()" style="padding:8px 14px;font-size:.75rem">🌓 States</button>
       </div>
     </div>
 
@@ -243,9 +244,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         </div>
 
         <div class="btn-row">
-          <button class="btn btn-primary" onclick="exportCursorCSS()">📋 Export CSS Code</button>
-          <button class="btn btn-secondary" onclick="downloadCursorSvg()">💾 Download SVG Cursor</button>
-          <button class="btn btn-outline" onclick="studio.exportToPage()">🧪 Test on This Page</button>
+          <button class="btn btn-primary" onclick="studio.exportCursorCSS()">📋 Export CSS</button>
+          <button class="btn btn-secondary" onclick="studio.downloadCursorSvg()">💾 Download SVG</button>
+          <button class="btn btn-outline" onclick="studio.exportToPage()">🧪 Test Page</button>
           <button class="btn btn-outline" onclick="studio.resetCursor()">🔄 Reset</button>
         </div>
       </div>
@@ -260,6 +261,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   <div class="demo-area">
     <h2>🔥 20 Shapes — Click to Apply</h2>
     <div class="demo-grid" id="shapeDemoGrid"></div>
+  </div>
+
+  <!-- Interactive State Demo -->
+  <div class="demo-area">
+    <h2>🧪 Multi-State Detection — Test cursor behavior on real elements</h2>
+    <div id="stateDemo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:12px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer" onclick="studio.toast('Click! State=click')">
+        <div style="font-size:2rem;margin-bottom:8px">🔘</div>
+        <div style="font-size:.78rem;color:var(--text-muted)">Button<br><span style="font-size:.65rem">cursor: pointer → hand</span></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:2rem;margin-bottom:8px">✏️</div>
+        <input type="text" placeholder="Type here..." style="width:100%;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.75rem">
+        <div style="font-size:.65rem;color:var(--text-muted);margin-top:6px">cursor: text → I-beam</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:2rem;margin-bottom:8px">🔗</div>
+        <a href="#" onclick="studio.toast('Link click!');return false" style="color:var(--accent);font-size:.8rem;text-decoration:underline">Clickable Link</a>
+        <div style="font-size:.65rem;color:var(--text-muted);margin-top:6px">cursor: pointer</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;cursor:grab" onmousedown="this.style.cursor='grabbing';studio.toast('Grabbing!')" onmouseup="this.style.cursor='grab'">
+        <div style="font-size:2rem;margin-bottom:8px">✊</div>
+        <div style="font-size:.78rem;color:var(--text-muted)">Drag Me<br><span style="font-size:.65rem">cursor: grab → grabbing</span></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -284,6 +310,7 @@ const PRESETS = {
   heart:    { shape:'heart',    color:'#ef4444', size:32, border:2, shadow:4,  hx:16, hy:16 },
   pointer:  { shape:'pointer',  color:'#f1f3f7', size:32, border:2, shadow:6,  hx:2,  hy:2  },
   cross:    { shape:'cross',    color:'#8b5cf6', size:32, border:2, shadow:4,  hx:16, hy:16 },
+  defaultArrow:{ shape:'defaultArrow',color:'#ffffff', size:32, border:0, shadow:2, hx:1, hy:1 },
   zoomIn:   { shape:'zoomIn',   color:'#22c55e', size:32, border:2, shadow:4,  hx:16, hy:16 },
   zoomOut:  { shape:'zoomOut',  color:'#ef4444', size:32, border:2, shadow:4,  hx:16, hy:16 },
   grab:     { shape:'grab',     color:'#f59e0b', size:28, border:2, shadow:4,  hx:14, hy:14 },
@@ -645,6 +672,14 @@ class CursorStudio {
       case 'star':      this._drawStar(ctx, cx, cy, 5, s/2, s/4); ctx.fill(); ctx.stroke(); break;
       case 'heart':
         this._drawHeart(ctx, cx, cy, s/2); ctx.fill(); ctx.stroke(); break;
+      case 'defaultArrow':
+        ctx.beginPath();
+        ctx.moveTo(cx-s*0.5, cy-s*0.7); ctx.lineTo(cx+s*0.3, cy+s*0.1);
+        ctx.lineTo(cx, cy+s*0.1); ctx.lineTo(cx+s*0.5, cy+s*0.7);
+        ctx.lineTo(cx+s*0.2, cy+s*0.7); ctx.lineTo(cx-s*0.2, cy+s*0.1);
+        ctx.lineTo(cx-s*0.5, cy+s*0.1); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
       case 'pointer':
         ctx.beginPath(); ctx.moveTo(cx, cy-s/2); ctx.lineTo(cx+s/2, cy-s*0.1); ctx.lineTo(cx+s*0.3, cy);
         ctx.lineTo(cx+s*0.35, cy+s/2); ctx.lineTo(cx-s*0.2, cy+s/2); ctx.lineTo(cx-s/2, cy+s*0.3);
@@ -736,7 +771,8 @@ class CursorStudio {
       case 'ring':        shape = `<circle cx="${size}" cy="${size}" r="${size*0.8}" fill="none" stroke="${c.color}" stroke-width="${c.border}"/><circle cx="${size}" cy="${size}" r="${size*0.35}" fill="none" stroke="${c.color}" stroke-width="${c.border}"/>`; break;
       case 'star':        shape = `<polygon points="${this._starPointsSVG(size,5,size*0.8,size*0.35)}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
       case 'heart':       shape = `<path d="M${size} ${size*1.1} C${size} ${size*0.3} ${size-size*0.8} ${size*0.5} ${size-size*0.8} ${size*1.1} C${size-size*0.8} ${size*1.6} ${size} ${size*1.8} ${size} ${size*1.8} C${size} ${size*1.8} ${size+size*0.8} ${size*1.6} ${size+size*0.8} ${size*1.1} C${size+size*0.8} ${size*0.5} ${size} ${size*0.3} ${size} ${size*1.1}Z" fill="${c.color}" stroke="white" stroke-width="${c.border}"/>`; break;
-      case 'pointer':     shape = `<polygon points="${size*0.5},${size*0.05} ${size*1.8},${size*0.7} ${size*1.1},${size*0.85} ${size*1.15},${size*1.8} ${size*0.4},${size*1.8} ${size*0.15},${size*1.1}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
+      case 'pointer':   shape = `<polygon points="${size*0.5},${size*0.05} ${size*1.8},${size*0.7} ${size*1.1},${size*0.85} ${size*1.15},${size*1.8} ${size*0.4},${size*1.8} ${size*0.15},${size*1.1}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
+      case 'defaultArrow': shape = `<polygon points="${size*0.2},${size*0.05} ${size*1.1},${size*0.9} ${size*0.8},${size*0.9} ${size*1.2},${size*1.7} ${size*0.9},${size*1.7} ${size*0.5},${size*0.95} ${size*0.2},${size*0.95}" fill="${c.color}" stroke="#555" stroke-width="1.5"/>`; break;
       case 'cross':       shape = `<rect x="${size*0.65}" y="${size*0.1}" width="${size*0.35}" height="${size*1.8}" fill="${c.color}" stroke="white" stroke-width="1"/><rect x="${size*0.1}" y="${size*0.65}" width="${size*1.8}" height="${size*0.35}" fill="${c.color}" stroke="white" stroke-width="1"/>`; break;
       case 'zoomIn':      shape = `<circle cx="${size*0.6}" cy="${size*0.6}" r="${size*0.4}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/><line x1="${size*0.9}" y1="${size*0.9}" x2="${size*1.2}" y2="${size*1.2}" stroke="${c.color}" stroke-width="3"/><line x1="${size*0.47}" y1="${size*0.6}" x2="${size*0.73}" y2="${size*0.6}" stroke="white" stroke-width="2"/><line x1="${size*0.6}" y1="${size*0.47}" x2="${size*0.6}" y2="${size*0.73}" stroke="white" stroke-width="2"/>`; break;
       case 'zoomOut':     shape = `<circle cx="${size*0.6}" cy="${size*0.6}" r="${size*0.4}" fill="${c.color}" stroke="white" stroke-width="${c.border}"/><line x1="${size*0.9}" y1="${size*0.9}" x2="${size*1.2}" y2="${size*1.2}" stroke="${c.color}" stroke-width="3"/><line x1="${size*0.47}" y1="${size*0.6}" x2="${size*0.73}" y2="${size*0.6}" stroke="white" stroke-width="2"/>`; break;
@@ -792,6 +828,67 @@ body { cursor: url("${svg}"), auto !important; }`;
       ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta);
       ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     }).then(() => this.toast('Data URI copied!'));
+  }
+
+  exportMultiStateCSS() {
+    const c = this.config;
+    const normal = this._generateSVGDataURI();
+    // Generate a smaller/lighter variant for pointer states
+    const pointerConfig = { ...c, color: '#7c4dff', size: c.size };
+    const textConfig = { ...c, shape: 'text', color: c.color, size: Math.max(20, c.size - 4) };
+    const waitConfig = { ...c, shadow: Math.max(c.shadow + 4, 8) };
+    
+    // We reuse the SVG method with temporary config override
+    const origCfg = this.config;
+    this.config = pointerConfig;
+    const pointerSVG = this._generateSVGDataURI();
+    this.config = textConfig;
+    const textSVG = this._generateSVGDataURI();
+    this.config = waitConfig;
+    const waitSVG = this._generateSVGDataURI();
+    this.config = origCfg;
+    
+    const code = `/* Multi-State Cursor — Auto-detection ready */
+/* Idle / Default state */
+body, .idle-state { cursor: url("${normal}"), auto; }
+
+/* Pointer / Button / Link hover */
+a, button, [role="button"], input[type="submit"], .clickable {
+  cursor: url("${pointerSVG}"), pointer;
+}
+
+/* Text input / editable */
+input[type="text"], textarea, [contenteditable="true"], .text-input {
+  cursor: url("${textSVG}"), text;
+}
+
+/* Busy / loading */
+.loading, .wait-state {
+  cursor: url("${waitSVG}"), wait;
+}
+
+/* Disabled */
+.disabled, [disabled] {
+  cursor: not-allowed;
+}
+
+/* Grab / Draggable */
+.grabbable, [draggable="true"] {
+  cursor: grab;
+}
+.grabbable:active, [draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Crosshair / Precision */
+.precision-target, .crosshair-state {
+  cursor: crosshair;
+}`;
+    navigator.clipboard?.writeText(code).catch(() => {
+      const ta = document.createElement('textarea'); ta.value = code;
+      ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    }).then(() => this.toast('Multi-state CSS copied!'));
   }
 
   downloadCursorSvg() {
@@ -907,7 +1004,7 @@ body { cursor: url("${svg}"), auto !important; }`;
 
   _getIcon(name) {
     const icons = {
-      circle:'●', crosshair:'╋', diamond:'◆', square:'■', arrow:'➤', dot:'◉', ring:'◎', star:'★',
+      circle:'●', defaultArrow:'↖', crosshair:'╋', diamond:'◆', square:'■', arrow:'➤', dot:'◉', ring:'◎', star:'★',
       heart:'♥', pointer:'☝', cross:'✚', zoomIn:'🔍', zoomOut:'🔎', grab:'✊', text:'𝐓', notAllowed:'🚫',
       pencil:'✏', move:'✥', help:'❓', cell:'⊞'
     };
