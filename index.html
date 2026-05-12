@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shadow Studio v5.1 — Universal Asset Generator</title>
-<meta name="description" content="Open source Canva for web dev. Zero-dependency, blazing fast, 100% offline. No AI required.">
+<title>Shadow Studio v5.2 — Universal Asset Generator</title>
+<meta name="description" content="Open source Canva for web dev. Zero-dependency, blazing fast, 100% offline. 15 creative tools, one-click export. No AI required.">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a0b14">
 <style>
@@ -208,18 +208,22 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 
   <div class="content">
     <!-- NVIDIA AI Banner -->
-    <div class="nai-banner" id="naiBanner" style="display:none">
-      <span class="nai-icon">🤖</span>
-      <div class="nai-text">
-        <strong>NVIDIA AI Boost Available!</strong> Connect your free NVIDIA API key to enable AI-powered asset generation. 
-        <code>Settings → BYOK → NVIDIA</code> — Free tier: 30 calls/day.
+    <div id="naiBanner" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:100%">
+        <span style="font-size:1.4rem">🤖</span>
+        <div style="flex:1">
+          <strong>NVIDIA AI Boost Enabled!</strong> 
+          <span style="font-size:.78rem;color:var(--text-muted)">Models: Step-3.5-Flash, Mistral-Large, Qwen3-Coder, Magpie-TTS, Phi-4-Vision, NV-EmbedCode</span>
+        </div>
+        <button class="btn-outline" style="padding:6px 12px;font-size:.75rem" onclick="dash.showNVIDIA()">Config</button>
       </div>
+    </div>
       <button class="btn-outline" style="padding:6px 12px;font-size:.75rem" onclick="dash.showNVIDIA()">Configure</button>
     </div>
 
     <div class="welcome-header">
       <h2>Welcome to Shadow Studio v5.1! 👋</h2>
-      <p>Your Universal Asset Generator — 11+ production-ready tools, 100% offline, zero AI required. <br>Or optionally supercharge with <strong>NVIDIA AI APIs</strong> (free tier).</p>
+      <p>Your Universal Asset Generator — 15 production-ready tools, 100% offline, zero AI required. <br>Or optionally supercharge with <strong>NVIDIA NIM APIs</strong> (free tier: Step-3.5-Flash, Mistral-Large, Qwen3-Coder, Magpie-TTS, Phi-4-Vision & more).</p>
     </div>
 
     <div class="quick-actions">
@@ -261,68 +265,87 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
       <button class="cat-tab" onclick="dash.filter('assets',this)">🗂️ Assets</button>
     </div>
 
+    <!-- Getting Started -->
+    <div id="gettingStarted" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <h2 style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-bottom:8px">🚀 Getting Started — 3 Steps</h2>
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--text-muted)"><span style="background:var(--primary);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700">1</span> Click any tool below</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--text-muted)"><span style="background:var(--primary);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700">2</span> Customize with sliders & colors</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--text-muted)"><span style="background:var(--primary);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700">3</span> One-click copy or download — no signup needed!</div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('gettingStarted').style.display='none'" style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.8rem;padding:4px 8px">✕ Dismiss</button>
+      </div>
+    </div>
+
     <div class="tool-grid" id="toolGrid">
       <!-- Visual -->
-      <div class="tool-card" data-cat="visual" onclick="dash.openTool('cursor_generator.html')">
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('cursor_generator.html')" title="Design custom cursors: 20 shapes, 8 themes, animation, multi-state CSS export — klik untuk mulai">
         <div class="preview" style="background:linear-gradient(135deg,#7c4dff22,#00e5ff44)">🖱️</div>
-        <div class="info"><h3>Cursor Studio</h3><p>Design unique cursors with 8+ themes</p><div class="tags"><span class="tag">UX</span><span class="tag">Export CSS/SVG</span></div></div>
+        <div class="info"><h3>Cursor Studio</h3><p>20 cursor shapes with themes, animation & multi-state export</p><div class="tags"><span class="tag">UX</span><span class="tag">Export CSS/SVG</span></div></div>
       </div>
-      <div class="tool-card" data-cat="visual" onclick="dash.openTool('mesh_gradient_generator.html')">
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('mesh_gradient_generator.html')" title="Buat background gradient keren dengan animasi real-time">
         <div class="preview" style="background:linear-gradient(135deg,#34d39922,#00e5ff44)">🌈</div>
         <div class="info"><h3>Mesh Gradient</h3><p>Real-time animated mesh gradients</p><div class="tags"><span class="tag">CSS</span><span class="tag">Animation</span></div></div>
       </div>
-      <div class="tool-card" data-cat="visual" onclick="dash.openTool('css_effect_generator.html')">
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('css_effect_generator.html')" title="10 efek CSS siap pakai: glassmorphism, neon, 3D tilt, shimmer">
         <div class="preview" style="background:linear-gradient(135deg,#f59e0b22,#a855f744)">✨</div>
-        <div class="info"><h3>CSS Effects</h3><p>10 production-ready CSS effects — glassmorphism, neon, 3D tilt, shimmer, and more</p><div class="tags"><span class="tag">CSS</span><span class="tag">Generator</span></div></div>
+        <div class="info"><h3>CSS Effects</h3><p>10 production-ready CSS effects — glassmorphism, neon, 3D tilt, shimmer</p><div class="tags"><span class="tag">CSS</span><span class="tag">Generator</span></div></div>
       </div>
-      <div class="tool-card" data-cat="visual" onclick="dash.openTool('color_palette_generator.html')">
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('color_palette_generator.html')" title="Buat palet warna dengan 7 metode harmony. Export CSS/Tailwind/JSON">
         <div class="preview" style="background:linear-gradient(135deg,#7c4dff,#00e5ff,#ff6b81,#f59e0b)"></div>
         <div class="info"><h3>Color Palette</h3><p>7 harmony methods + 8 quick presets</p><div class="tags"><span class="tag">Colors</span><span class="tag">Export JSON/CSS</span></div></div>
       </div>
-      <div class="tool-card" data-cat="visual" onclick="dash.openTool('icon_exporter_animated.html')">
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('icon_exporter_animated.html')" title="Edit pixel art frame-by-frame + export GIF/WebM/CSS keyframes">
         <div class="preview" style="background:linear-gradient(135deg,#ff6b8122,#7c4dff44)">🎞️</div>
-        <div class="info"><h3>Animated Icon Exporter</h3><p>Pixel editor + animation timeline — export GIF, WebM, sprite sheets, CSS keyframes<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Animation</span><span class="tag">Export</span></div></div>
+        <div class="info"><h3>Animated Icon Exporter</h3><p>Pixel editor + animation timeline<p><div class="tags"><span class="tag">Animation</span><span class="tag">Export GIF/WebM</span></div></div>
       </div>
-      <div class="tool-card" data-cat="visual" onclick="dash.openTool('visual_editor.html')">
+      <div class="tool-card" data-cat="visual" onclick="dash.openTool('visual_editor.html')" title="Drag-drop page builder: 14 komponen, live preview, export HTML">
         <div class="preview" style="background:linear-gradient(135deg,#a855f722,#00e5ff22)">🎨</div>
-        <div class="info"><h3>Visual Editor</h3><p>WYSIWYG drag-and-drop page builder with 14 component types, layers panel, live preview<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Builder</span><span class="tag">Export HTML</span></div></div>
+        <div class="info"><h3>Visual Editor</h3><p>WYSIWYG drag-and-drop page builder — 14 komponen, layers, live preview</p><div class="tags"><span class="tag">Builder</span><span class="tag">Export HTML</span></div></div>
       </div>
 
       <!-- Audio -->
-      <div class="tool-card" data-cat="audio" onclick="dash.openTool('shadow_audio_synth.html')">
+      <div class="tool-card" data-cat="audio" onclick="dash.openTool('shadow_audio_synth.html')" title="Buat sound effect & background music. 8 SFX + BGM engine. Record & export WAV">
         <div class="preview" style="background:linear-gradient(135deg,#f59e0b22,#dc262644)">🎹</div>
-        <div class="info"><h3>Audio Synth Studio v5</h3><p>8 SFX + infinite BGM engine with WAV recording export, EQ visualizer</p><div class="tags"><span class="tag">Audio</span><span class="tag">WebAudio API</span></div></div>
+        <div class="info"><h3>Audio Synth Studio v5</h3><p>8 SFX + infinite BGM engine with volume control, BPM presets, keyboard shortcuts</p><div class="tags"><span class="tag">Audio</span><span class="tag">WebAudio API</span></div></div>
       </div>
-      <div class="tool-card" data-cat="audio" onclick="dash.openTool('shadow_prompt_audio.html')">
+      <div class="tool-card" data-cat="audio" onclick="dash.openTool('shadow_prompt_audio.html')" title="Tulis teks → dapat soundscape otomatis. Mood detection, per-layer export WAV">
         <div class="preview" style="background:linear-gradient(135deg,#a855f722,#7c3aed44)">🔊</div>
-        <div class="info"><h3>Text-to-Soundscape</h3><p>AI-free mood detection from text — generates ambient soundscapes with WAV export</p><div class="tags"><span class="tag">Audio</span><span class="tag">Procedural</span></div></div>
+        <div class="info"><h3>Text-to-Soundscape</h3><p>AI-free mood detection — generates ambient soundscapes from text with per-layer WAV export</p><div class="tags"><span class="tag">Audio</span><span class="tag">Procedural</span></div></div>
       </div>
 
       <!-- Assets -->
-      <div class="tool-card" data-cat="assets" onclick="dash.openTool('icon_mapper.html')">
+      <div class="tool-card" data-cat="assets" onclick="dash.openTool('icon_mapper.html')" title="Ekstrak sprite dari gambar/video otomatis. Grid slicing, sheet packing, export PNG/JSON">
         <div class="preview" style="background:linear-gradient(135deg,#7c4dff22,#00e5ff44)">🗺️</div>
         <div class="info"><h3>Sprite Mapper v5</h3><p>Flood fill extraction, grid slicing, sprite sheet packing, multi-format export</p><div class="tags"><span class="tag">Game Dev</span><span class="tag">Export PNG/JSON/CSS</span></div></div>
       </div>
 
       <!-- Animation -->
-      <div class="tool-card" data-cat="animation" onclick="dash.openTool('icon_exporter_animated.html')">
+      <div class="tool-card" data-cat="animation" onclick="dash.openTool('icon_exporter_animated.html')" title="Animasi pixel art: draw frame by frame, export GIF/WebM/CSS keyframes">
         <div class="preview" style="background:linear-gradient(135deg,#ff6b8122,#f59e0b44)">🎬</div>
-        <div class="info"><h3>Anim. Icon Exporter</h3><p>Pixel-perfect animated icons — draw, animate, export GIF/WebM/Sprite Sheet/CSS<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Pixel Art</span><span class="tag">GIF/WebM</span></div></div>
+        <div class="info"><h3>Anim. Icon Exporter</h3><p>Pixel-perfect animated icons — draw, animate, export GIF/WebM/Sprite Sheet/CSS</p><div class="tags"><span class="tag">Pixel Art</span><span class="tag">GIF/WebM</span></div></div>
       </div>
 
-<!-- Productivity -->
-       <div class="tool-card" data-cat="productivity" onclick="dash.openTool('visual_editor.html')">
-         <div class="preview" style="background:linear-gradient(135deg,#22c55e22,#10b98144)">📝</div>
-         <div class="info"><h3>Visual Editor</h3><p>Build pages visually — drag & drop, real-time properties, export clean HTML/CSS/JSON<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Builder</span><span class="tag">WYSIWYG</span></div></div>
-       </div>
-       <div class="tool-card" data-cat="productivity" onclick="dash.openTool('photo_editor.html')">
-         <div class="preview" style="background:linear-gradient(135deg,#f59e0b22,#dc262644)">📷</div>
-         <div class="info"><h3>Photo Editor</h3><p>Full-featured photo editor — filters, drawing, shapes, layers, flood fill<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">Image</span><span class="tag">Filters</span></div></div>
-       </div>
-       <div class="tool-card" data-cat="productivity" onclick="dash.openTool('2.5d_playground.html')">
-         <div class="preview" style="background:linear-gradient(135deg,#a855f722,#22d3ee)">🎮</div>
-         <div class="info"><h3>2.5D Playground</h3><p>Interactive physics scene builder — 3D-like objects, gravity, animation<span class="tag" style="background:var(--accent);color:#000;margin-left:4px">NEW</span></p><div class="tags"><span class="tag">3D</span><span class="tag">Physics</span></div></div>
-       </div>
+      <!-- Productivity -->
+      <div class="tool-card" data-cat="productivity" onclick="dash.openTool('visual_editor.html')" title="Buat halaman web dengan drag-drop. 14 komponen, live preview, export HTML">
+        <div class="preview" style="background:linear-gradient(135deg,#22c55e22,#10b98144)">📝</div>
+        <div class="info"><h3>Visual Editor</h3><p>Build pages visually — drag & drop, real-time properties, export clean HTML/CSS/JSON</p><div class="tags"><span class="tag">Builder</span><span class="tag">WYSIWYG</span></div></div>
+      </div>
+      <div class="tool-card" data-cat="productivity" onclick="dash.openTool('photo_editor.html')" title="Edit foto: filters, drawing, shapes, 6 brush presets, flood fill, per-asset export">
+        <div class="preview" style="background:linear-gradient(135deg,#f59e0b22,#dc262644)">📷</div>
+        <div class="info"><h3>Photo Editor</h3><p>Full-featured photo editor — 6 brush presets, filters, drawing, shapes, layers</p><div class="tags"><span class="tag">Image</span><span class="tag">Filters</span></div></div>
+      </div>
+      <div class="tool-card" data-cat="productivity" onclick="dash.openTool('2.5d_playground.html')" title="Buat scene 3D palsu dengan CSS. 16 scene presets, physics, gravity, export HTML">
+        <div class="preview" style="background:linear-gradient(135deg,#a855f722,#22d3ee)">🎮</div>
+        <div class="info"><h3>2.5D Playground</h3><p>Interactive physics scene builder — 16 presets, 3D-like objects, gravity, animation</p><div class="tags"><span class="tag">3D</span><span class="tag">Physics</span></div></div>
+      </div>
+      <div class="tool-card" data-cat="productivity" onclick="dash.openTool('icon_interactive_playground.html')" title="Upload MP4/WebM → sprite slicing otomatis dengan 9 efek interaktif. Export per-sprite">
+        <div class="preview" style="background:linear-gradient(135deg,#06b6d422,#3b82f644)">✨</div>
+        <div class="info"><h3>2.5D Interactive</h3><p>Upload MP4/WebM, auto slice sprites, 9 interactive effects, per-sprite WebM/ZIP export</p><div class="tags"><span class="tag">Video</span><span class="tag">Effects</span></div></div>
+      </div>
     </div>
 
     <h3 style="margin-top:40px;margin-bottom:20px;font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:8px">📋 Templates <span style="font-size:.75rem;color:var(--text-faint);font-weight:normal">— Start faster</span></h3>
@@ -713,25 +736,30 @@ const Dashboard = {
   closeModal() { document.getElementById('modal').classList.remove('active'); },
 
   showAbout() {
-    this.showModal('About Shadow Studio v5.1',
-      'Universal Asset Generator<br>' +
-      '• 14+ production-ready tools<br>' +
-      '• Zero dependencies, zero AI required<br>' +
-      '• Fully offline (IndexedDB + Service Worker)<br>' +
-      '• Optional NVIDIA AI boost (free tier)<br>' +
-      '• Plugin system with BYOK<br>' +
-      '• Multi-format export (PNG, CSS, JSON, WAV, SVG, GIF, WebM)<br>' +
-      '• PWA installable<br>' +
-      '• MIT License'
+    this.showModal('About Shadow Studio v5.2',
+      'Open Source Canva for Web Dev<br>' +
+      '16 production-ready tools<br>' +
+      'Zero dependencies, zero AI required<br>' +
+      'Fully offline (IndexedDB + Service Worker)<br>' +
+      'Optional NVIDIA AI boost (free tier)<br>' +
+      'Plugin system with BYOK<br>' +
+      'Multi-format export (PNG, CSS, JSON, WAV, SVG, GIF, WebM, ZIP)<br>' +
+      'PWA installable<br>' +
+      'MIT License<br><br>' +
+      '⌨️ Keyboard: Ctrl+F search, Ctrl+N new project, 1-9 quick launch'
     );
   },
 
   showNVIDIA() {
     const status = shadowStudio.getNVIDIAStatus();
+    const models = shadowStudio._nvidia?.modelList?.filter(m => m.free) || [];
+    const modelList = models.map(m => `• <code>${m.id}</code> — ${m.desc}`).join('<br>');
     let msg = status.available
-      ? '✅ NVIDIA API connected! Free tier: 30 calls/day remaining.'
-      : '⚠️ Not connected. Get a free API key at https://build.nvidia.com and enter it in Settings > BYOK.';
-    this.showModal('🤖 NVIDIA AI Boost', msg + '<br><br>Uses: Text-to-Image, Style Transfer, TTS, Image Description.');
+      ? `✅ NVIDIA API connected! Rate limit: ${status.rateLimit?.remaining || '?'} calls remaining.`
+      : '⚠️ Not connected. Get a free API key at <a href="https://build.nvidia.com" target="_blank">build.nvidia.com</a> and enter it in Settings > BYOK.';
+    msg += '<br><br><b>🎯 Free Models Available:</b><br>' + modelList;
+    msg += '<br><br><b>💡 Usage:</b> Chat/Reasoning, Image Description, Code Embedding, TTS, Content Moderation';
+    this.showModal('🤖 NVIDIA AI Boost', msg);
   },
 
   checkNVIDIA() {
@@ -766,6 +794,16 @@ document.getElementById('modal').addEventListener('click', (e) => {
 
 Dashboard.init();
 window.dash = Dashboard;
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 'n') { e.preventDefault(); Dashboard.showModal('New Project', 'Select a tool from the grid to start creating. All tools are ready to use — no setup needed.'); }
+  if (e.key >= '1' && e.key <= '9') {
+    const cards = document.querySelectorAll('.tool-card');
+    const idx = parseInt(e.key) - 1;
+    if (cards[idx]) cards[idx].click();
+  }
+});
 </script>
 </body>
 </html>

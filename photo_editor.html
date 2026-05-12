@@ -441,6 +441,7 @@ const PE = {
     this._loadFromStorage();
     this._drawBrushPreview();
     this.buildAssetDownloads();
+    this._setupResizeHandler();
     document.getElementById('infoWidth').textContent = this.canvasWidth;
     document.getElementById('infoHeight').textContent = this.canvasHeight;
   },
@@ -1039,8 +1040,30 @@ commitAdjustments() {
        this.toast('📦 Downloading: ' + filename);
        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
      };
-     container.appendChild(a);
-   },
+      container.appendChild(a);
+    },
+  },
+
+  // === CANVAS RESIZE ===
+  _setupResizeHandler() {
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (this.originalImage) {
+          this.canvas.width = this.originalImage.width;
+          this.canvas.height = this.originalImage.height;
+          this.canvasWidth = this.originalImage.width;
+          this.canvasHeight = this.originalImage.height;
+          this._redrawImage();
+        }
+        this._updateInfo();
+        this._drawBrushPreview();
+        this.buildAssetDownloads();
+      }, 200);
+    });
+  },
+
   rotate(deg) {
     if (!this.originalImage) return;
     const tempCanvas = document.createElement('canvas');

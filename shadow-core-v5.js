@@ -10,94 +10,189 @@
  */
 
 // ==========================================
-// PART 0: NVIDIA AI BRIDGE (Optional)
+// PART 0: NVIDIA AI BRIDGE (Updated v5.2 — Free NIM Endpoints)
 // ==========================================
 
 class NVIDIAAPIBridge {
   constructor() {
-    this.baseURL = 'https://api.nvidia.com';
-    this.endpoints = {
-      imageGen: 'https://ai.api.nvidia.com/v1/genai/meta/llama-3-70b-instruct',
-      tts: 'https://api.nvidia.com/v1/voice/tts',
-      imageEdit: 'https://api.nvidia.com/v1/vision/image-editing',
+    this.baseURL = 'https://integrate.api.nvidia.com/v1';
+    this.models = {
+      // Chat/Reasoning (Chat Completions API — OpenAI compatible)
+      chat: {
+        'step-3.5-flash': { endpoint: '/chat/completions', model: 'stepfun-ai/step-3.5-flash', free: true, desc: '200B reasoning MoE, agentic AI' },
+        'mistral-large-3-675b': { endpoint: '/chat/completions', model: 'mistralai/mistral-large-3-675b-instruct-2512', free: true, desc: 'General purpose VLM' },
+        'qwen3-coder-480b': { endpoint: '/chat/completions', model: 'qwen/qwen3-coder-480b-a35b-instruct', free: true, desc: 'Agentic coding, 256K context' },
+        'llama-4-maverick-17b': { endpoint: '/chat/completions', model: 'meta/llama-4-maverick-17b-128e-instruct', free: true, desc: 'Multimodal MoE' },
+        'mistral-nemotron': { endpoint: '/chat/completions', model: 'mistralai/mistral-nemotron', free: true, desc: 'Agentic, coding, tool use' },
+        'gemma-3n-e2b-it': { endpoint: '/chat/completions', model: 'google/gemma-3n-e2b-it', free: true, desc: 'Edge AI, lightweight' },
+        'seed-oss-36b': { endpoint: '/chat/completions', model: 'bytedance/seed-oss-36b-instruct', free: true, desc: 'Reasoning, agentic' },
+        'nemotron-super-49b': { endpoint: '/chat/completions', model: 'nvidia/llama-3.3-nemotron-super-49b-v1', free: false, desc: 'Reasoning, tool calling' },
+        'nemotron-nano-8b': { endpoint: '/chat/completions', model: 'nvidia/llama-3.1-nemotron-nano-8b-v1', free: false, desc: 'Edge reasoning' },
+      },
+      // TTS (specific NIM endpoint)
+      tts: {
+        'magpie-tts': { endpoint: 'https://ai.api.nvidia.com/v1/nim/nvidia/magpie-tts-zeroshot/invoke', model: null, free: true, desc: 'Expressive TTS from short sample' },
+        'magpie-multilingual': { endpoint: 'https://ai.api.nvidia.com/v1/nim/nvidia/magpie-tts-multilingual/invoke', model: null, free: false, desc: 'Multilingual TTS' },
+      },
+      // Multimodal Vision (for image understanding)
+      vision: {
+        'phi-4-multimodal': { endpoint: '/chat/completions', model: 'microsoft/phi-4-multimodal-instruct', free: true, desc: 'Image + audio understanding' },
+        'gemma-3-27b-it': { endpoint: '/chat/completions', model: 'google/gemma-3-27b-it', free: true, desc: 'Vision assistant', deprecated: true },
+      },
+      // Embeddings / Code Retrieval
+      embed: {
+        'nv-embedcode-7b': { endpoint: 'https://ai.api.nvidia.com/v1/retrieval/nvidia/nv-embedcode-7b-v1/invoke', model: null, free: true, desc: 'Code embedding/retrieval' },
+      },
+      // Safety / Moderation
+      safety: {
+        'content-safety': { endpoint: '/chat/completions', model: 'nvidia/llama-3.1-nemotron-safety-guard-8b-v3', free: true, desc: 'Content safety moderation' },
+      },
     };
     this.apiKey = null;
-    this.rateLimit = { remaining: 30, resetTime: Date.now() + 3600000 };
+    this.currentModel = 'step-3.5-flash';
+    this.rateLimit = { remaining: 50, resetTime: Date.now() + 3600000 };
   }
 
   setKey(key) { this.apiKey = key; }
-
   get isAvailable() { return !!this.apiKey && this.rateLimit.remaining > 0; }
+  get modelList() {
+    const list = [];
+    Object.entries(this.models).forEach(([cat, models]) => {
+      Object.entries(models).forEach(([id, cfg]) => {
+        list.push({ id, category: cat, ...cfg });
+      });
+    });
+    return list;
+  }
 
-  async _request(endpoint, payload) {
+  setModel(id) {
+    for (const cat of Object.values(this.models)) {
+      if (cat[id]) { this.currentModel = id; return true; }
+    }
+    return false;
+  }
+
+  async _chatRequest(modelId, messages, opts = {}) {
     if (!this.isAvailable) throw new Error('NVIDIA API not configured. Set API key in Settings > BYOK > NVIDIA.');
+    const cfg = this._findModel(modelId);
+    if (!cfg) throw new Error(`Unknown model: ${modelId}`);
     
-    const res = await fetch(endpoint, {
+    const url = cfg.endpoint.startsWith('http') ? cfg.endpoint : `${this.baseURL}${cfg.endpoint}`;
+    const payload = {
+      model: cfg.model,
+      messages,
+      max_tokens: opts.maxTokens || 2048,
+      temperature: opts.temperature ?? 0.7,
+      top_p: opts.topP ?? 0.95,
+    };
+    if (opts.stream) payload.stream = true;
+
+    const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: { 'Authorization': `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error || `NVIDIA API error: ${res.status}`);
+      throw new Error(err.error?.message || err.error || `NVIDIA API error: ${res.status}`);
     }
 
+    this.rateLimit.remaining--;
+    if (opts.stream) return res.body;
+    return res.json();
+  }
+
+  async _nimRequest(url, payload) {
+    if (!this.isAvailable) throw new Error('NVIDIA API not configured.');
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`NVIDIA API error: ${res.status}`);
     this.rateLimit.remaining--;
     return res.json();
   }
 
-  // Text to Image generation
-  async generateImage(prompt, options = {}) {
-    const payload = {
-      messages: [{
-        role: 'user',
-        content: `Generate a web development asset image: ${prompt}. Return ONLY a valid JSON with a single top-level key "image_url" containing the URL.`
-      }],
-      max_tokens: 1024,
-      temperature: options.temperature || 0.7,
-      seed: options.seed || Math.floor(Math.random() * 100000)
-    };
-    const data = await this._request(this.endpoints.imageGen, payload);
-    return data;
+  _findModel(id) {
+    for (const cat of Object.values(this.models)) {
+      if (cat[id]) return cat[id];
+    }
+    return null;
   }
 
-  // Image to Image (style transfer)
-  async styleTransfer(imageUrl, style) {
-    const payload = {
-      input_image: imageUrl,
-      style_prompt: style
-    };
-    return this._request(this.endpoints.imageEdit, payload);
+  // === HIGH-LEVEL METHODS ===
+
+  // Chat / Reasoning (uses current model)
+  async chat(messages, opts = {}) {
+    const modelId = opts.model || this.currentModel;
+    return this._chatRequest(modelId, messages, opts);
   }
 
-  // Text to Speech
-  async synthesize(text, voice = 'neutral', speed = 1.0) {
+  // Prompt: ask AI about anything — image description, code generation, etc.
+  async prompt(systemPrompt, userMessage, opts = {}) {
+    const modelId = opts.model || this.currentModel;
+    return this._chatRequest(modelId, [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ], opts);
+  }
+
+  // Text to Image via Qwen-Image (or compatible)
+  async generateImage(prompt, opts = {}) {
+    const result = await this.prompt(
+      'You are an image description AI. Given a prompt, return detailed image generation parameters as JSON.',
+      `Generate: ${prompt}. ${opts.extra || ''}`,
+      { model: opts.model || 'qwen3-coder-480b', ...opts }
+    );
+    return result;
+  }
+
+  // Text to Speech via Magpie TTS
+  async synthesize(text, opts = {}) {
+    const modelId = opts.model || 'magpie-tts';
+    const cfg = this._findModel(modelId);
+    if (!cfg) throw new Error('TTS model not found');
+    
     const payload = {
       text,
-      voice,
-      speed,
-      format: 'mp3'
+      voice: opts.voice || 'default',
+      speed: opts.speed || 1.0,
+      format: opts.format || 'wav'
     };
-    const data = await this._request(this.endpoints.tts, payload);
-    return data;
+    return this._nimRequest(cfg.endpoint, payload);
+  }
+
+  // Image understanding via Phi-4 Multimodal
+  async describeImage(imageData, question = 'Describe this image in detail') {
+    return this._chatRequest('phi-4-multimodal', [
+      { role: 'user', content: [{ type: 'text', text: question }, { type: 'image_url', image_url: { url: imageData } }] }
+    ], { maxTokens: 512, temperature: 0.3 });
+  }
+
+  // Code embedding search via NV-EmbedCode
+  async embedCode(code, query) {
+    const payload = {
+      input: code,
+      query,
+      model: 'nvidia/nv-embedcode-7b-v1',
+      input_type: query ? 'query' : 'passage'
+    };
+    return this._nimRequest('https://ai.api.nvidia.com/v1/retrieval/nvidia/nv-embedcode-7b-v1/invoke', payload);
+  }
+
+  // Style transfer / image editing via Phi-4 Vision
+  async styleTransfer(imageUrl, style) {
+    return this._chatRequest('phi-4-multimodal', [
+      { role: 'user', content: [{ type: 'text', text: `Apply this style: "${style}". Describe what you see.` }, { type: 'image_url', image_url: { url: imageUrl } }] }
+    ], { maxTokens: 1024 });
   }
 
   // Smart asset description for accessibility
   async describeAsset(imageData, context) {
-    const payload = {
-      messages: [{
-        role: 'user', 
-        content: `Describe this asset for code generation context: ${context}. Return ONLY valid JSON: { "description": "...", "tags": [...], "suggested_css": "..." }`
-      }],
-      max_tokens: 512,
-      temperature: 0.3
-    };
-    return this._request(this.endpoints.imageGen, payload);
+    const result = await this.describeImage(imageData, `Describe this web dev asset: ${context}. Return ONLY valid JSON: { "description": "...", "tags": [...], "suggested_css": "..." }`);
+    return result;
   }
 }
 
