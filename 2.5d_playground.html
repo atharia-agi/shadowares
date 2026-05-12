@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎮 2.5D Playground — Shadow Studio</title>
+<title>🎮 2.5D Interactive Playground — Shadow Studio</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0a0b14;--surface:#15172a;--surface-2:#1c1f36;--border:#2a2d4a;--border-light:rgba(255,255,255,.06);--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff;--success:#34d399;--warning:#f59e0b;--error:#ef4444;--gradient:linear-gradient(135deg,#7c4dff,#9c6bff,#00e5ff)}
 html{font-size:15px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
 body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
 
-.topbar{height:52px;min-height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:8px}
+.topbar{height:52px;min-height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:8px;z-index:10}
 .topbar-section{display:flex;gap:4px;align-items:center}
 .top-icon{width:34px;height:34px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .2s}
 .top-icon:hover{background:rgba(255,255,255,.05);color:var(--text);border-color:var(--primary)}
@@ -19,7 +19,9 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 .btn-sm{padding:5px 10px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s;display:inline-flex;align-items:center;gap:3px}
 .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#6c3dee}
 .btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--primary)}
-.btn-success{background:var(--success);color:#000}
+.btn-success{background:var(--success);color:#000}.btn-success:hover{filter:brightness(1.1)}
+.btn-danger{background:var(--error);color:#fff}.btn-danger:hover{filter:brightness(1.1)}
+.btn-accent{background:var(--accent);color:#000;font-weight:700}.btn-accent:hover{filter:brightness(1.1)}
 
 .main-area{flex:1;display:flex;overflow:hidden}
 
@@ -32,8 +34,10 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 .scene-item:hover{border-color:var(--primary)}
 .scene-item .icon{font-size:1.1rem}
 .scene-item .label{font-size:.8rem;flex:1}
-.scene-item .remove{color:var(--error);cursor:pointer;font-size:.7rem;opacity:.5;transition:opacity .15s}
-.scene-item .remove:hover{opacity:1}
+.scene-item .remove{color:var(--error);cursor:pointer;font-size:.7rem;opacity:.5;transition:opacity .15s;padding:2px 4px;border-radius:4px}
+.scene-item .remove:hover{opacity:1;background:rgba(239,68,68,.15)}
+.scene-item .download-btn{color:var(--accent);cursor:pointer;font-size:.7rem;opacity:.5;transition:opacity .15s;padding:2px 4px;border-radius:4px;text-decoration:none}
+.scene-item .download-btn:hover{opacity:1;background:rgba(0,229,255,.1)}
 .scene-controls{padding:10px;border-top:1px solid var(--border)}
 .scene-controls label{display:block;font-size:.72rem;color:var(--text-muted);margin-bottom:4px}
 .scene-controls input[type=range]{width:100%;accent-color:var(--primary)}
@@ -42,7 +46,12 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 
 /* Canvas */
 .canvas-area{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle,#1a1d2e 1px,transparent 1px);background-size:24px 24px}
-#physicsCanvas{border-radius:8px;box-shadow:0 0 40px rgba(124,77,255,.08)}
+#physicsCanvas{border-radius:8px;box-shadow:0 0 40px rgba(124,77,255,.08);width:100%;height:100%}
+
+/* Selection indicator on canvas objects */
+.p2d-obj{cursor:pointer;transition:outline .15s}
+.p2d-obj.selected{outline:2px solid var(--accent);outline-offset:2px}
+.p2d-obj:hover{outline:1px dashed rgba(0,229,255,.5);outline-offset:1px}
 
 /* Right: Properties */
 .sidebar-right{width:260px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
@@ -59,15 +68,53 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 .obj-stats{font-size:.75rem;color:var(--text-muted);line-height:1.8;margin-top:4px}
 .obj-stats span{color:var(--text)}
 
+/* Object Inspector */
+.inspector-section{background:rgba(124,77,255,.05);border:1px solid rgba(124,77,255,.15);border-radius:8px;padding:10px;margin-top:8px}
+.inspector-title{font-size:.75rem;color:var(--accent);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.inspector-field{font-size:.72rem;color:var(--text-muted);margin-bottom:4px;display:flex;justify-content:space-between}
+.inspector-field .field-val{color:var(--text);font-weight:600}
+
 /* Toast */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.82rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.82rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:400px}
 .toast.show{opacity:1;transform:translateY(0)}
 
-.export-section{padding:12px 14px;border-top:1px solid var(--border)}
-.export-section .export-btns{display:flex;gap:6px}
+/* Bulk Export Bar */
+.bulk-export-bar{display:flex;gap:6px;padding:10px 14px;border-top:1px solid var(--border);flex-wrap:wrap}
+.bulk-export-bar .count-info{font-size:.78rem;color:var(--text-muted);margin-right:auto;display:flex;align-items:center;gap:6px}
+.bulk-export-bar .count-info .num{color:var(--accent);font-weight:700}
 
+/* Export Modal */
+.modal-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:10000}
+.modal-backdrop.show{display:flex}
+.modal{background:var(--surface);border-radius:16px;padding:24px;border:1px solid var(--border);max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-close{float:right;background:none;border:none;color:var(--text-muted);font-size:1.5rem;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s}
+.modal-close:hover{background:rgba(239,68,68,.15);color:var(--error)}
+.modal h3{font-size:1.1rem;margin-bottom:8px}
+
+.export-formats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:16px 0}
+.export-fmt-btn{padding:10px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);cursor:pointer;font-size:.75rem;font-weight:600;font-family:inherit;transition:all .15s;text-align:center}
+.export-fmt-btn:hover{border-color:var(--primary);color:var(--text)}
+.export-fmt-btn.active{border-color:var(--primary);background:rgba(124,77,255,.15);color:var(--primary)}
+
+.code-block{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Fira Code',monospace;font-size:.7rem;color:#a0a8c0;white-space:pre-wrap;overflow-x:auto;max-height:40vh;overflow-y:auto;margin:12px 0}
+
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+
+.file-input-hidden{display:none}
+
+/* Download all progress */
+.download-progress{display:none;margin:8px 0;padding:8px 12px;background:rgba(0,229,255,.08);border-radius:8px;border:1px solid rgba(0,229,255,.2)}
+.download-progress .progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px}
+.download-progress .progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:2px;transition:width .3s}
+.download-progress .progress-text{font-size:.72rem;color:var(--accent);margin-top:4px}
+
+/* Scene list context actions */
+.scene-actions{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+
+/* Responsive */
 @media(max-width:768px){
   .sidebar-left{width:200px}.sidebar-right{width:200px}
+  .export-formats{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
@@ -77,16 +124,19 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 <div class="topbar">
   <div class="topbar-section">
     <button class="top-icon" onclick="P2D.resetScene()" title="Reset Scene">🔄</button>
-    <button class="top-icon" onclick="P2D.undo()" title="Undo">↩️</button>
-    <button class="top-icon" onclick="P2D.redo()" title="Redo">↪️</button>
+    <button class="top-icon" onclick="P2D.undo()" title="Undo (Ctrl+Z)">↩️</button>
+    <button class="top-icon" onclick="P2D.redo()" title="Redo (Ctrl+Y)">↪️</button>
     <div class="topbar-divider" style="width:1px;height:24px;background:var(--border);margin:0 6px"></div>
     <button class="top-icon" onclick="P2D.togglePhysics()" id="togglePhysics" title="Toggle Physics">⚡</button>
     <button class="top-icon" onclick="P2D.toggleGravity()" id="toggleGravity" title="Toggle Gravity">🪨</button>
+    <button class="top-icon" onclick="P2D.toggleGrid()" id="toggleGrid" title="Toggle Grid">▦</button>
+    <button class="top-icon" onclick="P2D.snapAllToFloor()" id="snapFloor" title="Snap All to Floor">⬇️</button>
   </div>
-  <span class="topbar-title">🎮 2.5D Playground</span>
+  <span class="topbar-title">🎮 2.5D Interactive Playground</span>
   <div class="topbar-actions">
-    <button class="btn-sm btn-secondary" onclick="P2D.exportScene()">📦 Export</button>
-    <button class="btn-sm btn-success" onclick="P2D.downloadScene()">💾 Save</button>
+    <button class="btn-sm btn-secondary" onclick="P2D.exportModal()">📦 Export</button>
+    <button class="btn-sm btn-success" onclick="P2D.saveScene()">💾 Save</button>
+    <button class="btn-sm btn-accent" onclick="P2D.downloadAllAssets()">🗜️ Download All</button>
   </div>
 </div>
 
@@ -95,82 +145,54 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
   <aside class="sidebar-left">
     <div class="sidebar-header">
       <h2>🧩 Objects</h2>
+      <div style="display:flex;gap:4px;margin-top:8px">
+        <button class="btn-sm btn-secondary" onclick="P2D.selectAll()" style="flex:1">Select All</button>
+        <button class="btn-sm btn-danger" onclick="P2D.removeSelected()" style="flex:1;font-size:.7rem">🗑️ Remove</button>
+      </div>
     </div>
     <div class="scene-items" id="objectPalette">
-      <div class="scene-item" draggable="true" data-type="box" onclick="P2D.addObject('box')">
-        <span class="icon">📦</span><span class="label">Cube</span>
-        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
-      </div>
-      <div class="scene-item" draggable="true" data-type="sphere" onclick="P2D.addObject('sphere')">
-        <span class="icon">⚽</span><span class="label">Sphere</span>
-        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
-      </div>
-      <div class="scene-item" draggable="true" data-type="cylinder" onclick="P2D.addObject('cylinder')">
-        <span class="icon">🧱</span><span class="label">Cylinder</span>
-        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
-      </div>
-      <div class="scene-item" draggable="true" data-type="plane" onclick="P2D.addObject('plane')">
-        <span class="icon">🛬</span><span class="label">Plane</span>
-        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
-      </div>
-      <div class="scene-item" draggable="true" data-type="cone" onclick="P2D.addObject('cone')">
-        <span class="icon">🍦</span><span class="label">Cone</span>
-        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
-      </div>
-      <div class="scene-item" draggable="true" data-type="torus" onclick="P2D.addObject('torus')">
-        <span class="icon">🍩</span><span class="label">Torus</span>
-        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
-      </div>
-      <div class="scene-item" draggable="true" data-type="text3d" onclick="P2D.addObject('text3d')">
-        <span class="icon">🔤</span><span class="label">3D Text</span>
-        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
-      </div>
-      <div class="scene-item" draggable="true" data-type="light" onclick="P2D.addObject('light')">
-        <span class="icon">💡</span><span class="label">Light Source</span>
-        <span class="remove" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
-      </div>
+      <!-- Dynamic items -->
     </div>
     <div class="scene-controls">
       <div class="props-section" style="border:none;padding:0">
-        <h3>🎨 Properties</h3>
-        <label>Object Color</label>
-        <input type="color" id="objColor" value="#7c4dff" onchange="P2D.updatePreview()">
-        <div class="prop-row" style="margin-top:8px">
-          <div>
-            <label>Size X</label>
-            <input type="range" id="sizeX" min="1" max="10" value="1" step="0.5" oninput="P2D.updatePreview()">
+        <h3>🎨 Add Object</h3>
+        <div class="prop-row" style="margin-bottom:8px">
+          <select id="addType" style="margin-bottom:4px">
+            <option value="box">📦 Cube</option>
+            <option value="sphere">⚽ Sphere</option>
+            <option value="cylinder">🧱 Cylinder</option>
+            <option value="plane">🛬 Plane</option>
+            <option value="cone">🍦 Cone</option>
+            <option value="torus">🍩 Torus</option>
+            <option value="text3d">🔤 3D Text</option>
+            <option value="light">💡 Light</option>
+          </select>
+        </div>
+        <button class="btn-sm btn-primary" onclick="P2D.addObject(document.getElementById('addType').value)" style="width:100%">+ Add to Scene</button>
+
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+          <h3>🔧 Transform</h3>
+          <label>Pos X</label>
+          <input type="range" id="propX" min="-400" max="400" value="0" oninput="P2D.applyTransform()">
+          <label style="margin-top:4px">Pos Y</label>
+          <input type="range" id="propY" min="-200" max="200" value="0" oninput="P2D.applyTransform()">
+          <label style="margin-top:4px">Pos Z</label>
+          <input type="range" id="propZ" min="-400" max="400" value="0" oninput="P2D.applyTransform()">
+          <div class="prop-row" style="margin-top:6px">
+            <div>
+              <label>Rot X</label>
+              <input type="range" id="propRotX" min="0" max="360" value="0" oninput="P2D.applyTransform()">
+            </div>
+            <div>
+              <label>Rot Y</label>
+              <input type="range" id="propRotY" min="0" max="360" value="0" oninput="P2D.applyTransform()">
+            </div>
           </div>
-          <div>
-            <label>Size Y</label>
-            <input type="range" id="sizeY" min="1" max="10" value="1" step="0.5" oninput="P2D.updatePreview()">
+          <div class="scene-actions" id="sceneActions" style="display:none">
+            <button class="btn-sm btn-secondary" onclick="P2D.cloneSelected()">📋 Clone</button>
+            <button class="btn-sm btn-accent" onclick="P2D.exportObject()">💾 Export Obj</button>
           </div>
         </div>
-        <div class="prop-row">
-          <div>
-            <label>Size Z</label>
-            <input type="range" id="sizeZ" min="1" max="10" value="1" step="0.5" oninput="P2D.updatePreview()">
-          </div>
-          <div>
-            <label>Rotation</label>
-            <input type="range" id="objRotation" min="0" max="360" value="0" oninput="P2D.updatePreview()">
-          </div>
-        </div>
-        <label style="margin-top:8px">Material</label>
-        <select id="objMaterial" onchange="P2D.updatePreview()">
-          <option value="standard">Standard</option>
-          <option value="metal">Metal</option>
-          <option value="glass">Glass</option>
-          <option value="wireframe">Wireframe</option>
-          <option value="glow">Glow</option>
-        </select>
-        <label style="margin-top:8px">Animation</label>
-        <select id="objAnimation" onchange="P2D.updatePreview()">
-          <option value="none">None</option>
-          <option value="spin">Spin</option>
-          <option value="bounce">Bounce</option>
-          <option value="pulse">Pulse</option>
-          <option value="float">Float</option>
-        </select>
       </div>
     </div>
   </aside>
@@ -203,6 +225,12 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
         <div class="preset-card" data-preset="ballpit" onclick="P2D.loadPreset('ballpit',this)">
           <div class="p-icon">🎱</div>Ball Pit
         </div>
+        <div class="preset-card" data-preset="city" onclick="P2D.loadPreset('city',this)">
+          <div class="p-icon">🏙️</div>City Block
+        </div>
+        <div class="preset-card" data-preset="pyramid" onclick="P2D.loadPreset('pyramid',this)">
+          <div class="p-icon">🔺</div>Pyramid Stack
+        </div>
       </div>
     </div>
 
@@ -210,29 +238,28 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
       <h3>📊 Scene Stats</h3>
       <div class="obj-stats">
         Objects: <span id="objCount">0</span><br>
+        Selected: <span id="selectedCount">0</span><br>
         Lights: <span id="lightCount">0</span><br>
         Physics: <span id="physicsStatus">⚡ Off</span><br>
         Gravity: <span id="gravityStatus">🪨 Off</span><br>
+        Grid: <span id="gridStatus">▦ Off</span><br>
         FPS: <span id="fpsCounter">0</span>
       </div>
+    </div>
+
+    <!-- Inspector for selected object -->
+    <div class="props-section" id="inspectorSection" style="display:none">
+      <h3>🔍 Object Inspector</h3>
+      <div class="inspector-section" id="inspectorContent"></div>
     </div>
 
     <div class="props-section">
       <h3>🎯 Camera</h3>
       <div class="prop-row">
-        <div>
-          <label>Angle X</label>
-          <input type="range" id="camX" min="-180" max="180" value="30" oninput="P2D.updateCamera()">
-        </div>
-        <div>
-          <label>Angle Y</label>
-          <input type="range" id="camY" min="-180" max="180" value="-30" oninput="P2D.updateCamera()">
-        </div>
+        <div><label>Angle X</label><input type="range" id="camX" min="-180" max="180" value="30" oninput="P2D.updateCamera()"></div>
+        <div><label>Angle Y</label><input type="range" id="camY" min="-180" max="180" value="-30" oninput="P2D.updateCamera()"></div>
       </div>
-      <div>
-        <label>Zoom</label>
-        <input type="range" id="camZoom" min="100" max="1000" value="500" oninput="P2D.updateCamera()">
-      </div>
+      <div><label>Zoom</label><input type="range" id="camZoom" min="100" max="1500" value="500" oninput="P2D.updateCamera()"></div>
     </div>
 
     <div class="props-section">
@@ -247,6 +274,14 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
         </select>
       </div>
     </div>
+
+    <div class="export-section">
+      <div class="bulk-export-bar">
+        <span class="count-info"><span class="num" id="bulkObjCount">0</span> objects in scene</span>
+        <button class="btn-sm btn-primary" onclick="P2D.exportModal()">📦 Export</button>
+        <button class="btn-sm btn-accent" onclick="P2D.downloadAllAssets()">🗜️ All</button>
+      </div>
+    </div>
   </aside>
 </div>
 
@@ -254,18 +289,26 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 <div class="modal-backdrop" id="exportModal" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="modal">
     <button class="modal-close" onclick="document.getElementById('exportModal').classList.remove('show')">&times;</button>
-    <h3>📦 Export Scene</h3>
-    <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:12px">Choose export format:</p>
-    <div class="export-formats" style="justify-content:center">
-      <button class="export-fmt-btn active" onclick="P2D.exportAs('css')">CSS 3D</button>
-      <button class="export-fmt-btn" onclick="P2D.exportAs('html')">Full HTML</button>
-      <button class="export-fmt-btn" onclick="P2D.exportAs('json')">JSON</button>
-      <button class="export-fmt-btn" onclick="P2D.exportAs('code')">Code</button>
+    <h3>📦 Export Options</h3>
+    <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:12px">Selected format for download:</p>
+    <div class="export-formats">
+      <button class="export-fmt-btn active" id="fmt-css" onclick="P2D.setExportFormat('css',this)">CSS 3D</button>
+      <button class="export-fmt-btn" id="fmt-html" onclick="P2D.setExportFormat('html',this)">Full HTML</button>
+      <button class="export-fmt-btn" id="fmt-json" onclick="P2D.setExportFormat('json',this)">JSON Data</button>
+      <button class="export-fmt-btn" id="fmt-code" onclick="P2D.setExportFormat('code',this)">JS Code</button>
     </div>
     <div class="code-block" id="exportCode" style="max-height:40vh"></div>
+    <div class="download-progress" id="dlProgress">
+      <div style="display:flex;justify-content:space-between;font-size:.75rem">
+        <span>📥 Downloading…</span><span id="dlPercent">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="dlFill" style="width:0%"></div></div>
+      <div class="progress-text" id="dlStatus">Preparing…</div>
+    </div>
     <div class="modal-actions">
-      <button class="btn-sm btn-primary" onclick="P2D.copyExport()">📋 Copy</button>
-      <button class="btn-sm btn-success" onclick="P2D.downloadExport()">💾 Download</button>
+      <button class="btn-sm btn-secondary" onclick="P2D.copyExport()">📋 Copy</button>
+      <button class="btn-sm btn-success" id="dlBtn" onclick="P2D.downloadExport()">💾 Download</button>
+      <button class="btn-sm btn-accent" onclick="P2D.downloadAllFormats()">📦 All Formats</button>
       <button class="btn-sm btn-secondary" onclick="document.getElementById('exportModal').classList.remove('show')">Close</button>
     </div>
   </div>
@@ -276,27 +319,23 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
 <script src="shadow-core-v5.js"></script>
 <script>
 const P2D = {
-  scene: [],
-  history: [],
-  historyIndex: -1,
-  physicsEnabled: false,
-  gravityEnabled: false,
-  animationFrame: null,
-  objects: new Map(),
-  nextId: 1,
-  presets: {},
-  canvasEl: null,
-  renderer: 'css', // 'css' or 'canvas'
+  scene: [], history: [], historyIndex: -1,
+  physicsEnabled: false, gravityEnabled: false, gridEnabled: false,
+  animationFrame: null, objects: new Map(), nextId: 1,
+  presets: {}, canvasEl: null, renderer: 'css',
+  selectedIds: new Set(), exportFormat: 'css',
 
   init() {
     this.canvasEl = document.getElementById('physicsCanvas');
     this._setupPresets();
     this._setupDragDrop();
+    this._setupClickSelect();
     this.loadPreset('empty');
     this._render();
     this._setupKeyboard();
     this._animate();
-    this.toast('2.5D Playground ready! Drag objects from the left panel.');
+    this._redrawPalette();
+    this.toast('🎮 2.5D Playground ready! Drag objects from the left panel.');
   },
 
   // === PRESETS ===
@@ -304,41 +343,57 @@ const P2D = {
     this.presets = {
       empty: { objects: [] },
       stack: { objects: [
-        { type:'box', x:0, y:-100, z:0, sizeX:2, sizeY:2, sizeZ:2, color:'#7c4dff', material:'metal' },
-        { type:'box', x:0, y:-60, z:0, sizeX:1.8, sizeY:2, sizeZ:1.8, color:'#00e5ff', material:'glass' },
-        { type:'box', x:0, y:-20, z:0, sizeX:1.6, sizeY:2, sizeZ:1.6, color:'#ff6b81', material:'glow' },
-        { type:'sphere', x:80, y:0, z:0, sizeX:1, sizeY:1, sizeZ:1, color:'#f59e0b', material:'metal', animation:'float' },
+        { type:'box', x:0, y:-100, z:0, sizeX:2, sizeY:2, sizeZ:2, color:'#7c4dff', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0, y:-60, z:0, sizeX:1.8, sizeY:2, sizeZ:1.8, color:'#00e5ff', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0, y:-20, z:0, sizeX:1.6, sizeY:2, sizeZ:1.6, color:'#ff6b81', material:'glow', rotation:0, animation:'none', visible:true },
+        { type:'sphere', x:80, y:0, z:0, sizeX:1, sizeY:1, sizeZ:1, color:'#f59e0b', material:'metal', rotation:0, animation:'float', visible:true },
       ]},
       solar: { objects: [
-        { type:'sphere', x:0, y:0, z:0, sizeX:3, sizeY:3, sizeZ:3, color:'#ff6b00', material:'glow', animation:'spin' },
-        { type:'sphere', x:150, y:0, z:0, sizeX:0.5, sizeY:0.5, sizeZ:0.5, color:'#aaa', material:'standard', animation:'spin' },
-        { type:'sphere', x:250, y:0, z:0, sizeX:0.8, sizeY:0.8, sizeZ:0.8, color:'#c1440e', material:'standard', animation:'spin' },
-        { type:'sphere', x:340, y:0, z:0, sizeX:0.9, sizeY:0.9, sizeZ:0.9, color:'#4a90d9', material:'glass', animation:'spin' },
+        { type:'sphere', x:0, y:0, z:0, sizeX:3, sizeY:3, sizeZ:3, color:'#ff6b00', material:'glow', rotation:0, animation:'spin', visible:true },
+        { type:'sphere', x:150, y:0, z:0, sizeX:0.5, sizeY:0.5, sizeZ:0.5, color:'#aaa', material:'standard', rotation:0, animation:'spin', visible:true },
+        { type:'sphere', x:250, y:0, z:0, sizeX:0.8, sizeY:0.8, sizeZ:0.8, color:'#c1440e', material:'standard', rotation:0, animation:'spin', visible:true },
+        { type:'sphere', x:340, y:0, z:0, sizeX:0.9, sizeY:0.9, sizeZ:0.9, color:'#4a90d9', material:'glass', rotation:0, animation:'spin', visible:true },
       ]},
       tower: { objects: [
-        { type:'box', x:0,y:-150,z:0, sizeX:4,sizeY:2,sizeZ:4, color:'#7c4dff', material:'metal' },
-        { type:'box', x:0,y:-100,z:0, sizeX:3.5,sizeY:2,sizeZ:3.5, color:'#9c6bff', material:'metal' },
-        { type:'box', x:0,y:-50,z:0, sizeX:3,sizeY:2,sizeZ:3, color:'#b08dff', material:'metal' },
-        { type:'box', x:0,y:0,z:0, sizeX:2.5,sizeY:2,sizeZ:2.5, color:'#c7abff', material:'glass' },
-        { type:'cone', x:0,y:60,z:0, sizeX:1.5,sizeY:3,sizeZ:1.5, color:'#00e5ff', material:'glow', animation:'spin' },
+        { type:'box', x:0,y:-150,z:0, sizeX:4,sizeY:2,sizeZ:4, color:'#7c4dff', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-100,z:0, sizeX:3.5,sizeY:2,sizeZ:3.5, color:'#9c6bff', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-50,z:0, sizeX:3,sizeY:2,sizeZ:3, color:'#b08dff', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:0,z:0, sizeX:2.5,sizeY:2,sizeZ:2.5, color:'#c7abff', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'cone', x:0,y:60,z:0, sizeX:1.5,sizeY:3,sizeZ:1.5, color:'#00e5ff', material:'glow', rotation:0, animation:'spin', visible:true },
       ]},
       maze: { objects: [
-        { type:'box', x:-200,y:0,z:0, sizeX:2,sizeY:20,sizeZ:20, color:'#333', material:'metal' },
-        { type:'box', x:200,y:0,z:0, sizeX:2,sizeY:20,sizeZ:20, color:'#333', material:'metal' },
-        { type:'box', x:0,y:0,z:-200, sizeX:40,sizeY:20,sizeZ:2, color:'#333', material:'metal' },
-        { type:'box', x:0,y:0,z:200, sizeX:40,sizeY:20,sizeZ:2, color:'#333', material:'metal' },
-        { type:'box', x:0,y:0,z:0, sizeX:2,sizeY:20,sizeZ:30, color:'#555', material:'metal' },
-        { type:'box', x:50,y:-20,z:-50, sizeX:1,sizeY:2,sizeZ:1, color:'#7c4dff', material:'glass', animation:'bounce' },
-        { type:'sphere', x:100,y:20,z:100, sizeX:1,sizeY:1,sizeZ:1, color:'#ff6b81', material:'glow', animation:'float' },
+        { type:'box', x:-200,y:0,z:0, sizeX:2,sizeY:20,sizeZ:20, color:'#333', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:200,y:0,z:0, sizeX:2,sizeY:20,sizeZ:20, color:'#333', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:0,z:-200, sizeX:40,sizeY:20,sizeZ:2, color:'#333', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:0,z:200, sizeX:40,sizeY:20,sizeZ:2, color:'#333', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:0,z:0, sizeX:2,sizeY:20,sizeZ:30, color:'#555', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:50,y:-20,z:-50, sizeX:1,sizeY:2,sizeZ:1, color:'#7c4dff', material:'glass', rotation:0, animation:'bounce', visible:true },
+        { type:'sphere', x:100,y:20,z:100, sizeX:1,sizeY:1,sizeZ:1, color:'#ff6b81', material:'glow', rotation:0, animation:'float', visible:true },
       ]},
       ballpit: { objects: [
-        { type:'plane', x:0,y:-100,z:0, sizeX:20,sizeY:1,sizeZ:20, color:'#222', material:'standard' },
-        { type:'sphere', x:-30,y:-70,z:-30, sizeX:3,sizeY:3,sizeZ:3, color:'#7c4dff', material:'glass', animation:'bounce' },
-        { type:'sphere', x:0,y:-70,z:-10, sizeX:3,sizeY:3,sizeZ:3, color:'#00e5ff', material:'glass', animation:'bounce' },
-        { type:'sphere', x:30,y:-70,z:-30, sizeX:3,sizeY:3,sizeZ:3, color:'#ff6b81', material:'glass', animation:'bounce' },
-        { type:'sphere', x:-15,y:-70,z:20, sizeX:3,sizeY:3,sizeZ:3, color:'#f59e0b', material:'glass', animation:'bounce' },
-        { type:'sphere', x:15,y:-70,z:20, sizeX:3,sizeY:3,sizeZ:3, color:'#34d399', material:'glass', animation:'bounce' },
-      ]}
+        { type:'plane', x:0,y:-100,z:0, sizeX:20,sizeY:1,sizeZ:20, color:'#222', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'sphere', x:-30,y:-70,z:-30, sizeX:3,sizeY:3,sizeZ:3, color:'#7c4dff', material:'glass', rotation:0, animation:'bounce', visible:true },
+        { type:'sphere', x:0,y:-70,z:-10, sizeX:3,sizeY:3,sizeZ:3, color:'#00e5ff', material:'glass', rotation:0, animation:'bounce', visible:true },
+        { type:'sphere', x:30,y:-70,z:-30, sizeX:3,sizeY:3,sizeZ:3, color:'#ff6b81', material:'glass', rotation:0, animation:'bounce', visible:true },
+        { type:'sphere', x:-15,y:-70,z:20, sizeX:3,sizeY:3,sizeZ:3, color:'#f59e0b', material:'glass', rotation:0, animation:'bounce', visible:true },
+        { type:'sphere', x:15,y:-70,z:20, sizeX:3,sizeY:3,sizeZ:3, color:'#34d399', material:'glass', rotation:0, animation:'bounce', visible:true },
+      ]},
+      city: { objects: [
+        { type:'box', x:-120,y:-50,z:-60, sizeX:8,sizeY:25,sizeZ:6, color:'#444', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-80,y:-30,z:-60, sizeX:6,sizeY:20,sizeZ:6, color:'#555', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:-40,y:-40,z:-60, sizeX:10,sizeY:15,sizeZ:6, color:'#3a3a5c', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-60,z:-60, sizeX:12,sizeY:30,sizeZ:6, color:'#2a2a4a', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:60,y:-35,z:-60, sizeX:8,sizeY:18,sizeZ:6, color:'#5a4a8a', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'plane', x:-20,y:-100,z:-60, sizeX:20,sizeY:0.2,sizeZ:20, color:'#2a2d4a', material:'standard', rotation:0, animation:'none', visible:true },
+        { type:'light', x:-20,y:100,z:-60, sizeX:0.5,sizeY:0.5,sizeZ:0.5, color:'#ffee55', material:'glow', rotation:0, animation:'none', visible:true },
+      ]},
+      pyramid: { objects: [
+        { type:'box', x:0,y:-60,z:0, sizeX:8,sizeY:4,sizeZ:8, color:'#8B4513', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-36,z:0, sizeX:6,sizeY:4,sizeZ:6, color:'#A0522D', material:'metal', rotation:0, animation:'none', visible:true },
+        { type:'box', x:0,y:-12,z:0, sizeX:4,sizeY:4,sizeZ:4, color:'#CD853F', material:'glass', rotation:0, animation:'none', visible:true },
+        { type:'cone', x:0,y:20,z:0, sizeX:1,sizeY:4,sizeZ:1, color:'#D2691E', material:'glow', rotation:0, animation:'spin', visible:true },
+        { type:'plane', x:0,y:-80,z:0, sizeX:30,sizeY:0.2,sizeZ:30, color:'#2a2d4a', material:'standard', rotation:0, animation:'none', visible:true },
+      ]},
     };
   },
 
@@ -349,60 +404,131 @@ const P2D = {
     if (!preset) return;
     this.scene = JSON.parse(JSON.stringify(preset.objects));
     this.objects.clear();
+    this.selectedIds.clear();
     this.nextId = 1;
     this.scene.forEach(obj => { obj.id = this.nextId++; this.objects.set(obj.id, obj); });
     this._render();
+    this._redrawPalette();
+    this._updateStats();
+    this._closeExportModal();
     this.toast(`Loaded preset: ${name}`);
   },
 
   // === OBJECT MANAGEMENT ===
   addObject(type) {
+    const defaults = {
+      plane: { sizeX:20, sizeY:0.2, sizeZ:20, y:-100, color:'#2a2d4a', material:'standard' },
+      light:  { sizeX:0.5, sizeY:0.5, sizeZ:0.5, y:100, color:'#ffee55', material:'glow', intensity:1.5 },
+      text3d: { sizeX:2, sizeY:1, sizeZ:0.2, y:0, text:'HELLO', color:'#7c4dff', material:'glow' },
+    };
+    const d = defaults[type] || {};
     const obj = {
       id: this.nextId++,
       type,
       x: Math.round((Math.random() - 0.5) * 200),
-      y: type === 'plane' ? -100 : Math.round(-(Math.random() * 100 + 20)),
+      y: d.y ?? Math.round(-(Math.random() * 80 + 10)),
       z: Math.round((Math.random() - 0.5) * 200),
-      sizeX: 1, sizeY: 1, sizeZ: 1,
-      color: document.getElementById('objColor').value,
-      material: document.getElementById('objMaterial').value,
-      rotation: parseInt(document.getElementById('objRotation').value) || 0,
-      animation: document.getElementById('objAnimation').value || 'none',
-      visible: true
+      sizeX: d.sizeX ?? 1, sizeY: d.sizeY ?? 1, sizeZ: d.sizeZ ?? 1,
+      color: document.getElementById('objColor')?.value || '#7c4dff',
+      material: document.getElementById('objMaterial')?.value || 'standard',
+      rotation: parseInt(document.getElementById('objRotation')?.value) || 0,
+      animation: document.getElementById('objAnimation')?.value || 'none',
+      visible: true,
+      ...(d.text ? { text: d.text } : {}),
+      ...(d.intensity ? { intensity: d.intensity } : {}),
     };
-
-    if (type === 'plane') {
-      obj.sizeX = 20; obj.sizeZ = 20; obj.sizeY = 0.2;
-      obj.y = -100; obj.color = '#2a2d4a'; obj.material = 'standard';
-    } else if (type === 'light') {
-      obj.sizeX = 0.5; obj.sizeY = 0.5; obj.sizeZ = 0.5;
-      obj.y = 100; obj.color = '#ffee55'; obj.material = 'glow';
-      obj.intensity = 1.5;
-    } else if (type === 'text3d') {
-      obj.text = 'HELLO'; obj.sizeX = 2; obj.sizeY = 1; obj.sizeZ = 0.2;
-      obj.color = '#7c4dff'; obj.material = 'glow';
-    }
-
     this.scene.push(obj);
     this.objects.set(obj.id, obj);
     this.saveState();
     this._render();
-    this.toast(`Added: ${type}`);
+    this._redrawPalette();
+    this._updateStats();
+    this.toast(`Added: ${type} (#${obj.id})`);
   },
 
+  // FIX: removeObject now properly removes from scene
   removeObject(el) {
     const item = el.closest('.scene-item');
     if (!item) return;
-    // Just hide from palette demo
-    item.style.display = 'none';
-    this.toast('Object removed from scene');
+    const type = item.dataset.type;
+    // Find and remove matching objects from scene
+    const toRemove = [];
+    this.scene.forEach((obj, idx) => { if (obj.type === type) toRemove.push(idx); });
+    if (toRemove.length > 0) {
+      const idx = toRemove[toRemove.length - 1]; // Remove last added of this type
+      this.selectedIds.delete(this.scene[idx].id);
+      this.scene.splice(idx, 1);
+      this._rebuildObjectsMap();
+      this.saveState();
+      this._render();
+      this._redrawPalette();
+      this._updateStats();
+      this._updateInspector();
+      this.toast('🗑️ Object removed from scene');
+    }
+  },
+
+  removeObjectById(id) {
+    this.selectedIds.delete(id);
+    this.scene = this.scene.filter(o => o.id !== id);
+    this._rebuildObjectsMap();
+    this.saveState();
+    this._render();
+    this._redrawPalette();
+    this._updateStats();
+    this._updateInspector();
   },
 
   deleteObject(id) {
-    this.scene = this.scene.filter(o => o.id !== id);
-    this.objects.delete(id);
+    this.removeObjectById(id);
+  },
+
+  _rebuildObjectsMap() {
+    this.objects.clear();
+    this.scene.forEach(o => this.objects.set(o.id, o));
+  },
+
+  removeSelected() {
+    if (!this.selectedIds.size) { this.toast('⚠️ No objects selected!'); return; }
+    const ids = Array.from(this.selectedIds);
+    this.scene = this.scene.filter(o => !ids.includes(o.id));
+    this.selectedIds.clear();
+    this._rebuildObjectsMap();
     this.saveState();
     this._render();
+    this._redrawPalette();
+    this._updateStats();
+    this._updateInspector();
+    this.toast(`🗑️ Removed ${ids.length} objects`);
+  },
+
+  selectAll() {
+    this.scene.forEach(o => { if (o.type !== 'light') this.selectedIds.add(o.id); });
+    this._renderSelection();
+    this._updateStats();
+    this._updateInspector();
+    this.toast(`Selected ${this.selectedIds.size} objects`);
+  },
+
+  // === OBJECT CLONING ===
+  cloneSelected() {
+    if (!this.selectedIds.size) { this.toast('⚠️ No objects selected!'); return; }
+    const ids = Array.from(this.selectedIds);
+    ids.forEach(id => {
+      const orig = this.scene.find(o => o.id === id);
+      if (!orig) return;
+      const clone = JSON.parse(JSON.stringify(orig));
+      clone.id = this.nextId++;
+      clone.x += 20; clone.z += 20; // Offset clone
+      this.scene.push(clone);
+      this.objects.set(clone.id, clone);
+      this.selectedIds.add(clone.id);
+    });
+    this.saveState();
+    this._render();
+    this._redrawPalette();
+    this._updateStats();
+    this.toast(`📋 Cloned ${ids.length} object(s)`);
   },
 
   // === PHYSICS ===
@@ -426,11 +552,30 @@ const P2D = {
     this.toast(this.gravityEnabled ? 'Gravity enabled' : 'Gravity disabled');
   },
 
+  toggleGrid() {
+    this.gridEnabled = !this.gridEnabled;
+    const btn = document.getElementById('toggleGrid');
+    btn.style.background = this.gridEnabled ? 'rgba(0,229,255,.2)' : 'transparent';
+    btn.style.borderColor = this.gridEnabled ? 'var(--accent)' : 'var(--border)';
+    btn.style.color = this.gridEnabled ? 'var(--accent)' : 'var(--text-muted)';
+    document.getElementById('gridStatus').textContent = this.gridEnabled ? '▦ On' : '▦ Off';
+    this.toast(this.gridEnabled ? 'Grid enabled' : 'Grid disabled');
+  },
+
+  snapAllToFloor() {
+    this.scene.forEach(obj => {
+      if (obj.type !== 'plane') {
+        obj.y = -100 + (obj.sizeY || 1) * 20;
+        obj._vy = 0;
+      }
+    });
+    this.saveState();
+    this._render();
+    this.toast('⬇️ All objects snapped to floor');
+  },
+
   // === CAMERA ===
   updateCamera() {
-    const angleX = document.getElementById('camX').value;
-    const angleY = document.getElementById('camY').value;
-    const zoom = document.getElementById('camZoom').value;
     this._render();
   },
 
@@ -452,6 +597,69 @@ const P2D = {
     }
   },
 
+  // === CLICK SELECTION ON CANVAS ===
+  _setupClickSelect() {
+    this.canvasEl.addEventListener('click', (e) => {
+      // Find closest object based on 2D proximity (simplified selection)
+      const rect = this.canvasEl.getBoundingClientRect();
+      const cx = (e.clientX - rect.left) / rect.width;
+      const cy = (e.clientY - rect.top) / rect.height;
+
+      // Don't select if clicking UI overlay
+      if (e.target.closest('.modal-backdrop,.sidebar-left,.sidebar-right,.topbar')) return;
+
+      if (e.ctrlKey || e.metaKey) {
+        // Toggle selection of nearest object
+        let closestId = null, closestDist = Infinity;
+        this.scene.forEach(obj => {
+          if (obj.type === 'light') return;
+          const ox = 0.5 + obj.x / 800;
+          const oy = 0.5 - obj.y / 600;
+          const d = Math.sqrt((cx - ox) ** 2 + (cy - oy) ** 2);
+          const size = Math.max(obj.sizeX || 1, obj.sizeZ || 1) * 40;
+          if (d < closestDist && d < size / 100 + 0.1) {
+            closestDist = d;
+            closestId = obj.id;
+          }
+        });
+        if (closestId !== null) {
+          if (this.selectedIds.has(closestId)) this.selectedIds.delete(closestId);
+          else this.selectedIds.add(closestId);
+        }
+      } else {
+        // Single select
+        this.selectedIds.clear();
+        let closestId = null, closestDist = Infinity;
+        this.scene.forEach(obj => {
+          if (obj.type === 'light') return;
+          const ox = 0.5 + obj.x / 800;
+          const oy = 0.5 - obj.y / 600;
+          const d = Math.sqrt((cx - ox) ** 2 + (cy - oy) ** 2);
+          const size = Math.max(obj.sizeX || 1, obj.sizeZ || 1) * 40;
+          if (d < closestDist && d < size / 100 + 0.15) {
+            closestDist = d;
+            closestId = obj.id;
+          }
+        });
+        if (closestId !== null) this.selectedIds.add(closestId);
+      }
+
+      this._renderSelection();
+      this._updateStats();
+      this._updateInspector();
+      this._updateTransformControls();
+    });
+  },
+
+  _renderSelection() {
+    document.querySelectorAll('.p2d-obj').forEach(el => {
+      const id = parseInt(el.id.replace('obj-', ''));
+      if (this.selectedIds.has(id)) el.classList.add('selected');
+      else el.classList.remove('selected');
+    });
+    document.getElementById('selectedCount').textContent = this.selectedIds.size;
+  },
+
   // === RENDERING (CSS 3D Engine) ===
   _render() {
     const canvas = this.canvasEl;
@@ -462,24 +670,27 @@ const P2D = {
     let html = '';
     const time = Date.now() / 1000;
 
+    // Grid
+    if (this.gridEnabled) {
+      html += `<div style="position:absolute;width:600px;height:600px;transform:rotateX(90deg) translateZ(-2px);background-image:linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:50px 50px;transform-origin:center;pointer-events:none"></div>`;
+    }
+
     this.scene.forEach((obj, idx) => {
       if (!obj.visible) return;
       const id = `obj-${obj.id}`;
+      const selClass = this.selectedIds.has(obj.id) ? ' selected' : '';
       let transform = `translateX(${obj.x}px) translateY(${obj.y}px) translateZ(${obj.z}px)`;
       transform += ` rotateX(${obj.rotation || 0}deg) rotateY(${obj.rotation || 0}deg) rotateZ(${obj.rotation || 0}deg)`;
 
       // Animation
       if (obj.animation === 'spin') {
-        transform += ` rotateY(${time * 60 * idx}deg)`;
+        transform += ` rotateY(${time * 60 * (idx + 1)}deg)`;
       } else if (obj.animation === 'bounce') {
-        const bounce = Math.sin(time * 3 + idx) * 20;
-        transform += ` translateY(${bounce}px)`;
+        transform += ` translateY(${Math.sin(time * 3 + idx) * 20}px)`;
       } else if (obj.animation === 'float') {
-        const floatY = Math.sin(time * 2 + idx) * 10;
-        transform += ` translateY(${floatY}px)`;
+        transform += ` translateY(${Math.sin(time * 2 + idx) * 10}px)`;
       } else if (obj.animation === 'pulse') {
-        const scale = 1 + Math.sin(time * 4 + idx) * 0.2;
-        transform += ` scale(${scale})`;
+        transform += ` scale(${1 + Math.sin(time * 4 + idx) * 0.2})`;
       }
 
       const sizeX = (obj.sizeX || 1) * 40;
@@ -490,7 +701,6 @@ const P2D = {
       style += `transform:${transform};`;
       style += `transform-style:preserve-3d;`;
 
-      let inner = '';
       let faceStyle = `background:${obj.color};`;
       if (obj.material === 'metal') faceStyle += `background:linear-gradient(135deg,${obj.color},${this._darken(obj.color, 30)});`;
       if (obj.material === 'glass') faceStyle += `background:${obj.color}88;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.2);`;
@@ -498,8 +708,7 @@ const P2D = {
       if (obj.material === 'glow') faceStyle += `background:${obj.color};box-shadow:0 0 20px ${obj.color}88, 0 0 40px ${obj.color}44;`;
 
       const faces = this._generateFaces(obj.type, sizeX, sizeY, sizeZ, faceStyle, obj.text || '');
-
-      html += `<div id="${id}" class="p2d-obj" style="${style}">${faces}</div>`;
+      html += `<div id="${id}" class="p2d-obj${selClass}" style="${style}">${faces}</div>`;
     });
 
     canvas.innerHTML = html;
@@ -510,30 +719,28 @@ const P2D = {
     canvas.style.position = 'relative';
     canvas.style.transformStyle = 'preserve-3d';
 
-    // Update stats
-    document.getElementById('objCount').textContent = this.scene.filter(o => o.type !== 'light').length;
-    document.getElementById('lightCount').textContent = this.scene.filter(o => o.type === 'light').length;
+    this._updateStats();
+    this._renderSelection();
   },
 
   _generateFaces(type, w, h, d, style, text) {
     let faces = '';
-    const hw = w/2, hh = h/2, hd = d/2;
-
+    const hw = w / 2, hh = h / 2, hd = d / 2;
     const face = (transform, w2, h2) => {
-      return `<div style="position:absolute;width:${w2}px;height:${h2}px;transform:${transform};${style}display:flex;align-items:center;justify-content:center;font-size:${Math.min(w2,h2)/5}px;color:#fff;pointer-events:none;user-select:none">${text}</div>`;
+      return `<div style="position:absolute;width:${w2}px;height:${h2}px;transform:${transform};${style}display:flex;align-items:center;justify-content:center;font-size:${Math.max(8, Math.min(w2, h2) / 5)}px;color:#fff;pointer-events:none;user-select:none">${text}</div>`;
     };
 
-    switch(type) {
+    switch (type) {
       case 'box':
-        faces += face(`translateZ(${hd}px)`, w, h); // front
-        faces += face(`translateZ(${-hd}px) rotateY(180deg)`, w, h); // back
-        faces += face(`rotateY(90deg) translateZ(${hw}px)`, d, h); // right
-        faces += face(`rotateY(-90deg) translateZ(${hw}px)`, d, h); // left
-        faces += face(`rotateX(90deg) translateZ(${hh}px)`, w, d); // top
-        faces += face(`rotateX(-90deg) translateZ(${hh}px)`, w, d); // bottom
+        faces += face(`translateZ(${hd}px)`, w, h);
+        faces += face(`translateZ(${-hd}px) rotateY(180deg)`, w, h);
+        faces += face(`rotateY(90deg) translateZ(${hw}px)`, d, h);
+        faces += face(`rotateY(-90deg) translateZ(${hw}px)`, d, h);
+        faces += face(`rotateX(90deg) translateZ(${hh}px)`, w, d);
+        faces += face(`rotateX(-90deg) translateZ(${hh}px)`, w, d);
         break;
       case 'sphere':
-        faces += `<div style="position:absolute;width:${w}px;height:${h}px;border-radius:50%;${style}"></div>`;
+        faces.push(`<div style="position:absolute;width:${w}px;height:${h}px;border-radius:50%;${style}"></div>`);
         break;
       case 'cylinder':
         faces += face(`translateZ(${hd}px)`, w, h);
@@ -543,20 +750,21 @@ const P2D = {
         break;
       case 'cone':
         faces += `<div style="position:absolute;width:${w}px;height:${w}px;transform:translateZ(${-hd}px);border-radius:50%;${style}"></div>`;
-        faces += `<div style="position:absolute;width:0;height:0;border-left:${w/2}px solid transparent;border-right:${w/2}px solid transparent;border-bottom:${h}px solid ${this._extractColor(style)};transform:translateZ(${hd/2}px)"></div>`;
+        faces += `<div style="position:absolute;width:0;height:0;border-left:${w/2}px solid transparent;border-right:${w/2}px solid transparent;border-bottom:${h}px solid ${this._extractColor(style)};transform:translateZ(${hd / 2}px)"></div>`;
         break;
       case 'plane':
         faces += `<div style="position:absolute;width:${w}px;height:${d}px;transform:rotateX(90deg);${style}"></div>`;
         break;
       case 'text3d':
         for (let i = 0; i < 6; i++) {
-          faces += face(`translateZ(${hd}px)`, w*2, h, text);
+          faces += face(`translateZ(${hd}px)`, w * 2, h, text);
           break;
         }
-        faces += face(`translateZ(0)`, w*2, h, text);
+        faces += face(`translateZ(0)`, w * 2, h, text);
         break;
       case 'light':
-        faces += `<div style="position:absolute;width:${w}px;height:${w}px;border-radius:50%;${style};animation:pulseLight 1s infinite alternate"></div>`;
+        faces += `<div style="position:absolute;width:${w}px;height:${w}px;border-radius:50%;${style};animation:pulseLight 1s infinite alternate;box-shadow:0 0 ${w*2}px ${this._extractColor(style)}88"></div>`;
+        faces += `<style>@keyframes pulseLight{from{opacity:.5}to{opacity:1}}</style>`;
         break;
     }
     return faces;
@@ -568,11 +776,11 @@ const P2D = {
   },
 
   _darken(hex, pct) {
-    hex = hex.replace('#','');
-    const r = Math.max(0, parseInt(hex.substr(0,2),16) - pct);
-    const g = Math.max(0, parseInt(hex.substr(2,2),16) - pct);
-    const b = Math.max(0, parseInt(hex.substr(4,2),16) - pct);
-    return `#${[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}`;
+    hex = hex.replace('#', '');
+    const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - pct);
+    const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - pct);
+    const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - pct);
+    return `#${[r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')}`;
   },
 
   // === ANIMATION LOOP ===
@@ -585,45 +793,43 @@ const P2D = {
       this.animationFrame = requestAnimationFrame(loop);
       frames++;
       if (time - lastTime >= 1000) {
-        fps = frames;
-        frames = 0;
-        lastTime = time;
+        fps = frames; frames = 0; lastTime = time;
         document.getElementById('fpsCounter').textContent = fps;
       }
 
-      if (this.physicsEnabled) {
-        // Simple gravity simulation
+      if (this.physicsEnabled || this._needsAutoSpin()) {
         const dt = 0.016;
         this.scene.forEach(obj => {
           if (obj.type === 'plane') return;
           if (this.gravityEnabled) {
             obj._vy = (obj._vy || 0) + 9.8 * dt * 10;
             obj.y += obj._vy * dt * 50;
-
-            // Floor collision (plane at y=-100)
             const minY = -100 + (obj.sizeY || 1) * 20;
-            if (obj.y > minY) {
-              obj.y = minY;
-              obj._vy = (obj._vy || 0) * -0.5; // Bounce
-            }
+            if (obj.y > minY) { obj.y = minY; obj._vy = (obj._vy || 0) * -0.5; }
           }
-
-          // Auto-spin
-          if (obj.type !== 'light' && !obj.animation) {
+          if (!obj.animation && obj.type !== 'light') {
             obj.rotation = ((obj.rotation || 0) + 1) % 360;
           }
         });
+      }
+      // Re-render only when needed
+      if (this.physicsEnabled || this.gravityEnabled || this._needsAutoSpin()) {
         this._render();
+        this._renderSelection();
       }
     };
     this.animationFrame = requestAnimationFrame(loop);
+  },
+
+  _needsAutoSpin() {
+    return this.scene.some(o => !o.animation && o.type !== 'plane' && o.type !== 'light');
   },
 
   // === UNDO/REDO ===
   saveState() {
     this.history = this.history.slice(0, this.historyIndex + 1);
     this.history.push(JSON.stringify(this.scene));
-    if (this.history.length > 30) this.history.shift();
+    if (this.history.length > 50) this.history.shift();
     this.historyIndex = this.history.length - 1;
   },
 
@@ -646,138 +852,413 @@ const P2D = {
     this.objects.clear();
     this.scene.forEach(o => this.objects.set(o.id, o));
     this._render();
+    this._redrawPalette();
+    this._updateStats();
+  },
+
+  // === PALETTE REDRAW ===
+  _redrawPalette() {
+    const palette = document.getElementById('objectPalette');
+    if (!palette) return;
+    const types = [
+      { type: 'box', icon: '📦', label: 'Cube' },
+      { type: 'sphere', icon: '⚽', label: 'Sphere' },
+      { type: 'cylinder', icon: '🧱', label: 'Cylinder' },
+      { type: 'plane', icon: '🛬', label: 'Plane' },
+      { type: 'cone', icon: '🍦', label: 'Cone' },
+      { type: 'torus', icon: '🍩', label: 'Torus' },
+      { type: 'text3d', icon: '🔤', label: '3D Text' },
+      { type: 'light', icon: '💡', label: 'Light' },
+    ];
+    // Keep only header, rebuild rest
+    palette.innerHTML = '';
+    types.forEach(t => {
+      const count = this.scene.filter(o => o.type === t.type).length;
+      const div = document.createElement('div');
+      div.className = 'scene-item';
+      div.dataset.type = t.type;
+      div.draggable = true;
+      div.innerHTML = `
+        <span class="icon">${t.icon}</span>
+        <span class="label">${t.label}</span>
+        <span style="font-size:.65rem;color:var(--text-muted)">${count}</span>
+        <span class="download-btn" title="Download this type" onclick="event.stopPropagation();P2D.downloadType('${t.type}')">⬇</span>
+        <span class="remove" title="Remove all of this type" onclick="event.stopPropagation();P2D.removeObject(this)">✕</span>
+      `;
+      div.onclick = () => P2D.addObject(t.type);
+      div.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', t.type); });
+      palette.appendChild(div);
+    });
   },
 
   // === UPDATE PREVIEW ===
   updatePreview() {
-    const color = document.getElementById('objColor').value;
-    document.getElementById('sizeX').dispatchEvent(new Event('input'));
-    document.getElementById('sizeY').dispatchEvent(new Event('input'));
-    document.getElementById('sizeZ').dispatchEvent(new Event('input'));
-  },
-
-  // === KEYBOARD ===
-  _setupKeyboard() {
-    document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); this.undo(); }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); this.redo(); }
-      if (e.key === 'Delete') {
-        const selected = document.querySelector('.p2d-obj.selected');
-        if (selected) {
-          const id = parseInt(selected.id.replace('obj-',''));
-          this.deleteObject(id);
-        }
-      }
-    });
-  },
-
-  // === DRAG & DROP ===
-  _setupDragDrop() {
-    const canvas = this.canvasEl;
-
-    canvas.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      canvas.style.outline = '2px dashed var(--primary)';
-    });
-    canvas.addEventListener('dragleave', () => {
-      canvas.style.outline = 'none';
-    });
-    canvas.addEventListener('drop', (e) => {
-      e.preventDefault();
-      canvas.style.outline = 'none';
-      const type = e.dataTransfer.getData('text/plain');
-      if (type) {
-        const rect = canvas.getBoundingClientRect();
-        // Add to scene
-        this.addObject(type);
-      }
-    });
-
-    document.querySelectorAll('.scene-item').forEach(item => {
-      item.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', item.dataset.type);
-      });
-    });
-  },
-
-  // === EXPORT ===
-  exportAs(format) {
     this._render();
-    let output = '';
-    switch(format) {
-      case 'css':
-        output = this._exportCSS();
-        break;
-      case 'html':
-        output = this._exportHTML();
-        break;
-      case 'json':
-        output = JSON.stringify({
-          tool: '2.5d-playground',
-          version: '5.1.0',
-          scene: this.scene,
-          exportedAt: new Date().toISOString()
-        }, null, 2);
-        break;
-      case 'code':
-        output = this._exportCode();
-        break;
+  },
+
+  // === TRANSFORM CONTROLS ===
+  _updateTransformControls() {
+    if (this.selectedIds.size === 0) {
+      document.getElementById('sceneActions').style.display = 'none';
+      return;
     }
-    document.getElementById('exportCode').textContent = output;
+    document.getElementById('sceneActions').style.display = 'flex';
+    // Load first selected object's values
+    const firstId = Array.from(this.selectedIds)[0];
+    const obj = this.scene.find(o => o.id === firstId);
+    if (obj) {
+      document.getElementById('propX').value = obj.x;
+      document.getElementById('propY').value = obj.y;
+      document.getElementById('propZ').value = obj.z;
+      document.getElementById('propRotX').value = obj.rotation || 0;
+      document.getElementById('propRotY').value = obj.rotation || 0;
+    }
+  },
+
+  applyTransform() {
+    if (this.selectedIds.size === 0) return;
+    const x = parseInt(document.getElementById('propX').value);
+    const y = parseInt(document.getElementById('propY').value);
+    const z = parseInt(document.getElementById('propZ').value);
+    const rotX = parseInt(document.getElementById('propRotX').value);
+    const rotY = parseInt(document.getElementById('propRotY').value);
+    this.selectedIds.forEach(id => {
+      const obj = this.scene.find(o => o.id === id);
+      if (obj) {
+        obj.x = x; obj.y = y; obj.z = z;
+        obj.rotation = rotX;
+      }
+    });
+    this.saveState();
+    this._render();
+  },
+
+  // === INSPECTOR ===
+  _updateInspector() {
+    const section = document.getElementById('inspectorSection');
+    const content = document.getElementById('inspectorContent');
+    if (this.selectedIds.size === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    const ids = Array.from(this.selectedIds);
+    let html = '';
+    ids.forEach(id => {
+      const obj = this.scene.find(o => o.id === id);
+      if (!obj) return;
+      html += `
+        <div class="inspector-field"><span>ID</span><span class="field-val">#${obj.id}</span></div>
+        <div class="inspector-field"><span>Type</span><span class="field-val">${obj.type}</span></div>
+        <div class="inspector-field"><span>Position</span><span class="field-val">(${obj.x}, ${obj.y}, ${obj.z})</span></div>
+        <div class="inspector-field"><span>Size</span><span class="field-val">${obj.sizeX || 1}×${obj.sizeY || 1}×${obj.sizeZ || 1}</span></div>
+        <div class="inspector-field"><span>Color</span><span class="field-val"><span class="color-swatch" style="background:${obj.color};display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle"></span> ${obj.color}</span></div>
+        <div class="inspector-field"><span>Material</span><span class="field-val">${obj.material}</span></div>
+        <div class="inspector-field"><span>Animation</span><span class="field-val">${obj.animation || 'none'}</span></div>
+        ${obj.text ? `<div class="inspector-field"><span>Text</span><span class="field-val">"${obj.text}"</span></div>` : ''}
+        <div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px">
+          <button class="btn-sm btn-secondary" onclick="P2D.removeObjectById(${obj.id})" style="width:100%">🗑️ Remove #${obj.id}</button>
+        </div>
+      `;
+    });
+    content.innerHTML = html;
+  },
+
+  // ============ EXPORT & DOWNLOAD ============
+
+  setExportFormat(fmt, el) {
+    this.exportFormat = fmt;
+    document.querySelectorAll('.export-fmt-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    this.exportAs(fmt);
+  },
+
+  exportModal() {
+    this.exportAs(this.exportFormat);
     document.getElementById('exportModal').classList.add('show');
   },
 
+  _closeExportModal() {
+    document.getElementById('exportModal').classList.remove('show');
+  },
+
+  exportAs(format) {
+    this._render();
+    let output = '';
+    let filename = `scene-2.5d`;
+    let mime = 'text/plain';
+
+    switch (format) {
+      case 'css':
+        output = this._exportCSS();
+        filename += '.css';
+        mime = 'text/css';
+        break;
+      case 'html':
+        output = this._exportHTML();
+        filename += '.html';
+        mime = 'text/html';
+        break;
+      case 'json':
+        output = JSON.stringify({
+          tool: 'shadow-studio/2.5d-playground',
+          version: '5.2.0',
+          scene: this.scene,
+          camera: {
+            angleX: document.getElementById('camX').value,
+            angleY: document.getElementById('camY').value,
+            zoom: document.getElementById('camZoom').value
+          },
+          background: {
+            color: document.getElementById('bgColor').value,
+            style: document.getElementById('bgStyle').value
+          },
+          physics: this.physicsEnabled,
+          gravity: this.gravityEnabled,
+          grid: this.gridEnabled,
+          exportedAt: new Date().toISOString()
+        }, null, 2);
+        filename += '.json';
+        mime = 'application/json';
+        break;
+      case 'code':
+        output = this._exportCode();
+        filename += '.js';
+        mime = 'application/javascript';
+        break;
+    }
+
+    document.getElementById('exportCode').textContent = output;
+    // Store for download
+    this._exportData = { output, filename, mime };
+  },
+
   _exportCSS() {
-    let css = ['/* Shadow Studio 2.5D Scene — CSS Export */', '.scene-3d { perspective: 800px; transform-style: preserve-3d; }'];
+    const angleX = document.getElementById('camX').value;
+    const angleY = document.getElementById('camY').value;
+    const zoom = document.getElementById('camZoom').value;
+    let css = [
+      '/* Shadow Studio 2.5D Scene — CSS Export */',
+      '.scene-3d {',
+      `  perspective: ${zoom}px;`,
+      '  transform-style: preserve-3d;',
+      '  height: 100vh;',
+      '  display: flex;',
+      '  align-items: center;',
+      '  justify-content: center;',
+      `  transform: rotateX(${angleX}deg) rotateY(${angleY}deg);`,
+      '}'
+    ];
+
     this.scene.forEach((obj, i) => {
-      let s = `.obj-${i} { width:${obj.sizeX*40}px; height:${obj.sizeY*40}px; background:${obj.color}; `;
-      if (obj.type === 'box') s += 'transform-style:preserve-3d; }';
-      else if (obj.type === 'sphere') s += 'border-radius:50%; }';
-      else s += '}';
+      let s = `.obj-${i} {\n  position: absolute;\n  width: ${obj.sizeX * 40}px;\n  height: ${obj.sizeY * 40}px;\n`;
+      s += `  transform: translateX(${obj.x}px) translateY(${obj.y}px) translateZ(${obj.z}px);\n`;
+      s += `  transform-style: preserve-3d;\n`;
+
+      switch (obj.type) {
+        case 'box': s += '  transform-style: preserve-3d;\n}\n'; break;
+        case 'sphere': s += `  border-radius: 50%;\n}\n`; break;
+        case 'cylinder': s += `  border-radius: 50%;\n}\n`; break;
+        case 'plane': s += `  height: ${obj.sizeZ * 40}px;\n  transform: rotateX(90deg);\n}\n`; break;
+        default: s += '}\n';
+      }
       css.push(s);
     });
+
+    // Add keyframes for animations
+    this.scene.forEach((obj, i) => {
+      if (obj.animation === 'spin') {
+        css.push(`
+@keyframes spin-${i} {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+.obj-${i} { animation: spin-${i} ${4 + i % 3}s linear infinite; }`);
+      } else if (obj.animation === 'bounce') {
+        css.push(`
+@keyframes bounce-${i} {
+  0%, 100% { transform: translateY(${obj.y}px); }
+  50% { transform: translateY(${obj.y - 20}px); }
+}
+.obj-${i} { animation: bounce-${i} ${1 + i % 3}s ease-in-out infinite; }`);
+      } else if (obj.animation === 'float') {
+        css.push(`
+@keyframes float-${i} {
+  0%, 100% { transform: translateY(${obj.y}px); }
+  50% { transform: translateY(${obj.y - 10}px); }
+}
+.obj-${i} { animation: float-${i} ${2 + i % 2}s ease-in-out infinite; }`);
+      } else if (obj.animation === 'pulse') {
+        css.push(`
+@keyframes pulse-${i} {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+.obj-${i} { animation: pulse-${i} ${1 + i % 3}s ease-in-out infinite; }`);
+      }
+    });
+
     return css.join('\n');
   },
 
   _exportHTML() {
-    let html = '<!DOCTYPE html><html><head><title>2.5D Scene</title>';
-    html += '<style>.scene{perspective:800px;transform-style:preserve-3d;height:100vh;display:flex;align-items:center;justify-content:center}';
-    html += '.face{position:absolute;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.3);display:flex;align-items:center;justify-content:center;color:#fff}</style></head>';
-    html += '<body><div class="scene">';
-    this.scene.forEach(obj => {
-      html += `<div style="transform:translate3d(${obj.x}px,${obj.y}px,${obj.z}px);width:${obj.sizeX*40}px;height:${obj.sizeY*40}px;background:${obj.color};border-radius:${obj.type==='sphere'?'50%':'0'}"></div>`;
+    let html = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n';
+    html += '<meta name="viewport" content="width=device-width,initial-scale=1.0">\n';
+    html += '<title>2.5D Scene — Shadow Studio</title>\n';
+    html += '<style>\n';
+    html += '*{margin:0;padding:0;box-sizing:border-box}\n';
+    html += `body{overflow:hidden;background:${document.getElementById('bgColor').value}}\n`;
+    html += '.scene-3d{perspective:800px;transform-style:preserve-3d;height:100vh;display:flex;align-items:center;justify-content:center}\n';
+
+    this.scene.forEach((obj, i) => {
+      const s = obj.sizeX * 40, h = obj.sizeY * 40, d = obj.sizeZ * 40;
+      let style = `position:absolute;width:${s}px;height:${h}px;`;
+      style += `transform:translateX(${obj.x}px) translateY(${obj.y}px) translateZ(${obj.z}px);`;
+      style += `transform-style:preserve-3d;`;
+
+      let bg = obj.color;
+      if (obj.material === 'metal') bg = `linear-gradient(135deg,${obj.color},${this._darken(obj.color, 40)})`;
+      if (obj.material === 'glass') bg = `${obj.color}88`;
+
+      html += `.obj-${i}{${style}`;
+      if (obj.type === 'sphere' || obj.type === 'cylinder') html += `border-radius:50%;`;
+      html += `background:${bg};`;
+      if (obj.material === 'glass') html += `backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.2);`;
+      if (obj.material === 'wireframe') html += `background:none;border:2px solid ${obj.color};`;
+      if (obj.material === 'glow') html += `box-shadow:0 0 20px ${obj.color}88,0 0 40px ${obj.color}44;`;
+      html += `}\n`;
+
+      // Animation keyframes
+      if (obj.animation === 'spin') {
+        html += `@keyframes spin-${i}{from{transform:translateX(${obj.x}px) translateY(${obj.y}px) translateZ(${obj.z}px) rotateY(0deg);}to{transform:translateX(${obj.x}px) translateY(${obj.y}px) translateZ(${obj.z}px) rotateY(360deg);}}\n`;
+        html += `.obj-${i}{animation:spin-${i} ${4 + i % 3}s linear infinite;}\n`;
+      } else if (obj.animation === 'bounce') {
+        html += `@keyframes bounce-${i}{0%,100%{transform:translateX(${obj.x}px) translateY(${obj.y}px) translateZ(${obj.z}px);}50%{transform:translateX(${obj.x}px) translateY(${obj.y - 20}px) translateZ(${obj.z}px);}}\n`;
+        html += `.obj-${i}{animation:bounce-${i} ${1 + i % 3}s ease-in-out infinite;}\n`;
+      } else if (obj.animation === 'float') {
+        html += `@keyframes float-${i}{0%,100%{transform:translateX(${obj.x}px) translateY(${obj.y}px) translateZ(${obj.z}px);}50%{transform:translateX(${obj.x}px) translateY(${obj.y - 10}px) translateZ(${obj.z}px);}}\n`;
+        html += `.obj-${i}{animation:float-${i} ${2 + i % 2}s ease-in-out infinite;}\n`;
+      } else if (obj.animation === 'pulse') {
+        html += `@keyframes pulse-${i}{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}\n`;
+        html += `.obj-${i}{animation:pulse-${i} ${1 + i % 3}s ease-in-out infinite;}\n`;
+      }
     });
-    html += '</div></body></html>';
+
+    html += '</style>\n</head>\n<body>\n';
+    html += '<div class="scene-3d">\n';
+    this.scene.forEach((obj, i) => {
+      html += `<div class="obj-${i}"></div>\n`;
+    });
+    html += '</div>\n</body>\n</html>';
     return html;
   },
 
   _exportCode() {
-    return `// Shadow Studio 2.5D Scene Data
-// Paste into your project to recreate this scene
-const scene = ${JSON.stringify(this.scene, null, 2)};
+    return `// Shadow Studio 2.5D Scene — Exported
+// Scene: ${this.scene.length} objects
+// Date: ${new Date().toISOString()}
 
-// Use with Three.js, CSS 3D Transforms, or WebGL
-// Scene contains ${this.scene.length} objects`;
+const sceneData = ${JSON.stringify(this.scene, null, 2)};
+
+const camera = {
+  angleX: ${document.getElementById('camX').value},
+  angleY: ${document.getElementById('camY').value},
+  zoom: ${document.getElementById('camZoom').value}
+};
+
+const settings = {
+  physics: ${this.physicsEnabled},
+  gravity: ${this.gravityEnabled},
+  grid: ${this.gridEnabled},
+  background: "${document.getElementById('bgColor').value}",
+  bgStyle: "${document.getElementById('bgStyle').value}"
+};
+
+// Load: sceneData.forEach(obj => P2D.scene.push(obj));
+// Use with THREE.js, CSS 3D, or WebGL`;
   },
 
-  exportScene() {
-    this.exportAs('html');
-    this.toast('📦 Scene exported!');
+  // Download individual object
+  exportObject() {
+    if (!this.selectedIds.size) { this.toast('⚠️ Select objects first!'); return; }
+    this.selectedIds.forEach(id => {
+      const obj = this.scene.find(o => o.id === id);
+      if (!obj) return;
+      const data = JSON.stringify(obj, null, 2);
+      this._downloadText(data, `object-${obj.id}-${obj.type}.json`);
+    });
+    this.toast(`💾 Downloaded ${this.selectedIds.size} object(s)!`);
+  },
+
+  // Download all objects as individual files
+  downloadAllAssets() {
+    if (!this.scene.length) { this.toast('⚠️ No objects in scene!'); return; }
+    this.scene.forEach(obj => {
+      const data = JSON.stringify(obj, null, 2);
+      this._downloadText(data, `object-${obj.id}-${obj.type}.json`);
+    });
+    this.toast(`💾 Downloaded ${this.scene.length} objects!`);
+  },
+
+  // Download by object type
+  downloadType(type) {
+    const objs = this.scene.filter(o => o.type === type);
+    if (!objs.length) { this.toast('⚠️ No objects of that type!'); return; }
+    if (objs.length === 1) {
+      const data = JSON.stringify(objs[0], null, 2);
+      this._downloadText(data, `object-${objs[0].id}-${type}.json`);
+    } else {
+      // Bundle type into one file
+      const data = JSON.stringify(objs, null, 2);
+      this._downloadText(data, `${type}s-bundle.json`);
+    }
+    this.toast(`💾 Downloaded ${objs.length} ${type}(s)!`);
+  },
+
+  // Download export in current format
+  downloadExport() {
+    if (!this._exportData) { this.toast('⚠️ Export first!'); return; }
+    this._downloadText(this._exportData.output, this._exportData.filename);
+    this.toast(`💾 Downloaded as ${this._exportData.filename}`);
+  },
+
+  // Download ALL formats at once
+  downloadAllFormats() {
+    if (!this.scene.length) { this.toast('⚠️ No scene to export!'); return; }
+    const formats = ['html', 'css', 'json', 'code'];
+    const exts = { html: '.html', css: '.css', json: '.json', code: '.js' };
+    formats.forEach(fmt => {
+      switch(fmt) {
+        case 'css': this._downloadText(this._exportCSS(), `scene-2.5d${exts[fmt]}`); break;
+        case 'html': this._downloadText(this._exportHTML(), `scene-2.5d${exts[fmt]}`); break;
+        case 'json':
+          const j = JSON.stringify({ tool: 'shadow-studio/2.5d-playground', version: '5.2.0', scene: this.scene, exportedAt: new Date().toISOString() }, null, 2);
+          this._downloadText(j, `scene-2.5d${exts[fmt]}`);
+          break;
+        case 'code': this._downloadText(this._exportCode(), `scene-2.5d${exts[fmt]}`); break;
+      }
+    });
+    this.toast(`📦 Downloaded all 4 formats!`);
   },
 
   copyExport() {
-    shadowStudio.get('utils')?.copy(document.getElementById('exportCode').textContent);
-    this.toast('📋 Copied to clipboard!');
-  },
-
-  downloadExport() {
-    const code = document.getElementById('exportCode').textContent;
-    shadowStudio.get('utils')?.download('scene-2.5d.html', code, 'text/html');
-    this.toast('💾 Downloaded!');
+    if (!this._exportData) { this.toast('⚠️ Export first!'); return; }
+    const text = this._exportData.output;
+    navigator.clipboard?.writeText(text).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+    }).then(() => this.toast('📋 Copied to clipboard!'));
   },
 
   saveScene() {
-    localStorage.setItem('shadow-2.5d-scene', JSON.stringify(this.scene));
+    localStorage.setItem('shadow-2.5d-scene-v2', JSON.stringify(this.scene));
+    localStorage.setItem('shadow-2.5d-camera', JSON.stringify({
+      x: document.getElementById('camX').value,
+      y: document.getElementById('camY').value,
+      z: document.getElementById('camZoom').value
+    }));
     this.toast('💾 Scene saved!');
   },
 
@@ -785,9 +1266,21 @@ const scene = ${JSON.stringify(this.scene, null, 2)};
     if (!confirm('Reset the entire scene?')) return;
     this.scene = [];
     this.objects.clear();
+    this.selectedIds.clear();
     this.saveState();
     this._render();
+    this._redrawPalette();
+    this._updateStats();
+    this._updateInspector();
     this.toast('🔄 Scene reset');
+  },
+
+  // === UTILITIES ===
+  _updateStats() {
+    document.getElementById('objCount').textContent = this.scene.filter(o => o.type !== 'light').length;
+    document.getElementById('lightCount').textContent = this.scene.filter(o => o.type === 'light').length;
+    document.getElementById('selectedCount').textContent = this.selectedIds.size;
+    document.getElementById('bulkObjCount').textContent = this.scene.length;
   },
 
   toast(msg) {
@@ -795,7 +1288,16 @@ const scene = ${JSON.stringify(this.scene, null, 2)};
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(this._timer);
-    this._timer = setTimeout(() => el.classList.remove('show'), 2500);
+    this._timer = setTimeout(() => el.classList.remove('show'), 2800);
+  },
+
+  _downloadText(text, name) {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
   }
 };
 
