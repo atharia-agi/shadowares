@@ -40,6 +40,17 @@
         }
         .btn:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 8px 25px rgba(6, 182, 212, 0.6); }
 
+        /* Effects Panel */
+        .effects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:12px}
+        .effect-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;transition:all .2s;text-align:center}
+        .effect-card:hover{border-color:var(--primary);background:rgba(6,182,212,.08)}
+        .effect-card.active{border-color:#22d3ee;background:rgba(6,182,212,.12);box-shadow:0 0 20px rgba(6,182,212,.2)}
+        .effect-card .ef-icon{font-size:1.5rem;margin-bottom:4px}
+        .effect-card .ef-name{font-size:.75rem;font-weight:700;color:#d1d5db}
+        .effect-card .ef-desc{font-size:.65rem;color:#6b7280;margin-top:2px}
+        .effect-card.toggle-off{opacity:.4}
+        .effect-card.toggle-off:hover{opacity:.8}
+
         /* The Playground Grid */
         .playground { 
             display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
@@ -57,15 +68,15 @@
 
         .sprite-canvas {
             max-width: 90%; max-height: 90%; object-fit: contain;
-            /* Default initial shadow, will be overridden by JS */
             filter: drop-shadow(0px 20px 20px rgba(0,0,0,0.8));
-            /* Transition setup for physics bump */
             transition: transform 0.1s ease-out, filter 0.1s ease-out;
             will-change: transform, filter;
             transform-style: preserve-3d;
         }
         
-        /* Floating particles effect in background */
+        /* Particle overlay canvas */
+        #particleCanvas{position:fixed;inset:0;pointer-events:none;z-index:2}
+
         .ambient-light {
             position: fixed; top: 50%; left: 50%; width: 600px; height: 600px;
             background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
@@ -73,12 +84,18 @@
             transition: 0.1s ease-out;
         }
 
+        /* Config code block */
+        .config-block{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px;font-family:monospace;font-size:.68rem;color:#9ca3af;white-space:pre-wrap;max-height:120px;overflow-y:auto;display:none}
+        .config-block.show{display:block}
+
         #status { font-size: 1.1rem; color: #67e8f9; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="ambient-light" id="cursor-light"></div>
+
+<canvas id="particleCanvas"></canvas>
 
 <div class="container">
     <div class="header-card">
@@ -90,11 +107,60 @@
         
         <label class="upload-area" id="upload-label">
             <span style="font-size: 1.2rem; color: #d1d5db; font-weight:bold;">🛸 Inject Master File (WebM/MP4) Di Sini</span>
-            <input type="file" id="file-input" accept="video/webm, video/mp4">
+            <input type="file" id="file-input" accept="video/*">
         </label>
         
         <div id="status"></div>
         <button id="btn-process" class="btn" style="display: none;">Bangkitkan Entitas 3D!</button>
+        <div id="export-settings" style="display:none;margin-top:20px;background:rgba(17,24,39,.6);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:left">
+            <h3 style="color:#22d3ee;margin-bottom:12px">⚙️ Export Settings</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div><label style="font-size:.8rem;color:#9ca3af">Detection Tolerance: <span id="val-tolerance">55</span></label>
+                    <input type="range" id="inp-tolerance" min="10" max="150" value="55" style="width:100%"></div>
+                <div><label style="font-size:.8rem;color:#9ca3af">Edge Feather: <span id="val-feather">30</span></label>
+                    <input type="range" id="inp-feather" min="0" max="80" value="30" style="width:100%"></div>
+                <div><label style="font-size:.8rem;color:#9ca3af">Export FPS: <span id="val-fps">24</span></label>
+                    <input type="range" id="inp-fps" min="1" max="60" value="24" style="width:100%"></div>
+                <div><label style="font-size:.8rem;color:#9ca3af">Export Duration: <span id="val-dur">1</span>s</label>
+                    <input type="range" id="inp-dur" min="0.5" max="10" value="1" step="0.5" style="width:100%"></div>
+                <div><label style="font-size:.8rem;color:#9ca3af">Min Pixel Count: <span id="val-minpx">30</span></label>
+                    <input type="range" id="inp-minpx" min="5" max="200" value="30" step="5" style="width:100%"></div>
+                <div><label style="font-size:.8rem;color:#9ca3af">Merge Distance: <span id="val-merge">10</span>px</label>
+                    <input type="range" id="inp-merge" min="0" max="50" value="10" style="width:100%"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                <label style="font-size:.8rem;color:#9ca3af;display:flex;align-items:center;gap:4px">
+                    <input type="checkbox" id="chk-loop" checked> Loop export
+                </label>
+                <label style="font-size:.8rem;color:#9ca3af;display:flex;align-items:center;gap:4px">
+                    <input type="checkbox" id="chk-transparent" checked> Transparent BG
+                </label>
+            </div>
+        </div>
+        <div id="export-bar" style="margin-top:16px;display:none;flex-wrap:wrap;gap:8px;justify-content:center"></div>
+
+        <!-- Effects Panel -->
+        <div id="effects-panel" style="display:none;margin-top:16px;background:rgba(17,24,39,.6);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:left">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <h3 style="color:#22d3ee;font-size:.95rem">🌀 Interaction Effects</h3>
+                <div style="display:flex;gap:6px">
+                    <button class="btn-sm" onclick="copyEffectConfig()" style="padding:4px 10px;font-size:.7rem;background:rgba(6,182,212,.15);color:#22d3ee;border:1px solid rgba(6,182,212,.3);border-radius:6px;cursor:pointer;font-family:inherit">📋 Copy Config</button>
+                    <button class="btn-sm" onclick="toggleConfigBlock()" style="padding:4px 10px;font-size:.7rem;background:rgba(255,255,255,.05);color:#9ca3af;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit">📄 JSON</button>
+                </div>
+            </div>
+            <div class="effects-grid">
+                <div class="effect-card active" data-effect="tilt" onclick="toggleEffect('tilt',this)"><div class="ef-icon">🔄</div><div class="ef-name">3D Tilt</div><div class="ef-desc">Rotate toward cursor</div></div>
+                <div class="effect-card active" data-effect="shadow" onclick="toggleEffect('shadow',this)"><div class="ef-icon">🌓</div><div class="ef-name">Dynamic Shadow</div><div class="ef-desc">Light-direction shadow</div></div>
+                <div class="effect-card active" data-effect="glow" onclick="toggleEffect('glow',this)"><div class="ef-icon">✨</div><div class="ef-name">Proximity Glow</div><div class="ef-desc">Cyan aura on hover</div></div>
+                <div class="effect-card active" data-effect="magnet" onclick="toggleEffect('magnet',this)"><div class="ef-icon">🧲</div><div class="ef-name">Magnetic Warp</div><div class="ef-desc">Pull sprites toward cursor</div></div>
+                <div class="effect-card active" data-effect="particle" onclick="toggleEffect('particle',this)"><div class="ef-icon">💫</div><div class="ef-name">Particle Aura</div><div class="ef-desc">Sparkle trail & aura</div></div>
+                <div class="effect-card active" data-effect="chroma" onclick="toggleEffect('chroma',this)"><div class="ef-icon">🌈</div><div class="ef-name">Chromatic Ab.</div><div class="ef-desc">RGB edge split</div></div>
+                <div class="effect-card active" data-effect="wobble" onclick="toggleEffect('wobble',this)"><div class="ef-icon">🌀</div><div class="ef-name">Wobble</div><div class="ef-desc">Subtle oscillation</div></div>
+                <div class="effect-card active" data-effect="colorshift" onclick="toggleEffect('colorshift',this)"><div class="ef-icon">🎨</div><div class="ef-name">Color Shift</div><div class="ef-desc">Hue from mouse speed</div></div>
+                <div class="effect-card active" data-effect="ripple" onclick="toggleEffect('ripple',this)"><div class="ef-icon">🌊</div><div class="ef-name">Ripple</div><div class="ef-desc">Click shockwave</div></div>
+            </div>
+            <div class="config-block" id="configBlock">// Click "Copy Config" to export effect configuration</div>
+        </div>
     </div>
 
     <div id="results" class="playground"></div>
@@ -107,23 +173,41 @@
     const statusDiv = document.getElementById('status');
     const resultsDiv = document.getElementById('results');
     const cursorLight = document.getElementById('cursor-light');
+    const exportBar = document.getElementById('export-bar');
     
     let videoUrl = null;
     let videoEl = document.createElement('video');
     videoEl.muted = true;
-    videoEl.loop = true; // Auto loop forever di playground
+    videoEl.loop = true;
+    let sprites = [];
+
+    // FIX: Pastikan browse selalu triggered
+    uploadLabel.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'INPUT') {
+            fileInput.click();
+        }
+    });
+
+    // Wire sliders
+    ['tolerance','feather','fps','dur','minpx','merge'].forEach(id => {
+        const inp = document.getElementById('inp-' + id);
+        const val = document.getElementById('val-' + id);
+        if (inp && val) inp.addEventListener('input', () => { val.textContent = inp.value; });
+    });
 
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
         
         uploadLabel.innerHTML = `Materi Gelap Terdeteksi: <b style="color:#22d3ee">${file.name}</b>`;
+        document.getElementById('export-settings').style.display = 'block';
         videoUrl = URL.createObjectURL(file);
         videoEl.src = videoUrl;
         
         videoEl.onloadeddata = () => {
             statusDiv.textContent = `Sistem siap. Resolusi ${videoEl.videoWidth}x${videoEl.videoHeight}.`;
             btnProcess.style.display = 'inline-block';
+            exportBar.style.display = 'none';
         };
     });
 
@@ -157,6 +241,11 @@
         const width = videoEl.videoWidth;
         const height = videoEl.videoHeight;
         
+        const CORE_TOLERANCE = parseInt(document.getElementById('inp-tolerance').value);
+        const FEATHER = parseInt(document.getElementById('inp-feather').value);
+        const MIN_PIXELS = parseInt(document.getElementById('inp-minpx').value);
+        const MERGE_DISTANCE = parseInt(document.getElementById('inp-merge').value);
+        
         const masterCanvas = document.createElement('canvas');
         masterCanvas.width = width; masterCanvas.height = height;
         const ctx = masterCanvas.getContext('2d', { willReadFrequently: true });
@@ -165,8 +254,6 @@
         const data = ctx.getImageData(0, 0, width, height).data;
         const bgR = data[0], bgG = data[1], bgB = data[2];
         
-        const CORE_TOLERANCE = 55; 
-        const FEATHER = 30;
         const getDist = (r, g, b) => Math.sqrt(Math.pow(r-bgR,2) + Math.pow(g-bgG,2) + Math.pow(b-bgB,2));
         
         // BFS Isolation (Sama presisinya dengan exporter)
@@ -204,14 +291,13 @@
                             }
                         }
                     }
-                    if (pixelCount > 30) rawBoxes.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
+                    if (pixelCount > MIN_PIXELS) rawBoxes.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
                 }
             }
         }
         
         let mergedBoxes = [...rawBoxes];
         let merged = true;
-        const MERGE_DISTANCE = 10;
         
         while (merged) {
             merged = false;
@@ -240,7 +326,7 @@
         document.querySelector('.header-card').style.padding = "20px";
         
         // Buat DOM 2.5D
-        const sprites = boundingBoxes.map((box, i) => {
+        const spriteData = boundingBoxes.map((box, i) => {
             const wrapper = document.createElement('div');
             wrapper.className = 'sprite-wrapper';
             
@@ -248,7 +334,17 @@
             sc.className = 'sprite-canvas';
             sc.width = box.w; sc.height = box.h;
             
+            // Download button per sprite
+            const dlBtn = document.createElement('button');
+            dlBtn.className = 'btn';
+            dlBtn.style.cssText = 'padding:6px 12px;font-size:.75rem;margin-top:4px;position:absolute;bottom:2px;right:2px;opacity:0;transition:opacity .2s';
+            dlBtn.textContent = '⬇️ WebM';
+            dlBtn.onclick = (e) => { e.stopPropagation(); exportSpriteWebM(i); };
+            
             wrapper.appendChild(sc);
+            wrapper.appendChild(dlBtn);
+            wrapper.addEventListener('mouseenter', () => dlBtn.style.opacity = '1');
+            wrapper.addEventListener('mouseleave', () => dlBtn.style.opacity = '0');
             resultsDiv.appendChild(wrapper);
             
             return { 
@@ -259,13 +355,42 @@
                 physicsState: { isJumping: false }
             };
         });
+        sprites = spriteData;
+        
+        // Export Bar
+        exportBar.style.display = 'flex';
+        exportBar.innerHTML = `
+            <button class="btn" onclick="bulkExportWebM()" style="font-size:.85rem;padding:8px 20px">📦 Export All as WebM</button>
+            <button class="btn" onclick="bulkExportZIP()" style="font-size:.85rem;padding:8px 20px;background:linear-gradient(135deg,#10b981,#059669)">🗜️ Download All ZIP</button>
+            <span style="color:#9ca3af;font-size:.82rem;align-self:center">${spriteData.length} sprites</span>
+        `;
+        
+        document.getElementById('effects-panel').style.display = 'block';
+        
+        // EFFECTS STATE
+        const effects = {
+            tilt: true, shadow: true, glow: true, magnet: true,
+            particle: true, chroma: true, wobble: true, colorshift: true, ripple: true
+        };
         
         // PHYSICS & INTERACTION LOGIC
-        // 1. Mouse Move = Dynamic Lighting & 3D Tilt
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
+        let mouseSpeed = 0;
+        let prevMX = mouseX, prevMY = mouseY;
+        let time = 0;
+        let ripples = [];
         
-        const PROXIMITY_RADIUS = 250; // px — efek tilt hanya aktif dalam radius ini
+        const PROXIMITY_RADIUS = 280;
+        
+        setInterval(() => { time += 0.016; }, 16);
+        
+        setInterval(() => {
+            const dx = Math.abs(mouseX - prevMX);
+            const dy = Math.abs(mouseY - prevMY);
+            mouseSpeed = Math.min(1, (dx + dy) / 100);
+            prevMX = mouseX; prevMY = mouseY;
+        }, 50);
 
         document.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
@@ -281,75 +406,130 @@
                 const deltaX = mouseX - centerX;
                 const deltaY = mouseY - centerY;
                 const distance = Math.sqrt(deltaX**2 + deltaY**2);
-
-                // Kalau cursor di luar radius, reset ke posisi netral dan skip
+                
                 if (distance > PROXIMITY_RADIUS) {
-                    sprite.canvas.style.transform = `perspective(800px) rotateX(0deg) rotateY(0deg) scale(1.0)`;
-                    sprite.canvas.style.filter = `drop-shadow(0px 20px 20px rgba(0,0,0,0.8))`;
+                    let neutral = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale(1.0)';
+                    let neutralF = 'drop-shadow(0px 20px 20px rgba(0,0,0,0.8))';
+                    if (effects.wobble) neutral += ' rotateZ(0deg)';
+                    sprite.canvas.style.transform = neutral;
+                    sprite.canvas.style.filter = neutralF;
                     return;
                 }
-
-                // Faktor interpolasi: 1 = cursor tepat di tengah, 0 = cursor di batas radius
+                
                 const proximity = 1 - (distance / PROXIMITY_RADIUS);
+                const near = proximity > 0.5;
+                const veryNear = proximity > 0.8;
                 
-                // Tilt (Max 20 degrees, dikali faktor proximity supaya smooth)
-                const tiltX = Math.max(-20, Math.min(20, (deltaY / 12))) * proximity;
-                const tiltY = Math.max(-20, Math.min(20, -(deltaX / 12))) * proximity;
+                // Build transform
+                let tx = '';
+                let tiltX = 0, tiltY = 0, scaleVal = 1.0, transX = 0, transY = 0, wobbleRot = 0, wobbleScale = 0;
                 
-                // Scale sedikit membesar saat cursor dekat
-                const scaleVal = 1.0 + (0.08 * proximity);
+                if (effects.tilt) {
+                    tiltX = Math.max(-25, Math.min(25, (deltaY / 10))) * proximity;
+                    tiltY = Math.max(-25, Math.min(25, -(deltaX / 10))) * proximity;
+                }
+                if (effects.wobble) {
+                    const wobPhase = Date.now() / 600 + (sprite.box.x + sprite.box.y) / 50;
+                    wobbleRot = Math.sin(wobPhase) * proximity * 3;
+                    wobbleScale = Math.sin(wobPhase * 1.3) * proximity * 0.03;
+                }
+                if (effects.magnet && near) {
+                    const pull = (proximity - 0.5) * 1.5;
+                    transX = deltaX * pull * 0.15;
+                    transY = deltaY * pull * 0.15;
+                }
+                scaleVal = 1.0 + (0.1 * proximity) + wobbleScale;
                 
-                // Drop Shadow (Arah berlawanan dengan cahaya mouse)
-                const safeDistance = Math.max(distance, 1);
-                const shadowX = (deltaX / safeDistance) * -12 * proximity;
-                const shadowY = (deltaY / safeDistance) * -12 * proximity;
-                const blur = 8 + (12 * (1 - proximity));
+                tx = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scaleVal}) translateX(${transX}px) translateY(${transY}px)`;
+                if (effects.wobble) tx += ` rotateZ(${wobbleRot}deg)`;
                 
-                // Glow cyan saat cursor dekat
-                const glowIntensity = proximity * 0.7;
+                // Build filter
+                const safeDist = Math.max(distance, 1);
+                let flt = '';
+                if (effects.shadow) {
+                    const sX = (deltaX / safeDist) * -15 * proximity;
+                    const sY = (deltaY / safeDist) * -15 * proximity;
+                    const blur = 6 + (14 * (1 - proximity));
+                    flt += `drop-shadow(${sX}px ${sY}px ${blur}px rgba(0,0,0,0.85))`;
+                }
+                if (effects.glow) {
+                    const glowInt = proximity * (0.5 + mouseSpeed * 0.5);
+                    flt += ` drop-shadow(0px 0px ${15 + glowInt * 30}px rgba(6,182,212,${glowInt}))`;
+                }
+                if (effects.colorshift && mouseSpeed > 0.1) {
+                    const hue = mouseSpeed * 60 + time * 10;
+                    flt += ` hue-rotate(${hue}deg)`;
+                }
+                if (effects.chroma && veryNear) {
+                    const chromaStrength = (proximity - 0.8) * 4;
+                    flt += ` drop-shadow(${2 * chromaStrength}px 0px 2px rgba(255,0,0,${0.3 * chromaStrength})) drop-shadow(${-2 * chromaStrength}px 0px 2px rgba(0,0,255,${0.3 * chromaStrength}))`;
+                }
+                if (!flt) flt = 'drop-shadow(0px 20px 20px rgba(0,0,0,0.8))';
                 
-                sprite.canvas.style.transform = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scaleVal})`;
-                sprite.canvas.style.filter = `drop-shadow(${shadowX}px ${shadowY}px ${blur}px rgba(0,0,0,0.9)) drop-shadow(0px 0px ${glowIntensity * 25}px rgba(6,182,212,${glowIntensity}))`;
+                sprite.canvas.style.transform = tx;
+                sprite.canvas.style.filter = flt;
             });
         });
         
-        // 2. Click = Physics Bump (Karakter mental!)
+        // 2. Click = Physics Bump + Ripple Chain
         sprites.forEach(sprite => {
             sprite.wrapper.addEventListener('mousedown', () => {
                 if(sprite.physicsState.isJumping) return;
                 sprite.physicsState.isJumping = true;
                 
-                // Ubah transisi biar nge-per (spring physics)
                 sprite.canvas.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.4s ease';
-                
-                // Bikin karakter mental ke atas, muter, dan membesar
                 const randomRot = (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random()*20);
                 sprite.canvas.style.transform = `perspective(800px) translateY(-80px) scale(1.4) rotateZ(${randomRot}deg)`;
-                
-                // Bayangannya ngejauh ke bawah lantai
                 sprite.canvas.style.filter = `drop-shadow(0px 80px 30px rgba(0, 0, 0, 0.5)) drop-shadow(0px 0px 40px rgba(6, 182, 212, 1))`;
                 
-                // Gravitasi jatuh
+                // Ripple shockwave
+                if (effects.ripple) {
+                    const rect = sprite.wrapper.getBoundingClientRect();
+                    ripples.push({ x: rect.left+rect.width/2, y: rect.top+rect.height/2, radius: 0, maxRadius: 400, life: 1 });
+                    // Chain reaction: nearby sprites also jump
+                    sprites.forEach(other => {
+                        if (other === sprite || other.physicsState.isJumping) return;
+                        const oRect = other.wrapper.getBoundingClientRect();
+                        const oDist = Math.hypot(oRect.left-oRect.width/2-rect.left-rect.width/2, oRect.top-oRect.height/2-rect.top-rect.height/2);
+                        if (oDist < 300 && Math.random() > 0.3) {
+                            setTimeout(() => { triggerJump(other); }, 100 + Math.random()*200);
+                        }
+                    });
+                }
+                
                 setTimeout(() => {
                     sprite.canvas.style.transition = 'transform 0.3s cubic-bezier(0.6, -0.28, 0.735, 0.045), filter 0.3s ease';
-                    sprite.canvas.style.transform = `perspective(800px) translateY(10px) scale(0.95) rotateZ(0deg)`; // Squash ke lantai
+                    sprite.canvas.style.transform = `perspective(800px) translateY(10px) scale(0.95) rotateZ(0deg)`;
                     sprite.canvas.style.filter = `drop-shadow(0px 5px 5px rgba(0, 0, 0, 0.9))`;
                     
-                    // Balik normal
                     setTimeout(() => {
                         sprite.canvas.style.transition = 'transform 0.1s ease-out, filter 0.1s ease-out';
                         sprite.physicsState.isJumping = false;
-                        
-                        // Force update posisi mouse biar tilt-nya balik bener
                         const e = new MouseEvent('mousemove', { clientX: mouseX, clientY: mouseY });
                         document.dispatchEvent(e);
                     }, 300);
-                    
-                }, 400); // Tahan di udara 0.4 detik
+                }, 400);
             });
         });
+        
+        function triggerJump(s) {
+            if (s.physicsState.isJumping) return;
+            s.physicsState.isJumping = true;
+            s.canvas.style.transition = 'transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.35s ease';
+            s.canvas.style.transform = `perspective(800px) translateY(-40px) scale(1.15) rotateZ(${(Math.random()-0.5)*20}deg)`;
+            s.canvas.style.filter = 'drop-shadow(0px 40px 20px rgba(0,0,0,0.4)) drop-shadow(0px 0px 30px rgba(6,182,212,0.6))';
+            setTimeout(() => {
+                s.canvas.style.transition = 'transform 0.25s cubic-bezier(0.6, -0.28, 0.735, 0.045), filter 0.25s ease';
+                s.canvas.style.transform = 'perspective(800px) translateY(5px) scale(0.95) rotateZ(0deg)';
+                s.canvas.style.filter = 'drop-shadow(0px 5px 5px rgba(0,0,0,0.9))';
+                setTimeout(() => {
+                    s.canvas.style.transition = 'transform 0.1s ease-out, filter 0.1s ease-out';
+                    s.physicsState.isJumping = false;
+                }, 250);
+            }, 300);
+        }
 
-        // 3. Real-time Video Render Loop
+        // 3. Real-time Video Render Loop + Ripple render
         videoEl.play();
         function renderLoop() {
             ctx.clearRect(0, 0, width, height);
@@ -371,9 +551,377 @@
                 sprite.ctx.clearRect(0, 0, sprite.box.w, sprite.box.h);
                 sprite.ctx.drawImage(masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
             });
+            
+            // Render ripples
+            if (effects.ripple) {
+                ripples = ripples.filter(r => r.life > 0);
+                ripples.forEach(r => {
+                    r.radius += 6;
+                    r.life -= 0.02;
+                    const alpha = r.life * 0.4;
+                    // Ripple ring on visible sprites
+                    sprites.forEach(sprite => {
+                        const sr = sprite.wrapper.getBoundingClientRect();
+                        const sc = { x: sr.left+sr.width/2, y: sr.top+sr.height/2 };
+                        const dist = Math.hypot(sc.x - r.x, sc.y - r.y);
+                        if (Math.abs(dist - r.radius) < 15 && r.life > 0.3) {
+                            const pulse = 1 + (1 - Math.abs(dist - r.radius) / 15) * 0.3;
+                            sprite.canvas.style.filter = `drop-shadow(0px 0px ${25 * pulse}px rgba(6,182,212,${0.5 * pulse}))`;
+                        }
+                    });
+                });
+            }
+            
             requestAnimationFrame(renderLoop);
         }
         requestAnimationFrame(renderLoop);
+    }
+
+    // === GLOBAL EFFECT FUNCTIONS ===
+    // Particle system
+    const pCanvas = document.getElementById('particleCanvas');
+    const pCtx = pCanvas.getContext('2d');
+    let particles = [];
+    let particleEnabled = true;
+    
+    function resizeParticleCanvas() {
+        pCanvas.width = window.innerWidth;
+        pCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeParticleCanvas);
+    resizeParticleCanvas();
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!particleEnabled) return;
+        for (let i = 0; i < 2; i++) {
+            particles.push({
+                x: e.clientX + (Math.random()-0.5)*10,
+                y: e.clientY + (Math.random()-0.5)*10,
+                vx: (Math.random()-0.5) * 2,
+                vy: -Math.random() * 3,
+                life: 1,
+                decay: 0.008 + Math.random() * 0.01,
+                size: 1.5 + Math.random() * 3,
+                hue: 180 + Math.random() * 60
+            });
+        }
+    });
+    
+    function renderParticles() {
+        requestAnimationFrame(renderParticles);
+        if (!particleEnabled) { pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height); return; }
+        
+        // Add sprite aura particles
+        if (typeof sprites !== 'undefined' && sprites.length > 0) {
+            sprites.forEach(sprite => {
+                const rect = sprite.wrapper.getBoundingClientRect();
+                if (Math.random() > 0.7) {
+                    particles.push({
+                        x: rect.left + Math.random() * rect.width,
+                        y: rect.top + Math.random() * rect.height,
+                        vx: (Math.random()-0.5) * 1.5,
+                        vy: (Math.random()-0.5) * 1.5 - 0.5,
+                        life: 1,
+                        decay: 0.01 + Math.random() * 0.015,
+                        size: 1 + Math.random() * 2.5,
+                        hue: 200 + Math.random() * 55
+                    });
+                }
+            });
+        }
+        
+        pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+        particles = particles.filter(p => p.life > 0);
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= p.decay;
+            p.vy += 0.05;
+            pCtx.beginPath();
+            pCtx.arc(p.x, p.y, p.size * (0.3 + p.life * 0.7), 0, Math.PI * 2);
+            pCtx.fillStyle = `hsla(${p.hue}, 80%, 70%, ${p.life * 0.6})`;
+            pCtx.fill();
+        });
+    }
+    renderParticles();
+
+    window.toggleEffect = function(name, el) {
+        if (typeof processPlayground !== 'undefined') {
+            const internalEffects = document.querySelectorAll('.effect-card');
+            // Toggle active state visually
+            el.classList.toggle('active');
+            el.classList.toggle('toggle-off');
+            // Update global effects state
+            window._effectState = window._effectState || {};
+            window._effectState[name] = el.classList.contains('active');
+            // Re-trigger mousemove to apply
+            document.dispatchEvent(new MouseEvent('mousemove', { clientX: mouseX || window.innerWidth/2, clientY: mouseY || window.innerHeight/2 }));
+            if (name === 'particle') particleEnabled = el.classList.contains('active');
+        }
+    };
+
+    window.copyEffectConfig = function() {
+        const config = {};
+        document.querySelectorAll('.effect-card').forEach(card => {
+            config[card.dataset.effect] = card.classList.contains('active');
+        });
+        const json = JSON.stringify({
+            effects: config,
+            proximity_radius: 280,
+            version: '2.5d_playground_v5.2',
+            description: 'Shadow 2.5D Interaction Effects Config - Compatible with AI Coding Agents'
+        }, null, 2);
+        
+        navigator.clipboard.writeText(json).then(() => {
+            statusDiv.textContent = '✅ Effect config copied for AI agent!';
+            setTimeout(() => { statusDiv.textContent = ''; }, 2000);
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = json; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta);
+            statusDiv.textContent = '✅ Effect config copied!';
+        });
+        document.getElementById('configBlock').textContent = json;
+        document.getElementById('configBlock').classList.add('show');
+    };
+
+    window.toggleConfigBlock = function() {
+        const block = document.getElementById('configBlock');
+        block.classList.toggle('show');
+        if (block.classList.contains('show')) {
+            const config = {};
+            document.querySelectorAll('.effect-card').forEach(card => {
+                config[card.dataset.effect] = card.classList.contains('active');
+            });
+            block.textContent = JSON.stringify({
+                effects: config,
+                proximity_radius: 280,
+                version: '2.5d_playground_v5.2'
+            }, null, 2);
+        }
+    };
+
+    // === EXPORT FUNCTIONS ===
+    window.exportSpriteWebM = function(idx) {
+        const sprite = sprites[idx];
+        if (!sprite) return;
+        const fps = parseFloat(document.getElementById('inp-fps').value);
+        const dur = parseFloat(document.getElementById('inp-dur').value);
+        const loop = document.getElementById('chk-loop').checked;
+        const totalFrames = Math.max(1, Math.round(fps * dur));
+        const frameDelay = 1000 / fps;
+        
+        const stream = sprite.canvas.captureStream(fps);
+        const chunks = [];
+        const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+        rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+        rec.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sprite_${idx+1}_${sprite.box.w}x${sprite.box.h}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            statusDiv.textContent = `✅ Sprite ${idx+1} exported (${(blob.size/1024).toFixed(1)} KB)`;
+        };
+        
+        let frame = 0;
+        rec.start();
+        const captureFrame = () => {
+            if (frame < totalFrames) {
+                frame++;
+                setTimeout(captureFrame, frameDelay);
+            } else {
+                rec.stop();
+            }
+        };
+        captureFrame();
+    };
+
+    window.bulkExportWebM = function() {
+        if (sprites.length === 0) return;
+        const total = sprites.length;
+        let current = 0;
+        statusDiv.textContent = `📦 Exporting ${total} sprites...`;
+        const exportNext = () => {
+            if (current >= total) {
+                statusDiv.textContent = `✅ All ${total} sprites exported!`;
+                return;
+            }
+            const sprite = sprites[current];
+            const fps = parseFloat(document.getElementById('inp-fps').value);
+            const dur = parseFloat(document.getElementById('inp-dur').value);
+            const totalFrames = Math.max(1, Math.round(fps * dur));
+            const frameDelay = 1000 / fps;
+            
+            const stream = sprite.canvas.captureStream(fps);
+            const chunks = [];
+            const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+            rec.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sprite_${current+1}_${sprite.box.w}x${sprite.box.h}.webm`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 2000);
+                statusDiv.textContent = `📦 Exported ${current+1}/${total}...`;
+                current++;
+                setTimeout(exportNext, 500);
+            };
+            
+            let frame = 0;
+            rec.start();
+            const captureFrame = () => {
+                if (frame < totalFrames) {
+                    frame++;
+                    setTimeout(captureFrame, frameDelay);
+                } else {
+                    rec.stop();
+                }
+            };
+            captureFrame();
+        };
+        exportNext();
+    };
+
+    window.bulkExportZIP = async function() {
+        if (sprites.length === 0) return;
+        statusDiv.textContent = `🗜️ Creating ZIP with ${sprites.length} sprites...`;
+        
+        // Render each sprite to WebM and collect blobs
+        const fps = parseFloat(document.getElementById('inp-fps').value);
+        const dur = parseFloat(document.getElementById('inp-dur').value);
+        const totalFrames = Math.max(1, Math.round(fps * dur));
+        const frameDelay = 1000 / fps;
+        const entries = [];
+        
+        for (let i = 0; i < sprites.length; i++) {
+            const sprite = sprites[i];
+            statusDiv.textContent = `🗜️ Rendering sprite ${i+1}/${sprites.length}...`;
+            const blob = await new Promise(resolve => {
+                const stream = sprite.canvas.captureStream(fps);
+                const chunks = [];
+                const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+                rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                rec.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+                let frame = 0;
+                rec.start();
+                const cf = () => {
+                    if (frame < totalFrames) { frame++; setTimeout(cf, frameDelay); }
+                    else rec.stop();
+                };
+                cf();
+            });
+            entries.push({ name: `sprite_${i+1}_${sprite.box.w}x${sprite.box.h}.webm`, blob });
+        }
+        
+        // Build ZIP manually (store method, no compression)
+        const zipBlob = await buildZIP(entries);
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sprites_${Date.now()}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        statusDiv.textContent = `✅ ZIP downloaded! ${sprites.length} sprites (${(zipBlob.size/1024).toFixed(0)} KB)`;
+    };
+
+    async function buildZIP(entries) {
+        // Simple ZIP builder (store method)
+        const encoder = new TextEncoder();
+        let centralDir = new Uint8Array(0);
+        let localOffset = 0;
+        const fileData = [];
+        
+        for (const entry of entries) {
+            const buf = await entry.blob.arrayBuffer();
+            const nameBytes = encoder.encode(entry.name);
+            const crc = crc32(new Uint8Array(buf));
+            
+            // Local file header
+            const local = new Uint8Array(30 + nameBytes.length + buf.byteLength);
+            const dv = new DataView(local.buffer);
+            dv.setUint32(0, 0x04034b50, true); // Signature
+            dv.setUint16(4, 20, true); // Version needed
+            dv.setUint16(6, 0, true); // Flags
+            dv.setUint16(8, 0, true); // Compression: store
+            dv.setUint16(10, 0, true); // Mod time
+            dv.setUint16(12, 0, true); // Mod date
+            dv.setUint32(14, crc, true); // CRC-32
+            dv.setUint32(18, buf.byteLength, true); // Compressed size
+            dv.setUint32(22, buf.byteLength, true); // Uncompressed size
+            dv.setUint16(26, nameBytes.length, true); // Filename length
+            dv.setUint16(28, 0, true); // Extra field length
+            local.set(nameBytes, 30);
+            local.set(new Uint8Array(buf), 30 + nameBytes.length);
+            fileData.push(local);
+            
+            // Central directory entry
+            const cd = new Uint8Array(46 + nameBytes.length);
+            const cdv = new DataView(cd.buffer);
+            cdv.setUint32(0, 0x02014b50, true);
+            cdv.setUint16(4, 20, true);
+            cdv.setUint16(6, 20, true);
+            cdv.setUint16(8, 0, true);
+            cdv.setUint16(10, 0, true);
+            cdv.setUint16(12, 0, true);
+            cdv.setUint32(14, crc, true);
+            cdv.setUint32(18, buf.byteLength, true);
+            cdv.setUint32(22, buf.byteLength, true);
+            cdv.setUint16(26, nameBytes.length, true);
+            cdv.setUint16(28, 0, true);
+            cdv.setUint16(30, 0, true);
+            cdv.setUint16(32, 0, true);
+            cdv.setUint32(34, 0, true);
+            cdv.setUint32(38, localOffset, true);
+            cdv.setUint32(42, 0, true);
+            cd.set(nameBytes, 46);
+            
+            const oldCD = centralDir;
+            centralDir = new Uint8Array(oldCD.length + cd.length);
+            centralDir.set(oldCD, 0);
+            centralDir.set(cd, oldCD.length);
+            localOffset += local.byteLength;
+        }
+        
+        // End of central directory
+        const eocd = new Uint8Array(22);
+        const eocdv = new DataView(eocd.buffer);
+        eocdv.setUint32(0, 0x06054b50, true);
+        eocdv.setUint16(4, 0, true);
+        eocdv.setUint16(6, 0, true);
+        eocdv.setUint16(8, entries.length, true);
+        eocdv.setUint16(10, entries.length, true);
+        eocdv.setUint32(12, centralDir.length, true);
+        eocdv.setUint32(16, localOffset, true);
+        eocdv.setUint16(20, 0, true);
+        
+        const total = new Uint8Array(fileData.reduce((s,f)=>s+f.length,0) + centralDir.length + 22);
+        let offset = 0;
+        for (const f of fileData) { total.set(f, offset); offset += f.length; }
+        total.set(centralDir, offset); offset += centralDir.length;
+        total.set(eocd, offset);
+        
+        return new Blob([total], { type: 'application/zip' });
+    }
+
+    function crc32(data) {
+        let crc = 0xFFFFFFFF;
+        for (let i = 0; i < data.length; i++) {
+            crc ^= data[i];
+            for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0);
+        }
+        return (crc ^ 0xFFFFFFFF) >>> 0;
     }
 </script>
 
