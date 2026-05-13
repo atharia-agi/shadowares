@@ -74,20 +74,20 @@
             right: 8px;
             display: flex;
             gap: 4px;
-            opacity: 0;
+            opacity: 0.3;
             transition: opacity 0.2s ease;
             z-index: 10;
         }
         .sprite-wrapper:hover .sprite-actions { opacity: 1; }
         .sprite-action-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(0,0,0,0.6);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(6,182,212,0.3);
+            background: rgba(0,0,0,0.75);
             backdrop-filter: blur(8px);
             color: #fff;
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -97,7 +97,8 @@
         .sprite-action-btn:hover {
             background: var(--primary);
             border-color: var(--primary);
-            transform: scale(1.1);
+            transform: scale(1.15);
+            box-shadow: 0 0 12px rgba(6,182,212,0.5);
         }
         .sprite-action-btn[title]:hover::after {
             content: attr(title);
@@ -232,11 +233,16 @@
         }
     });
 
-    // Wire sliders
+    // Wire sliders — auto reprocess on change
     ['tolerance','feather','fps','dur','minpx','merge'].forEach(id => {
         const inp = document.getElementById('inp-' + id);
         const val = document.getElementById('val-' + id);
-        if (inp && val) inp.addEventListener('input', () => { val.textContent = inp.value; });
+        if (inp && val) {
+            inp.addEventListener('input', () => { 
+                val.textContent = inp.value;
+                if (sources.length > 0) { reprocessSprites(); }
+            });
+        }
     });
 
     fileInput.addEventListener('change', (e) => {
@@ -300,11 +306,31 @@
         processPlayground();
     });
 
+    // Global effects state (accessible from toggleEffect)
+    window.effects = {
+        tilt: true, shadow: true, glow: true, magnet: true,
+        particle: true, chroma: true, wobble: true, colorshift: true, ripple: true
+    };
+
+    // Debounced reprocess function for slider changes
+    let reprocessTimer = null;
+    function reprocessSprites() {
+        clearTimeout(reprocessTimer);
+        reprocessTimer = setTimeout(() => {
+            resultsDiv.innerHTML = '';
+            sprites = [];
+            processPlayground();
+        }, 300);
+    }
+    window.reprocessSprites = reprocessSprites;
+
     function processPlayground() {
         const CORE_TOLERANCE = parseInt(document.getElementById('inp-tolerance').value);
         const FEATHER = parseInt(document.getElementById('inp-feather').value);
         const MIN_PIXELS = parseInt(document.getElementById('inp-minpx').value);
         const MERGE_DISTANCE = parseInt(document.getElementById('inp-merge').value);
+        
+        const effects = window.effects;
         
         let globalSpriteIndex = 0;
         
@@ -442,12 +468,6 @@
         
         document.getElementById('effects-panel').style.display = 'block';
         
-        // EFFECTS STATE
-        const effects = {
-            tilt: true, shadow: true, glow: true, magnet: true,
-            particle: true, chroma: true, wobble: true, colorshift: true, ripple: true
-        };
-        
         // PHYSICS & INTERACTION LOGIC
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
@@ -470,6 +490,8 @@
         document.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
+            window._lastMX = mouseX;
+            window._lastMY = mouseY;
             
             sprites.forEach(sprite => {
                 if(sprite.physicsState.isJumping) return;
@@ -723,18 +745,16 @@
     renderParticles();
 
     window.toggleEffect = function(name, el) {
-        if (typeof processPlayground !== 'undefined') {
-            const internalEffects = document.querySelectorAll('.effect-card');
-            // Toggle active state visually
-            el.classList.toggle('active');
-            el.classList.toggle('toggle-off');
-            // Update global effects state
-            window._effectState = window._effectState || {};
-            window._effectState[name] = el.classList.contains('active');
-            // Re-trigger mousemove to apply
-            document.dispatchEvent(new MouseEvent('mousemove', { clientX: mouseX || window.innerWidth/2, clientY: mouseY || window.innerHeight/2 }));
-            if (name === 'particle') particleEnabled = el.classList.contains('active');
-        }
+        // Toggle active state visually
+        el.classList.toggle('active');
+        el.classList.toggle('toggle-off');
+        // Update global effects state
+        const isActive = el.classList.contains('active');
+        if (window.effects) window.effects[name] = isActive;
+        // Handle particle toggle
+        if (name === 'particle') particleEnabled = isActive;
+        // Re-trigger mousemove to apply immediately
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: window._lastMX || window.innerWidth/2, clientY: window._lastMY || window.innerHeight/2 }));
     };
 
     window.copyEffectConfig = function() {
