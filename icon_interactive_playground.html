@@ -201,8 +201,6 @@
                 <div class="effect-card active" data-effect="shadow" onclick="toggleEffect('shadow',this)"><div class="ef-icon">🌓</div><div class="ef-name">Dynamic Shadow</div><div class="ef-desc">Light-direction shadow</div></div>
                 <div class="effect-card active" data-effect="glow" onclick="toggleEffect('glow',this)"><div class="ef-icon">✨</div><div class="ef-name">Proximity Glow</div><div class="ef-desc">Cyan aura on hover</div></div>
                 <div class="effect-card active" data-effect="magnet" onclick="toggleEffect('magnet',this)"><div class="ef-icon">🧲</div><div class="ef-name">Magnetic Warp</div><div class="ef-desc">Pull sprites toward cursor</div></div>
-                <div class="effect-card active" data-effect="particle" onclick="toggleEffect('particle',this)"><div class="ef-icon">💫</div><div class="ef-name">Particle Aura</div><div class="ef-desc">Sparkle trail & aura</div></div>
-                <div class="effect-card active" data-effect="chroma" onclick="toggleEffect('chroma',this)"><div class="ef-icon">🌈</div><div class="ef-name">Chromatic Ab.</div><div class="ef-desc">RGB edge split</div></div>
                 <div class="effect-card active" data-effect="wobble" onclick="toggleEffect('wobble',this)"><div class="ef-icon">🌀</div><div class="ef-name">Wobble</div><div class="ef-desc">Subtle oscillation</div></div>
                 <div class="effect-card active" data-effect="colorshift" onclick="toggleEffect('colorshift',this)"><div class="ef-icon">🎨</div><div class="ef-name">Color Shift</div><div class="ef-desc">Hue from mouse speed</div></div>
                 <div class="effect-card active" data-effect="ripple" onclick="toggleEffect('ripple',this)"><div class="ef-icon">🌊</div><div class="ef-name">Ripple</div><div class="ef-desc">Click shockwave</div></div>
@@ -477,22 +475,26 @@
         let ripples = [];
         
         const PROXIMITY_RADIUS = 280;
+        let needsInteractionUpdate = false;
         
-        setInterval(() => { time += 0.016; }, 16);
-        
-        setInterval(() => {
-            const dx = Math.abs(mouseX - prevMX);
-            const dy = Math.abs(mouseY - prevMY);
-            mouseSpeed = Math.min(1, (dx + dy) / 100);
-            prevMX = mouseX; prevMY = mouseY;
-        }, 50);
+        // Use rAF-based time instead of setInterval
+        let lastFrameTime = performance.now();
 
         document.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
             window._lastMX = mouseX;
             window._lastMY = mouseY;
-            
+            needsInteractionUpdate = true;
+        });
+        
+        function updateInteractions() {
+            // Calculate mouse speed
+            const dx = Math.abs(mouseX - prevMX);
+            const dy = Math.abs(mouseY - prevMY);
+            mouseSpeed = Math.min(1, (dx + dy) / 80);
+            prevMX = mouseX; prevMY = mouseY;
+
             sprites.forEach(sprite => {
                 if(sprite.physicsState.isJumping) return;
                 
@@ -502,69 +504,65 @@
                 
                 const deltaX = mouseX - centerX;
                 const deltaY = mouseY - centerY;
-                const distance = Math.sqrt(deltaX**2 + deltaY**2);
+                const distance = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
                 
                 if (distance > PROXIMITY_RADIUS) {
-                    let neutral = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale(1.0)';
-                    let neutralF = 'drop-shadow(0px 20px 20px rgba(0,0,0,0.8))';
-                    if (effects.wobble) neutral += ' rotateZ(0deg)';
-                    sprite.canvas.style.transform = neutral;
-                    sprite.canvas.style.filter = neutralF;
+                    if (sprite._wasNear) {
+                        sprite.canvas.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)';
+                        sprite.canvas.style.filter = 'drop-shadow(0px 20px 20px rgba(0,0,0,0.8))';
+                        sprite._wasNear = false;
+                    }
                     return;
                 }
+                sprite._wasNear = true;
                 
                 const proximity = 1 - (distance / PROXIMITY_RADIUS);
                 const near = proximity > 0.5;
                 const veryNear = proximity > 0.8;
                 
-                let tx = '';
-                let tiltX = 0, tiltY = 0, scaleVal = 1.0, transX = 0, transY = 0, wobbleRot = 0, wobbleScale = 0;
+                let tiltX = 0, tiltY = 0, scaleVal = 1.0, transX = 0, transY = 0, wobbleRot = 0;
                 
                 if (effects.tilt) {
-                    tiltX = Math.max(-25, Math.min(25, (deltaY / 10))) * proximity;
-                    tiltY = Math.max(-25, Math.min(25, -(deltaX / 10))) * proximity;
+                    tiltX = (deltaY / 10) * proximity;
+                    tiltY = -(deltaX / 10) * proximity;
+                    tiltX = tiltX > 25 ? 25 : tiltX < -25 ? -25 : tiltX;
+                    tiltY = tiltY > 25 ? 25 : tiltY < -25 ? -25 : tiltY;
                 }
                 if (effects.wobble) {
-                    const wobPhase = Date.now() / 600 + (sprite.box.x + sprite.box.y) / 50;
+                    const wobPhase = time * 1.67 + (sprite.box.x + sprite.box.y) / 50;
                     wobbleRot = Math.sin(wobPhase) * proximity * 3;
-                    wobbleScale = Math.sin(wobPhase * 1.3) * proximity * 0.03;
+                    scaleVal += Math.sin(wobPhase * 1.3) * proximity * 0.03;
                 }
                 if (effects.magnet && near) {
-                    const pull = (proximity - 0.5) * 1.5;
-                    transX = deltaX * pull * 0.15;
-                    transY = deltaY * pull * 0.15;
+                    const pull = (proximity - 0.5) * 0.22;
+                    transX = deltaX * pull;
+                    transY = deltaY * pull;
                 }
-                scaleVal = 1.0 + (0.1 * proximity) + wobbleScale;
+                scaleVal += 0.1 * proximity;
                 
-                tx = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scaleVal}) translateX(${transX}px) translateY(${transY}px)`;
-                if (effects.wobble) tx += ` rotateZ(${wobbleRot}deg)`;
+                let tx = `perspective(800px) rotateX(${tiltX.toFixed(1)}deg) rotateY(${tiltY.toFixed(1)}deg) scale(${scaleVal.toFixed(3)}) translate(${transX.toFixed(1)}px,${transY.toFixed(1)}px)`;
+                if (effects.wobble) tx += ` rotateZ(${wobbleRot.toFixed(1)}deg)`;
                 
-                const safeDist = Math.max(distance, 1);
+                const safeDist = distance || 1;
                 let flt = '';
                 if (effects.shadow) {
                     const sX = (deltaX / safeDist) * -15 * proximity;
                     const sY = (deltaY / safeDist) * -15 * proximity;
-                    const blur = 6 + (14 * (1 - proximity));
-                    flt += `drop-shadow(${sX}px ${sY}px ${blur}px rgba(0,0,0,0.85))`;
+                    flt = `drop-shadow(${sX.toFixed(0)}px ${sY.toFixed(0)}px ${(6 + 14*(1-proximity)).toFixed(0)}px rgba(0,0,0,.85))`;
                 }
                 if (effects.glow) {
                     const glowInt = proximity * (0.5 + mouseSpeed * 0.5);
-                    flt += ` drop-shadow(0px 0px ${15 + glowInt * 30}px rgba(6,182,212,${glowInt}))`;
+                    flt += ` drop-shadow(0 0 ${(15+glowInt*30).toFixed(0)}px rgba(6,182,212,${glowInt.toFixed(2)}))`;
                 }
                 if (effects.colorshift && mouseSpeed > 0.1) {
-                    const hue = mouseSpeed * 60 + time * 10;
-                    flt += ` hue-rotate(${hue}deg)`;
+                    flt += ` hue-rotate(${(mouseSpeed*60+time*10).toFixed(0)}deg)`;
                 }
-                if (effects.chroma && veryNear) {
-                    const chromaStrength = (proximity - 0.8) * 4;
-                    flt += ` drop-shadow(${2 * chromaStrength}px 0px 2px rgba(255,0,0,${0.3 * chromaStrength})) drop-shadow(${-2 * chromaStrength}px 0px 2px rgba(0,0,255,${0.3 * chromaStrength}))`;
-                }
-                if (!flt) flt = 'drop-shadow(0px 20px 20px rgba(0,0,0,0.8))';
+                if (!flt) flt = 'drop-shadow(0px 20px 20px rgba(0,0,0,.8))';
                 
                 sprite.canvas.style.transform = tx;
                 sprite.canvas.style.filter = flt;
             });
-        });
+        }
         
         // Click = Physics Bump + Ripple Chain
         sprites.forEach(sprite => {
@@ -625,49 +623,62 @@
         // Real-time Render Loop - handles both video (animated) and image (static) sources
         sources.filter(s => s.isVideo).forEach(s => s.mediaEl.play());
         
-        function renderLoop() {
-            sources.forEach(src => {
-                if (!src.isVideo) return; // Static images don't need redraw
-                
-                const { ctx, masterCanvas, mediaEl, width, height, getDist } = src;
-                ctx.clearRect(0, 0, width, height);
-                ctx.drawImage(mediaEl, 0, 0, width, height);
-                const rFrame = ctx.getImageData(0, 0, width, height);
-                const d = rFrame.data;
-                
-                for (let i = 0; i < d.length; i += 4) {
-                    const dist = getDist(d[i], d[i+1], d[i+2]);
-                    if (dist <= CORE_TOLERANCE) { d[i+3] = 0; } 
-                    else if (dist <= CORE_TOLERANCE + FEATHER) {
-                        const ratio = (dist - CORE_TOLERANCE) / FEATHER;
-                        const smooth = ratio * ratio * ratio * (ratio * (ratio * 6 - 15) + 10);
-                        d[i+3] = Math.round(smooth * 255);
-                    }
-                }
-                ctx.putImageData(rFrame, 0, 0);
-            });
-            
+        // For static images, render sprites once immediately
+        const hasVideo = sources.some(s => s.isVideo);
+        if (!hasVideo) {
             sprites.forEach(sprite => {
                 const src = sprite.source;
                 sprite.ctx.clearRect(0, 0, sprite.box.w, sprite.box.h);
                 sprite.ctx.drawImage(src.masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
             });
+        }
+        
+        function renderLoop() {
+            const now = performance.now();
+            const dt = (now - lastFrameTime) / 1000;
+            lastFrameTime = now;
+            time += dt;
+
+            // Only process video sources each frame
+            if (hasVideo) {
+                sources.forEach(src => {
+                    if (!src.isVideo) return;
+                    const { ctx, masterCanvas, mediaEl, width, height, getDist } = src;
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.drawImage(mediaEl, 0, 0, width, height);
+                    const rFrame = ctx.getImageData(0, 0, width, height);
+                    const d = rFrame.data;
+                    for (let i = 0; i < d.length; i += 4) {
+                        const dist = getDist(d[i], d[i+1], d[i+2]);
+                        if (dist <= CORE_TOLERANCE) { d[i+3] = 0; } 
+                        else if (dist <= CORE_TOLERANCE + FEATHER) {
+                            const ratio = (dist - CORE_TOLERANCE) / FEATHER;
+                            const smooth = ratio * ratio * ratio * (ratio * (ratio * 6 - 15) + 10);
+                            d[i+3] = Math.round(smooth * 255);
+                        }
+                    }
+                    ctx.putImageData(rFrame, 0, 0);
+                });
+                
+                sprites.forEach(sprite => {
+                    if (!sprite.source.isVideo) return;
+                    sprite.ctx.clearRect(0, 0, sprite.box.w, sprite.box.h);
+                    sprite.ctx.drawImage(sprite.source.masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
+                });
+            }
             
-            // Render ripples
-            if (effects.ripple) {
+            // Update interactions when mouse moved OR wobble is active (time-based)
+            if (needsInteractionUpdate || effects.wobble) {
+                needsInteractionUpdate = false;
+                updateInteractions();
+            }
+            
+            // Render ripples (lightweight)
+            if (effects.ripple && ripples.length > 0) {
                 ripples = ripples.filter(r => r.life > 0);
                 ripples.forEach(r => {
                     r.radius += 6;
                     r.life -= 0.02;
-                    sprites.forEach(sprite => {
-                        const sr = sprite.wrapper.getBoundingClientRect();
-                        const sc = { x: sr.left+sr.width/2, y: sr.top+sr.height/2 };
-                        const dist = Math.hypot(sc.x - r.x, sc.y - r.y);
-                        if (Math.abs(dist - r.radius) < 15 && r.life > 0.3) {
-                            const pulse = 1 + (1 - Math.abs(dist - r.radius) / 15) * 0.3;
-                            sprite.canvas.style.filter = `drop-shadow(0px 0px ${25 * pulse}px rgba(6,182,212,${0.5 * pulse}))`;
-                        }
-                    });
                 });
             }
             
@@ -677,72 +688,10 @@
     }
 
     // === GLOBAL EFFECT FUNCTIONS ===
-    // Particle system
+    // Particle system removed for performance
     const pCanvas = document.getElementById('particleCanvas');
-    const pCtx = pCanvas.getContext('2d');
-    let particles = [];
-    let particleEnabled = true;
-    
-    function resizeParticleCanvas() {
-        pCanvas.width = window.innerWidth;
-        pCanvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeParticleCanvas);
-    resizeParticleCanvas();
-    
-    document.addEventListener('mousemove', (e) => {
-        if (!particleEnabled) return;
-        for (let i = 0; i < 2; i++) {
-            particles.push({
-                x: e.clientX + (Math.random()-0.5)*10,
-                y: e.clientY + (Math.random()-0.5)*10,
-                vx: (Math.random()-0.5) * 2,
-                vy: -Math.random() * 3,
-                life: 1,
-                decay: 0.008 + Math.random() * 0.01,
-                size: 1.5 + Math.random() * 3,
-                hue: 180 + Math.random() * 60
-            });
-        }
-    });
-    
-    function renderParticles() {
-        requestAnimationFrame(renderParticles);
-        if (!particleEnabled) { pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height); return; }
-        
-        // Add sprite aura particles
-        if (typeof sprites !== 'undefined' && sprites.length > 0) {
-            sprites.forEach(sprite => {
-                const rect = sprite.wrapper.getBoundingClientRect();
-                if (Math.random() > 0.7) {
-                    particles.push({
-                        x: rect.left + Math.random() * rect.width,
-                        y: rect.top + Math.random() * rect.height,
-                        vx: (Math.random()-0.5) * 1.5,
-                        vy: (Math.random()-0.5) * 1.5 - 0.5,
-                        life: 1,
-                        decay: 0.01 + Math.random() * 0.015,
-                        size: 1 + Math.random() * 2.5,
-                        hue: 200 + Math.random() * 55
-                    });
-                }
-            });
-        }
-        
-        pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
-        particles = particles.filter(p => p.life > 0);
-        particles.forEach(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life -= p.decay;
-            p.vy += 0.05;
-            pCtx.beginPath();
-            pCtx.arc(p.x, p.y, p.size * (0.3 + p.life * 0.7), 0, Math.PI * 2);
-            pCtx.fillStyle = `hsla(${p.hue}, 80%, 70%, ${p.life * 0.6})`;
-            pCtx.fill();
-        });
-    }
-    renderParticles();
+    pCanvas.style.display = 'none';
+    let particleEnabled = false;
 
     window.toggleEffect = function(name, el) {
         // Toggle active state visually
@@ -807,7 +756,8 @@
         canvas.width = sprite.box.w;
         canvas.height = sprite.box.h;
         const c = canvas.getContext('2d');
-        c.drawImage(sprite.canvas, 0, 0);
+        // Draw from masterCanvas source directly for reliability
+        c.drawImage(sprite.source.masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
         const url = canvas.toDataURL('image/png');
         const a = document.createElement('a');
         a.href = url;
@@ -815,7 +765,7 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        statusDiv.textContent = `✅ Sprite ${idx+1} PNG snapshot saved!`;
+        statusDiv.textContent = `✅ Sprite ${idx+1} PNG downloaded!`;
     };
 
     window.exportSpriteWebM = function(idx) {
@@ -823,13 +773,22 @@
         if (!sprite) return;
         const fps = parseFloat(document.getElementById('inp-fps').value);
         const dur = parseFloat(document.getElementById('inp-dur').value);
-        const loop = document.getElementById('chk-loop').checked;
         const totalFrames = Math.max(1, Math.round(fps * dur));
         const frameDelay = 1000 / fps;
         
-        const stream = sprite.canvas.captureStream(fps);
+        // Create a dedicated capture canvas
+        const capCanvas = document.createElement('canvas');
+        capCanvas.width = sprite.box.w;
+        capCanvas.height = sprite.box.h;
+        const capCtx = capCanvas.getContext('2d');
+        
+        const stream = capCanvas.captureStream(fps);
         const chunks = [];
-        const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+        let mimeType = 'video/webm;codecs=vp9';
+        if (typeof MediaRecorder !== 'undefined' && !MediaRecorder.isTypeSupported(mimeType)) {
+            mimeType = 'video/webm';
+        }
+        const rec = new MediaRecorder(stream, { mimeType });
         rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
         rec.onstop = () => {
             const blob = new Blob(chunks, { type: 'video/webm' });
@@ -841,13 +800,17 @@
             a.click();
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 1000);
-            statusDiv.textContent = `✅ Sprite ${idx+1} exported (${(blob.size/1024).toFixed(1)} KB)`;
+            statusDiv.textContent = `✅ Sprite ${idx+1} WebM exported (${(blob.size/1024).toFixed(1)} KB)`;
         };
         
+        statusDiv.textContent = `⏳ Recording sprite ${idx+1}...`;
         let frame = 0;
         rec.start();
         const captureFrame = () => {
             if (frame < totalFrames) {
+                // Re-draw from source each frame (handles video sources with animation)
+                capCtx.clearRect(0, 0, capCanvas.width, capCanvas.height);
+                capCtx.drawImage(sprite.source.masterCanvas, sprite.box.x, sprite.box.y, sprite.box.w, sprite.box.h, 0, 0, sprite.box.w, sprite.box.h);
                 frame++;
                 setTimeout(captureFrame, frameDelay);
             } else {
