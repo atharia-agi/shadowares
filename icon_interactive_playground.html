@@ -224,12 +224,8 @@
     let sprites = [];
     let sources = []; // Each source: { file, mediaEl, isVideo, masterCanvas, ctx, width, height, getDist }
 
-    // FIX: Pastikan browse selalu triggered
-    uploadLabel.addEventListener('click', (e) => {
-        if (e.target.tagName !== 'INPUT') {
-            fileInput.click();
-        }
-    });
+    // Label already triggers file input natively (input is inside label)
+    // No manual click handler needed
 
     // Wire sliders — auto reprocess on change
     ['tolerance','feather','fps','dur','minpx','merge'].forEach(id => {
