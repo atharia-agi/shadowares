@@ -122,16 +122,6 @@
             transform-style: preserve-3d;
         }
         
-        /* Particle overlay canvas */
-        #particleCanvas{position:fixed;inset:0;pointer-events:none;z-index:2}
-
-        .ambient-light {
-            position: fixed; top: 50%; left: 50%; width: 600px; height: 600px;
-            background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
-            transform: translate(-50%, -50%); pointer-events: none; z-index: 1; mix-blend-mode: screen;
-            transition: 0.1s ease-out;
-        }
-
         /* Config code block */
         .config-block{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px;font-family:monospace;font-size:.68rem;color:#9ca3af;white-space:pre-wrap;max-height:120px;overflow-y:auto;display:none}
         .config-block.show{display:block}
@@ -140,10 +130,6 @@
     </style>
 </head>
 <body>
-
-<div class="ambient-light" id="cursor-light"></div>
-
-<canvas id="particleCanvas"></canvas>
 
 <div class="container">
     <div class="header-card">
@@ -199,10 +185,8 @@
             <div class="effects-grid">
                 <div class="effect-card active" data-effect="tilt" onclick="toggleEffect('tilt',this)"><div class="ef-icon">🔄</div><div class="ef-name">3D Tilt</div><div class="ef-desc">Rotate toward cursor</div></div>
                 <div class="effect-card active" data-effect="shadow" onclick="toggleEffect('shadow',this)"><div class="ef-icon">🌓</div><div class="ef-name">Dynamic Shadow</div><div class="ef-desc">Light-direction shadow</div></div>
-                <div class="effect-card active" data-effect="glow" onclick="toggleEffect('glow',this)"><div class="ef-icon">✨</div><div class="ef-name">Proximity Glow</div><div class="ef-desc">Cyan aura on hover</div></div>
                 <div class="effect-card active" data-effect="magnet" onclick="toggleEffect('magnet',this)"><div class="ef-icon">🧲</div><div class="ef-name">Magnetic Warp</div><div class="ef-desc">Pull sprites toward cursor</div></div>
                 <div class="effect-card active" data-effect="wobble" onclick="toggleEffect('wobble',this)"><div class="ef-icon">🌀</div><div class="ef-name">Wobble</div><div class="ef-desc">Subtle oscillation</div></div>
-                <div class="effect-card active" data-effect="colorshift" onclick="toggleEffect('colorshift',this)"><div class="ef-icon">🎨</div><div class="ef-name">Color Shift</div><div class="ef-desc">Hue from mouse speed</div></div>
                 <div class="effect-card active" data-effect="ripple" onclick="toggleEffect('ripple',this)"><div class="ef-icon">🌊</div><div class="ef-name">Ripple</div><div class="ef-desc">Click shockwave</div></div>
             </div>
             <div class="config-block" id="configBlock">// Click "Copy Config" to export effect configuration</div>
@@ -218,7 +202,6 @@
     const btnProcess = document.getElementById('btn-process');
     const statusDiv = document.getElementById('status');
     const resultsDiv = document.getElementById('results');
-    const cursorLight = document.getElementById('cursor-light');
     const exportBar = document.getElementById('export-bar');
     
     let sprites = [];
@@ -254,12 +237,6 @@
         document.getElementById('export-settings').style.display = 'block';
         statusDiv.textContent = `Memuat ${files.length} file...`;
         btnProcess.style.display = 'inline-block';
-    });
-
-    // Cursor Tracking for Global Ambient Light
-    document.addEventListener('mousemove', (e) => {
-        cursorLight.style.left = e.clientX + 'px';
-        cursorLight.style.top = e.clientY + 'px';
     });
 
     btnProcess.addEventListener('click', async () => {
@@ -546,13 +523,6 @@
                     const sY = (deltaY / safeDist) * -15 * proximity;
                     flt = `drop-shadow(${sX.toFixed(0)}px ${sY.toFixed(0)}px ${(6 + 14*(1-proximity)).toFixed(0)}px rgba(0,0,0,.85))`;
                 }
-                if (effects.glow) {
-                    const glowInt = proximity * (0.5 + mouseSpeed * 0.5);
-                    flt += ` drop-shadow(0 0 ${(15+glowInt*30).toFixed(0)}px rgba(6,182,212,${glowInt.toFixed(2)}))`;
-                }
-                if (effects.colorshift && mouseSpeed > 0.1) {
-                    flt += ` hue-rotate(${(mouseSpeed*60+time*10).toFixed(0)}deg)`;
-                }
                 if (!flt) flt = 'drop-shadow(0px 20px 20px rgba(0,0,0,.8))';
                 
                 sprite.canvas.style.transform = tx;
@@ -569,7 +539,7 @@
                 sprite.canvas.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.4s ease';
                 const randomRot = (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random()*20);
                 sprite.canvas.style.transform = `perspective(800px) translateY(-80px) scale(1.4) rotateZ(${randomRot}deg)`;
-                sprite.canvas.style.filter = `drop-shadow(0px 80px 30px rgba(0, 0, 0, 0.5)) drop-shadow(0px 0px 40px rgba(6, 182, 212, 1))`;
+                sprite.canvas.style.filter = `drop-shadow(0px 80px 30px rgba(0,0,0,0.5))`;
                 
                 if (effects.ripple) {
                     const rect = sprite.wrapper.getBoundingClientRect();
@@ -604,7 +574,7 @@
             s.physicsState.isJumping = true;
             s.canvas.style.transition = 'transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.35s ease';
             s.canvas.style.transform = `perspective(800px) translateY(-40px) scale(1.15) rotateZ(${(Math.random()-0.5)*20}deg)`;
-            s.canvas.style.filter = 'drop-shadow(0px 40px 20px rgba(0,0,0,0.4)) drop-shadow(0px 0px 30px rgba(6,182,212,0.6))';
+            s.canvas.style.filter = 'drop-shadow(0px 40px 20px rgba(0,0,0,0.4))';
             setTimeout(() => {
                 s.canvas.style.transition = 'transform 0.25s cubic-bezier(0.6, -0.28, 0.735, 0.045), filter 0.25s ease';
                 s.canvas.style.transform = 'perspective(800px) translateY(5px) scale(0.95) rotateZ(0deg)';
@@ -684,10 +654,6 @@
     }
 
     // === GLOBAL EFFECT FUNCTIONS ===
-    // Particle system removed for performance
-    const pCanvas = document.getElementById('particleCanvas');
-    pCanvas.style.display = 'none';
-    let particleEnabled = false;
 
     window.toggleEffect = function(name, el) {
         // Toggle active state visually
