@@ -1,0 +1,371 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎬 2.5D Animation Workflow — Shadow Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0b14;--surface:#15172a;--surface-2:#1c1f36;--border:#2a2d4a;--text:#f1f3f7;--text-muted:#94a0b8;--primary:#7c4dff;--accent:#00e5ff;--success:#34d399;--warning:#f59e0b;--error:#ef4444;--gradient:linear-gradient(135deg,#7c4dff,#9c6bff,#00e5ff)}
+html{font-size:15px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+.topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:100}
+.topbar h1{font-size:1rem;font-weight:700;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;flex:1}
+.topbar .back-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);font-size:.8rem;cursor:pointer;text-decoration:none;transition:all .2s}
+.topbar .back-btn:hover{border-color:var(--primary);color:var(--text)}
+
+.container{max-width:1400px;margin:0 auto;padding:24px}
+
+/* Steps indicator */
+.steps{display:flex;gap:4px;margin-bottom:24px;flex-wrap:wrap}
+.step{padding:10px 18px;border-radius:8px;background:var(--surface);border:1px solid var(--border);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;color:var(--text-muted)}
+.step:hover{border-color:var(--primary);color:var(--text)}
+.step.active{background:rgba(124,77,255,.15);border-color:var(--primary);color:var(--primary)}
+.step.done{background:rgba(52,211,153,.1);border-color:var(--success);color:var(--success)}
+.step .num{width:22px;height:22px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700}
+.step.active .num{background:var(--primary);color:#fff}
+.step.done .num{background:var(--success);color:#fff}
+
+/* Panels */
+.panel{display:none;animation:fadeIn .3s}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--border);border-radius:16px;padding:60px 40px;text-align:center;cursor:pointer;transition:all .3s;background:var(--surface)}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--primary);background:rgba(124,77,255,.05)}
+.upload-zone .icon{font-size:3rem;margin-bottom:12px}
+.upload-zone h3{font-size:1.1rem;margin-bottom:6px}
+.upload-zone p{color:var(--text-muted);font-size:.85rem}
+.upload-zone .formats{margin-top:12px;font-size:.75rem;color:var(--text-muted)}
+
+/* Preview area */
+.preview-area{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px;position:relative}
+.preview-area video,.preview-area img{max-width:100%;max-height:400px;display:block;margin:0 auto;border-radius:8px}
+.preview-area canvas{max-width:100%;display:block;margin:0 auto;border-radius:8px}
+
+/* Controls */
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;align-items:center}
+.ctrl-group{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px}
+.ctrl-group label{font-size:.75rem;color:var(--text-muted);white-space:nowrap}
+.ctrl-group input[type=range]{width:100px;accent-color:var(--primary)}
+.ctrl-group input[type=color]{width:28px;height:28px;border:none;border-radius:4px;cursor:pointer;background:none}
+.ctrl-group input[type=number]{width:60px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 6px;font-size:.78rem}
+.ctrl-group select{background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 8px;font-size:.78rem}
+
+.btn{padding:8px 16px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#6c3dee}
+.btn-accent{background:var(--accent);color:#000;font-weight:700}.btn-accent:hover{filter:brightness(1.1)}
+.btn-success{background:var(--success);color:#000}.btn-success:hover{filter:brightness(1.1)}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--primary)}
+.btn-danger{background:var(--error);color:#fff}.btn-danger:hover{filter:brightness(1.1)}
+.btn-sm{padding:5px 10px;font-size:.75rem}
+
+/* Frame grid */
+.frame-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:16px;max-height:500px;overflow-y:auto;padding:4px}
+.frame-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
+.frame-card:hover{border-color:var(--primary);transform:scale(1.02)}
+.frame-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,229,255,.3)}
+.frame-card canvas,.frame-card img{width:100%;height:100px;object-fit:contain;display:block;background:repeating-conic-gradient(#1a1a2e 0% 25%,#252540 0% 50%) 0 0/16px 16px}
+.frame-card .frame-info{padding:6px 8px;font-size:.7rem;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center}
+.frame-card .frame-actions{position:absolute;top:4px;right:4px;display:flex;gap:2px;opacity:0;transition:opacity .2s}
+.frame-card:hover .frame-actions{opacity:1}
+.frame-card .frame-actions button{width:22px;height:22px;border-radius:4px;border:none;background:rgba(0,0,0,.7);color:#fff;font-size:.65rem;cursor:pointer}
+
+/* BG removal settings */
+.bg-settings{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px}
+.bg-settings h3{font-size:.9rem;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.method-tabs{display:flex;gap:4px;margin-bottom:12px}
+.method-tab{padding:8px 14px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text-muted);font-size:.78rem;cursor:pointer;transition:all .2s;font-family:inherit}
+.method-tab:hover{border-color:var(--primary)}
+.method-tab.active{background:rgba(124,77,255,.15);border-color:var(--primary);color:var(--primary)}
+
+/* Export section */
+.export-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:16px}
+.export-section h3{font-size:.9rem;margin-bottom:12px}
+.export-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.export-opt{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s}
+.export-opt:hover{border-color:var(--primary)}
+.export-opt.active{border-color:var(--accent);background:rgba(0,229,255,.05)}
+.export-opt h4{font-size:.85rem;margin-bottom:4px}
+.export-opt p{font-size:.72rem;color:var(--text-muted)}
+
+/* CSS output */
+.css-output{background:#0c0e18;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Fira Code',monospace;font-size:.72rem;color:#a0a8c0;white-space:pre-wrap;overflow-x:auto;max-height:300px;overflow-y:auto;margin-top:12px;position:relative}
+.css-output .copy-btn{position:absolute;top:8px;right:8px;padding:4px 10px;border-radius:4px;background:var(--primary);color:#fff;border:none;font-size:.7rem;cursor:pointer}
+
+/* Progress */
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:var(--gradient);border-radius:3px;transition:width .3s}
+.progress-text{font-size:.72rem;color:var(--accent);margin-top:4px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:12px 20px;font-size:.82rem;z-index:100000;opacity:0;transform:translateY(20px);transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* Checkerboard bg for transparency */
+.checker-bg{background:repeating-conic-gradient(#1a1a2e 0% 25%,#252540 0% 50%) 0 0/16px 16px}
+
+/* Two column layout */
+.two-col{display:grid;grid-template-columns:1fr 340px;gap:16px;margin-top:16px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+/* API key input */
+.api-key-section{background:rgba(124,77,255,.05);border:1px solid rgba(124,77,255,.2);border-radius:8px;padding:12px;margin-bottom:12px}
+.api-key-section input{width:100%;padding:8px 12px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:.8rem;font-family:monospace}
+.api-key-section .hint{font-size:.7rem;color:var(--text-muted);margin-top:4px}
+
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:10px;font-size:.7rem;font-weight:600}
+.status-badge.online{background:rgba(52,211,153,.15);color:var(--success)}
+.status-badge.offline{background:rgba(239,68,68,.15);color:var(--error)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="back-btn">← Back</a>
+  <h1>🎬 2.5D Animation Workflow — All-in-One Asset Pipeline</h1>
+  <span class="status-badge" id="aiStatus">⚡ Checking...</span>
+</div>
+
+<div class="container">
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" onclick="WF.goStep(1)"><span class="num">1</span> Import</div>
+    <div class="step" onclick="WF.goStep(2)"><span class="num">2</span> BG Removal</div>
+    <div class="step" onclick="WF.goStep(3)"><span class="num">3</span> Preview & Edit</div>
+    <div class="step" onclick="WF.goStep(4)"><span class="num">4</span> Export</div>
+  </div>
+
+  <!-- STEP 1: Import -->
+  <div class="panel active" id="panel1">
+    <div class="upload-zone" id="uploadZone">
+      <div class="icon">📁</div>
+      <h3>Drop your video or image here</h3>
+      <p>Or click to browse files</p>
+      <div class="formats">Supported: WebM, MP4, GIF, PNG, JPG, SVG — max 100MB</div>
+    </div>
+    <input type="file" id="fileInput" accept="video/*,image/*,.webm,.mp4,.gif,.png,.jpg,.jpeg,.svg" style="display:none" multiple>
+
+    <div id="importPreview" style="display:none">
+      <div class="preview-area">
+        <video id="srcVideo" controls muted loop style="display:none"></video>
+        <img id="srcImage" style="display:none">
+      </div>
+      <div class="controls">
+        <div class="ctrl-group">
+          <label>Source:</label>
+          <span id="srcInfo" style="font-size:.78rem;color:var(--accent)">—</span>
+        </div>
+        <div class="ctrl-group" id="fpsGroup" style="display:none">
+          <label>Extract FPS:</label>
+          <input type="number" id="extractFps" value="12" min="1" max="60">
+        </div>
+        <div class="ctrl-group" id="rangeGroup" style="display:none">
+          <label>Start:</label>
+          <input type="number" id="startTime" value="0" min="0" step="0.1" style="width:50px">s
+          <label>End:</label>
+          <input type="number" id="endTime" value="3" min="0" step="0.1" style="width:50px">s
+        </div>
+        <button class="btn btn-primary" onclick="WF.extractFrames()">🎞️ Extract Frames</button>
+        <button class="btn btn-accent" onclick="WF.goStep(2)">Next →</button>
+      </div>
+      <div id="extractProgress" style="display:none;margin-top:12px">
+        <div class="progress-bar"><div class="progress-fill" id="extractFill" style="width:0%"></div></div>
+        <div class="progress-text" id="extractStatus">Extracting frames...</div>
+      </div>
+      <div class="frame-grid" id="extractedFrames"></div>
+    </div>
+  </div>
+
+  <!-- STEP 2: BG Removal -->
+  <div class="panel" id="panel2">
+    <div class="two-col">
+      <div>
+        <div class="preview-area checker-bg">
+          <canvas id="bgCanvas" style="max-height:400px"></canvas>
+        </div>
+        <div class="controls">
+          <button class="btn btn-primary" onclick="WF.removeBgAll()">🪄 Remove BG All Frames</button>
+          <button class="btn btn-secondary" onclick="WF.removeBgSelected()">Remove Selected</button>
+          <button class="btn btn-secondary" onclick="WF.undoBg()">↩️ Undo</button>
+        </div>
+        <div id="bgProgress" style="display:none;margin-top:8px">
+          <div class="progress-bar"><div class="progress-fill" id="bgFill" style="width:0%"></div></div>
+          <div class="progress-text" id="bgStatus">Processing...</div>
+        </div>
+      </div>
+      <div>
+        <div class="bg-settings">
+          <h3>🎯 Background Removal Method</h3>
+          <div class="method-tabs">
+            <button class="method-tab active" onclick="WF.setMethod('chroma',this)">🟢 Chroma Key</button>
+            <button class="method-tab" onclick="WF.setMethod('ai',this)">🤖 AI (NIM)</button>
+            <button class="method-tab" onclick="WF.setMethod('manual',this)">✏️ Manual</button>
+          </div>
+
+          <!-- Chroma Key Settings -->
+          <div id="chromaSettings">
+            <div class="ctrl-group" style="width:100%;margin-bottom:8px">
+              <label>Key Color:</label>
+              <input type="color" id="chromaColor" value="#00b140">
+              <button class="btn btn-sm btn-secondary" onclick="WF.pickColor()">🎯 Pick from frame</button>
+            </div>
+            <div class="ctrl-group" style="width:100%;margin-bottom:8px">
+              <label>Tolerance:</label>
+              <input type="range" id="chromaTolerance" min="1" max="150" value="50" oninput="WF.previewBg()">
+              <span id="tolVal" style="font-size:.75rem;min-width:30px">50</span>
+            </div>
+            <div class="ctrl-group" style="width:100%;margin-bottom:8px">
+              <label>Edge Softness:</label>
+              <input type="range" id="chromaSoftness" min="0" max="30" value="5" oninput="WF.previewBg()">
+              <span id="softVal" style="font-size:.75rem;min-width:30px">5</span>
+            </div>
+            <div class="ctrl-group" style="width:100%">
+              <label>Spill Suppress:</label>
+              <input type="range" id="chromaSpill" min="0" max="100" value="30" oninput="WF.previewBg()">
+              <span id="spillVal" style="font-size:.75rem;min-width:30px">30</span>
+            </div>
+          </div>
+
+          <!-- AI Settings -->
+          <div id="aiSettings" style="display:none">
+            <div class="api-key-section">
+              <label style="font-size:.78rem;font-weight:600;display:block;margin-bottom:4px">NVIDIA NIM API Key:</label>
+              <input type="password" id="nvApiKey" placeholder="nvapi-..." oninput="WF.checkAI()">
+              <div class="hint">Get free key at <a href="https://build.nvidia.com" target="_blank" style="color:var(--accent)">build.nvidia.com</a> — 1000 free credits/month</div>
+            </div>
+            <div class="ctrl-group" style="width:100%;margin-bottom:8px">
+              <label>Model:</label>
+              <select id="aiModel">
+                <option value="phi-4-multimodal">Phi-4 Multimodal (Free)</option>
+                <option value="nv-grounding-dino">Grounding DINO (Detection)</option>
+              </select>
+            </div>
+            <div class="ctrl-group" style="width:100%">
+              <label>Subject prompt:</label>
+              <input type="text" id="aiPrompt" value="character, mascot" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 8px;font-size:.78rem">
+            </div>
+            <p style="font-size:.72rem;color:var(--text-muted);margin-top:8px">💡 AI detects subject → creates mask → removes background. Fallback: chroma key if API unavailable.</p>
+          </div>
+
+          <!-- Manual Settings -->
+          <div id="manualSettings" style="display:none">
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:8px">Click on the preview to mark background areas. Use brush to paint mask.</p>
+            <div class="ctrl-group" style="width:100%;margin-bottom:8px">
+              <label>Brush Size:</label>
+              <input type="range" id="brushSize" min="5" max="100" value="20">
+            </div>
+            <div class="ctrl-group" style="width:100%">
+              <label>Mode:</label>
+              <button class="btn btn-sm btn-danger" id="eraseModeBtn" onclick="WF.toggleEraseMode()">🗑️ Erase BG</button>
+              <button class="btn btn-sm btn-success" onclick="WF.toggleRestoreMode()">✅ Restore</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Frame selector for BG step -->
+        <div style="margin-top:12px;max-height:200px;overflow-y:auto">
+          <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:6px">Frames (<span id="bgFrameCount">0</span>):</div>
+          <div class="frame-grid" id="bgFrameGrid" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr));max-height:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Preview & Edit -->
+  <div class="panel" id="panel3">
+    <div class="preview-area checker-bg" style="min-height:300px">
+      <canvas id="previewCanvas"></canvas>
+    </div>
+    <div class="controls">
+      <button class="btn btn-secondary" onclick="WF.playPreview()">▶️ Play</button>
+      <button class="btn btn-secondary" onclick="WF.pausePreview()">⏸️ Pause</button>
+      <div class="ctrl-group">
+        <label>Speed:</label>
+        <input type="range" id="playSpeed" min="1" max="60" value="12">
+        <span id="speedVal">12 fps</span>
+      </div>
+      <div class="ctrl-group">
+        <label>Scale:</label>
+        <select id="exportScale">
+          <option value="1">1x (Original)</option>
+          <option value="0.5">0.5x</option>
+          <option value="2">2x</option>
+        </select>
+      </div>
+      <button class="btn btn-accent" onclick="WF.goStep(4)">Next → Export</button>
+    </div>
+    <div class="frame-grid" id="previewFrameGrid" style="margin-top:16px"></div>
+  </div>
+
+  <!-- STEP 4: Export -->
+  <div class="panel" id="panel4">
+    <div class="export-section">
+      <h3>📦 Export Options</h3>
+      <div class="export-options">
+        <div class="export-opt active" onclick="WF.setExport('webm',this)">
+          <h4>🎬 WebM (Transparent)</h4>
+          <p>VP9 codec, alpha channel, perfect for web overlays</p>
+        </div>
+        <div class="export-opt" onclick="WF.setExport('frames',this)">
+          <h4>🖼️ PNG Frames</h4>
+          <p>Individual transparent PNGs, download as ZIP</p>
+        </div>
+        <div class="export-opt" onclick="WF.setExport('sprite',this)">
+          <h4>📊 Sprite Sheet</h4>
+          <p>Single PNG with all frames + JSON metadata</p>
+        </div>
+        <div class="export-opt" onclick="WF.setExport('css',this)">
+          <h4>🎨 CSS Animation</h4>
+          <p>Ready-to-paste CSS keyframes + HTML snippet</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="ctrl-group">
+          <label>FPS:</label>
+          <input type="number" id="exportFps" value="12" min="1" max="60">
+        </div>
+        <div class="ctrl-group">
+          <label>Quality:</label>
+          <select id="exportQuality">
+            <option value="high">High (larger file)</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low (smaller file)</option>
+          </select>
+        </div>
+        <button class="btn btn-accent" onclick="WF.exportAll()">📦 Export All</button>
+        <button class="btn btn-success" onclick="WF.downloadSelected()">💾 Download Selected</button>
+        <button class="btn btn-primary" onclick="WF.downloadAll()">🗜️ Download All (ZIP)</button>
+      </div>
+
+      <div id="exportProgress" style="display:none;margin-top:12px">
+        <div class="progress-bar"><div class="progress-fill" id="exportFill" style="width:0%"></div></div>
+        <div class="progress-text" id="exportStatus">Exporting...</div>
+      </div>
+    </div>
+
+    <!-- CSS Output for coding agent -->
+    <div class="export-section" style="margin-top:16px">
+      <h3>🎨 CSS Snippet — Copy & Paste to your coding agent</h3>
+      <div class="css-output" id="cssOutput">
+        <button class="copy-btn" onclick="WF.copyCss()">📋 Copy</button>
+        <span style="color:var(--text-muted)">/* Export first to generate CSS */</span>
+      </div>
+    </div>
+
+    <!-- Download grid -->
+    <div style="margin-top:16px">
+      <h3 style="font-size:.9rem;margin-bottom:12px">📥 Individual Downloads</h3>
+      <div class="frame-grid" id="downloadGrid"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="animation-workflow-engine.js"></script>
+</body>
+</html>

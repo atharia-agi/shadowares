@@ -193,7 +193,15 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
     </div>
     <div class="nav-section">
       <div class="nav-section-title">🚀 Animation</div>
-      <div class="nav-item" data-href="icon_exporter_animated.html"><span class="icon">🎞️</span><span class="label">Anim. Icon Exporter</span><span class="badge" style="background:var(--accent);color:#000">NEW</span></div>
+      <div class="nav-item" data-href="2.5d_animation_workflow.html"><span class="icon">🎬</span><span class="label">Animation Workflow</span><span class="badge" style="background:var(--accent);color:#000">NEW</span></div>
+      <div class="nav-item" data-href="icon_exporter_animated.html"><span class="icon">🎞️</span><span class="label">Anim. Icon Exporter</span></div>
+      <div class="nav-item" data-href="2.5d_playground.html"><span class="icon">🎮</span><span class="label">2.5D Playground</span></div>
+      <div class="nav-item" data-href="icon_interactive_playground.html"><span class="icon">✨</span><span class="label">2.5D Interactive</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">🛠️ Tools</div>
+      <div class="nav-item" data-href="photo_editor.html"><span class="icon">📷</span><span class="label">Photo Editor</span></div>
+      <div class="nav-item" data-href="icon_designer.html"><span class="icon">⭐</span><span class="label">Icon Designer</span></div>
     </div>
   </nav>
 </aside>
@@ -255,6 +263,9 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
       </div>
       <div class="qcard" onclick="dash.openTool('icon_exporter_animated.html')">
         <span class="icon">🎞️</span><h3>Anim. Icons</h3><p>Animate & export GIF/WebM<span style="color:var(--accent);font-size:.7rem"> NEW</span></p>
+      </div>
+      <div class="qcard" onclick="dash.openTool('2.5d_animation_workflow.html')">
+        <span class="icon">🎬</span><h3>Animation Workflow</h3><p>Video → BG Remove → WebM<span style="color:var(--accent);font-size:.7rem"> NEW</span></p>
       </div>
     </div>
 
@@ -325,7 +336,10 @@ body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display
         <div class="info"><h3>Sprite Mapper v5</h3><p>Flood fill extraction, grid slicing, sprite sheet packing, multi-format export</p><div class="tags"><span class="tag">Game Dev</span><span class="tag">Export PNG/JSON/CSS</span></div></div>
       </div>
 
-      <!-- Animation -->
+      <div class="tool-card" data-cat="animation" onclick="dash.openTool('2.5d_animation_workflow.html')" title="All-in-one: Import video/image → BG removal (AI/Chroma) → Export transparent WebM → Copy CSS">
+        <div class="preview" style="background:linear-gradient(135deg,#7c4dff22,#00e5ff44,#34d39922)">🎬</div>
+        <div class="info"><h3>2.5D Animation Workflow</h3><p>Import WebM/MP4 → AI/Chroma BG removal → Export transparent WebM + CSS snippet</p><div class="tags"><span class="tag">Video</span><span class="tag">BG Remove</span><span class="tag">WebM Export</span></div></div>
+      </div>
       <div class="tool-card" data-cat="animation" onclick="dash.openTool('icon_exporter_animated.html')" title="Animasi pixel art: draw frame by frame, export GIF/WebM/CSS keyframes">
         <div class="preview" style="background:linear-gradient(135deg,#ff6b8122,#f59e0b44)">🎬</div>
         <div class="info"><h3>Anim. Icon Exporter</h3><p>Pixel-perfect animated icons — draw, animate, export GIF/WebM/Sprite Sheet/CSS</p><div class="tags"><span class="tag">Pixel Art</span><span class="tag">GIF/WebM</span></div></div>
